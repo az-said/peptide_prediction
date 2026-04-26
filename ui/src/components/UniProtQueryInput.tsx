@@ -15,6 +15,7 @@ import { Search, Loader2, Info, ChevronDown, ExternalLink, SlidersHorizontal } f
 import { toast } from "sonner";
 import { API_BASE, executeUniProtQuery } from "@/lib/api";
 import { cancelSyncJob } from "@/lib/jobApi";
+import { uuid } from "@/lib/uuid";
 import { AnalysisProgress } from "@/components/AnalysisProgress";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -162,7 +163,7 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
       if (abortRef.current) abortRef.current.abort();
       const abortController = new AbortController();
       abortRef.current = abortController;
-      const token = crypto.randomUUID();
+      const token = uuid();
       cancelTokenRef.current = token;
 
       // Timeout — UniProt returns FULL proteins (some 1000+ aa).

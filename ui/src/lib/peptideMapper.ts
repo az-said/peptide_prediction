@@ -15,23 +15,11 @@ import type { ApiPeptideRow } from "@/types/api";
 import { validateApiRow, reportValidationErrors } from "./apiValidator";
 
 // ----- optional nested shapes (match types/peptide) -----
-type JPredInfo = {
-  helixFragments?: Array<[number, number]> | Segment[];
-  helixScore?: number;
-};
-
 type TangoCurves = {
   agg?: number[];
   beta?: number[];
   helix?: number[];
   turn?: number[];
-};
-
-type PsipredInfo = {
-  pH?: number[];
-  pE?: number[];
-  pC?: number[];
-  helixSegments?: Array<[number, number]>;
 };
 
 type S4predInfo = {
@@ -193,19 +181,6 @@ export function mapApiRowToPeptide(row: ApiPeptideRow | Record<string, any>, sou
     row.ffHelixFragments ?? row["FF Helix fragments"] ?? row["FF-Helix fragments"] ?? []
   );
 
-  // JPred — optional
-  const jpredFrags = toSegments(
-    row.jpredHelixFragments || row["Helix fragments (Jpred)"] || row["JPred Helix fragments"] || []
-  );
-  const jpredScore = num(
-    row.jpredHelixScore ?? row["Helix score (Jpred)"] ?? row["JPred Helix score"],
-    true
-  );
-  const jpred: JPredInfo | undefined =
-    (jpredFrags?.length ?? 0) || jpredScore !== undefined
-      ? { helixFragments: jpredFrags, helixScore: jpredScore }
-      : undefined;
-
   // Optional per-residue curves (Tango)
   // Check canonical API fields first (tangoAggCurve), then legacy keys
   const extra = row.extras || row.extra || {};
@@ -243,19 +218,6 @@ export function mapApiRowToPeptide(row: ApiPeptideRow | Record<string, any>, sou
   const tangoBetaMax = num(row.tangoBetaMax, true);
   const tangoHelixMax = num(row.tangoHelixMax, true);
 
-  // Optional per-residue curves (PSIPRED)
-  const psipred: PsipredInfo | undefined = (() => {
-    const pH = row.psipredPH || row["Psipred P_H"] as number[] | undefined;
-    const pE = row.psipredPE || row["Psipred P_E"] as number[] | undefined;
-    const pC = row.psipredPC || row["Psipred P_C"] as number[] | undefined;
-    const helixSegments = (
-      row.psipredHelixSegments || row["Helix fragments (Psipred)"]
-    ) as Array<[number, number]> | undefined;
-    if ((pH && pH.length) || (pE && pE.length) || (pC && pC.length) || (helixSegments?.length ?? 0) > 0) {
-      return { pH, pE, pC, helixSegments };
-    }
-    return undefined;
-  })();
 
   // Optional per-residue curves (S4PRED)
   const s4pred: S4predInfo | undefined = (() => {
@@ -347,9 +309,7 @@ export function mapApiRowToPeptide(row: ApiPeptideRow | Record<string, any>, sou
     sswBetaPct,
 
     // Providers
-    jpred,
     tango,
-    psipred,
     s4pred,
 
     // Canonical Tango summary fields (from backend)

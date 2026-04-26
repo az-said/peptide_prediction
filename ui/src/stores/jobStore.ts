@@ -14,6 +14,7 @@ import { toast } from "sonner";
 
 import { pollJobStatus, cancelJob as apiCancelJob } from "@/lib/jobApi";
 import type { JobProgress, JobStatusValue } from "@/lib/jobApi";
+import { toDatasetMetadata } from "@/lib/metaAdapter";
 import { useDatasetStore } from "./datasetStore";
 
 // ---------------------------------------------------------------------------
@@ -188,7 +189,7 @@ function startPolling(
 
         // Ingest results into the dataset store
         const { rows, meta } = status.result;
-        useDatasetStore.getState().ingestBackendRows(rows, meta);
+        useDatasetStore.getState().ingestBackendRows(rows, toDatasetMetadata(meta));
 
         const job = get().jobs[jobId];
         toast.success(`Analysis complete — ${rows.length} peptides`, {

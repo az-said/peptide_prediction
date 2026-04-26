@@ -30,6 +30,7 @@ function aggBarColor(score: number): string {
   return '#ef4444';                    // red-500 — high
 }
 import { ChartExportButtons } from '@/components/ChartExportButtons';
+import { TangoTooltip } from '@/components/charts/TangoTooltip';
 
 interface AggregationHeatmapProps {
   sequence: string;
@@ -100,22 +101,7 @@ export function AggregationHeatmap({
                 label={{ value: 'TANGO score (%)', angle: -90, position: 'insideLeft', fontSize: 11 }}
                 tick={{ fontSize: 10 }}
               />
-              <Tooltip
-                content={({ payload, label }) => {
-                  if (!payload?.length) return null;
-                  const d = payload[0]?.payload;
-                  return (
-                    <div className="bg-background border border-border rounded p-2 text-xs space-y-1">
-                      <p className="font-medium">Residue {label}: {d?.aa}</p>
-                      {payload.map((entry: any) => (
-                        <p key={entry.dataKey} style={{ color: entry.color }}>
-                          {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}%
-                        </p>
-                      ))}
-                    </div>
-                  );
-                }}
-              />
+              <Tooltip content={<TangoTooltip />} />
               <Bar dataKey="Aggregation" opacity={0.85}>
                 {data.map((entry, idx) => (
                   <Cell key={idx} fill={aggBarColor(entry.Aggregation)} />
@@ -141,22 +127,7 @@ export function AggregationHeatmap({
                   tick={{ fontSize: 10 }}
                 />
                 <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip
-                  content={({ payload, label }) => {
-                    if (!payload?.length) return null;
-                    const d = payload[0]?.payload;
-                    return (
-                      <div className="bg-background border border-border rounded p-2 text-xs space-y-1">
-                        <p className="font-medium">Residue {label}: {d?.aa}</p>
-                        {payload.map((entry: any) => (
-                          <p key={entry.dataKey} style={{ color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}%
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
+                <Tooltip content={<TangoTooltip />} />
                 <Legend />
                 <Bar dataKey="Beta" fill="hsl(var(--beta, 210 80% 50%))" opacity={0.7} />
                 <Bar dataKey="Helix" fill="hsl(var(--helix, 0 80% 50%))" opacity={0.7} />
@@ -215,24 +186,7 @@ export function AggregationHeatmap({
                 />
                 <YAxis tick={{ fontSize: 10 }} label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', fontSize: 11 }} />
                 <ReferenceLine y={5} stroke="#eab308" strokeDasharray="6 3" label={{ value: '5%', position: 'right', fontSize: 9, fill: '#eab308' }} />
-                <Tooltip
-                  content={({ payload, label }) => {
-                    if (!payload?.length) return null;
-                    const d = payload[0]?.payload;
-                    return (
-                      <div className="bg-background border border-border rounded p-2 text-xs space-y-1">
-                        <p className="font-medium">Residue {label}: {d?.aa}</p>
-                        {payload.map((entry: any) => (
-                          entry.value != null && (
-                            <p key={entry.dataKey} style={{ color: entry.color }}>
-                              {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value}%
-                            </p>
-                          )
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
+                <Tooltip content={<TangoTooltip />} />
                 <Legend />
                 <Line type="monotone" dataKey="Aggregation" stroke="#f59e0b" strokeWidth={2} dot={false} />
                 {betaCurve?.length && <Line type="monotone" dataKey="TANGO Beta" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" dot={false} />}

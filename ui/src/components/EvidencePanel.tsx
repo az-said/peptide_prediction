@@ -134,8 +134,8 @@ export function EvidencePanel({ peptide, cohortStats }: EvidencePanelProps) {
   const tangoSSW = peptide.sswPrediction;
   const s4predSSW = peptide.s4predSswPrediction;
   const tangoAvailable = peptide.providerStatus?.tango?.status === "AVAILABLE";
-  const s4predAvailable = peptide.providerStatus?.s4pred?.status === "available" || peptide.providerStatus?.s4pred?.status === "AVAILABLE";
-  const hasTangoSSW = tangoAvailable && tangoSSW !== null && tangoSSW !== undefined && tangoSSW !== "null";
+  const s4predAvailable = peptide.providerStatus?.s4pred?.status === "AVAILABLE";
+  const hasTangoSSW = tangoAvailable && tangoSSW !== null && tangoSSW !== undefined;
   const hasS4predSSW = s4predAvailable && s4predSSW !== null && s4predSSW !== undefined;
 
   const tangoLabel = !hasTangoSSW ? 'N/A' : tangoSSW === 1 ? 'Positive' : tangoSSW === -1 ? 'Negative' : 'N/A';

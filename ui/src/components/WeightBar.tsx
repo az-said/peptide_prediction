@@ -238,7 +238,7 @@ export function WeightBar({ weights, activeMetrics, onChange, disabled }: Weight
             key={seg.metric}
             className={`relative flex items-center justify-center overflow-hidden transition-opacity cursor-pointer ${seg.color} ${dragging != null ? "" : "hover:opacity-90"} ${seg.weight === 0 ? "min-w-[2px]" : ""}`}
             style={{ width: `${Math.max(seg.weight === 0 ? 0.5 : 0, seg.width)}%` }}
-            onClick={() => handleSegmentClick(seg.metric)}
+            onClick={() => startEditing()}
           >
             {seg.width > 8 && (
               <div className="flex flex-col items-center text-white text-[10px] leading-tight font-medium pointer-events-none">

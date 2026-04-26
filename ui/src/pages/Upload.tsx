@@ -9,6 +9,8 @@ import { DataPreview } from "@/components/DataPreview";
 import { useDatasetStore } from "@/stores/datasetStore";
 import { uploadCSV } from "@/lib/api";
 import { submitUploadJob, cancelSyncJob } from "@/lib/jobApi";
+import { toDatasetMetadata } from "@/lib/metaAdapter";
+import { uuid } from "@/lib/uuid";
 import { useJobStore } from "@/stores/jobStore";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
@@ -305,7 +307,7 @@ export default function Upload() {
 
       // Try async job submission first, fall back to sync
       try {
-        const token = crypto.randomUUID();
+        const token = uuid();
         cancelTokenRef.current = token;
         const jobResponse = await submitUploadJob(
           localFile,
@@ -326,12 +328,14 @@ export default function Upload() {
         } else if (jobResponse.mode === "sync" && jobResponse.result) {
           // Sync fallback: result returned directly
           const { rows, meta } = jobResponse.result;
-          ingestBackendRows(rows, meta);
-          if (meta?.cache_hits > 0) {
-            toast.success(`${meta.cache_hits} of ${rows.length} sequences loaded from cache`, {
+          ingestBackendRows(rows, toDatasetMetadata(meta));
+          const hits = meta?.cache_hits ?? 0;
+          const misses = meta?.cache_misses ?? 0;
+          if (hits > 0) {
+            toast.success(`${hits} of ${rows.length} sequences loaded from cache`, {
               description:
-                meta.cache_misses > 0
-                  ? `${meta.cache_misses} newly computed`
+                misses > 0
+                  ? `${misses} newly computed`
                   : "All results cached — instant analysis",
             });
           }
@@ -349,11 +353,13 @@ export default function Upload() {
         controller.signal
       )) as any;
       ingestBackendRows(rows, meta);
-      if (meta?.cache_hits > 0) {
-        toast.success(`${meta.cache_hits} of ${rows.length} sequences loaded from cache`, {
+      const legacyHits = meta?.cache_hits ?? 0;
+      const legacyMisses = meta?.cache_misses ?? 0;
+      if (legacyHits > 0) {
+        toast.success(`${legacyHits} of ${rows.length} sequences loaded from cache`, {
           description:
-            meta.cache_misses > 0
-              ? `${meta.cache_misses} newly computed`
+            legacyMisses > 0
+              ? `${legacyMisses} newly computed`
               : "All results cached — instant analysis",
         });
       }

@@ -613,27 +613,51 @@ CEO terminal (T1) plans waves; sub-terminals (T2/T3/T-PEL/Cowork) execute. T1 co
 | 6 | UI charts/PeptideDetail (P1-P6, CH2, CH6 done; CH1/3/4/5/7, P7/8 remain) | PARTIAL |
 | 7 | Async B1 (Celery+Redis) + Cache B6 (DuckDB) | DONE |
 
-### Current wave plan (post-2026-04-26 feedback)
+### Current wave plan (revised 2026-04-26 — Peleg PDF extracted, replaces D+E with P-series)
+
+**Source of truth for Peleg work**: `docs/active/PELEG_FEEDBACK_INSTRUCTIONS.md` (32 FIXes, 5 tiers).
+
 | Wave | Focus | Terminals | Output |
 |------|-------|-----------|--------|
-| **0** | Red CI fix (ISSUE-025 + ISSUE-026) | T2, T3 | `make test` green + `tsc` clean |
-| **A** | Sentry crypto crash (ISSUE-027) | T3 | UUID polyfill across all `crypto.randomUUID()` calls |
-| **B** | Visible bugs (ISSUE-028 TANGO tooltip + ISSUE-029 dark menu) | T3 | tooltip parity + theme leak fixed |
-| **C** | Email Alex+Peleg recap (H8) | T1 + Said | Email sent, momentum kept |
-| **D** | Wave 6 chart leftovers (CH1, CH3, CH4, CH5, CH7, P7, P8) | T3 + Cowork | 7 chart items closed |
-| **E** | ISSUE-024 non-standard AA notification | T2 + T3 | API + UI banners |
-| **F** | Phase I research spike (G4 multi-predictor strategy decision) | T1 + Said | Go/no-go decision on Phase I |
-| **G** | Cowork design pilot (one component end-to-end before full redesign) | Cowork + T3 | Pilot accepted by Said |
-| **H** | pvl-cli + pvl-py packages (B17, B18, B19) | T2 | Packages on PyPI test index |
+| **0** | Red CI: ISSUE-025 backend trace_id failures | T2 | ✅ DONE — real production bug (asyncio.to_thread + cache traceId refresh) |
+| **0.1** | Red CI: ISSUE-026 store type errors (8) | T3 | ✅ DONE in stores |
+| **0.2** | All remaining 13 tsc errors across 8 files (Compare, Upload, EvidencePanel, PeptideTable, TrustSection, WeightBar, peptideMapper, main.tsx) | T3 | tsc clean overall |
+| **A** | Sentry crypto crash (ISSUE-027) — UUID polyfill at 2 sites | T3 | crypto.randomUUID safe in HTTP/Safari |
+| **B** | TANGO tooltip in Quick Analyze (ISSUE-028) | T3 | tooltip parity |
+| **B-skip** | ISSUE-029 dark menu in light mode | — | ✅ already fixed |
+| **P0** | Foundation: FIX-001 (4-category classification) + FIX-002 (threshold restructure) + FIX-003 (terminology sweep) | T2 backend + T3 UI | Classification logic, threshold defaults, Cohort→Database, Aggregation→Fibril framing, no acronyms |
+| **P1** | Tier 1 dashboard: FIX-004 KPI cards, FIX-005 badges, FIX-006 columns, FIX-007 Venn bug, FIX-008 Pipeline→Results | T3 + Cowork (icons) | Results dashboard fixed |
+| **P2** | Tier 2 PeptideDetail: FIX-009 to FIX-018 | T3 + Cowork (heavy visuals on FIX-014, 016, 017) | PeptideDetail page complete |
+| **P3** | Tier 3 charts: FIX-019 to FIX-025 | Cowork-heavy + T3 wires | All distribution + correlation charts redone |
+| **P4** | Tier 4 help text: FIX-026 to FIX-030 | T3 (text-only) | Metric definitions, classification text, visualization guide |
+| **P5** | Tier 5 polish: FIX-031, FIX-032 | T3 | S4PRED warning citation, threshold values panel |
+| **C** | Email Alex+Peleg recap (queued from start, sent after P5) | T1 + Said | Recap + 6 Peleg-flagged Qs answered |
+| **F** | Phase I (multi-predictor consensus) research spike | T1 + Said | Go/no-go on Galagos-inspired strategy |
+| **G** | Cowork design pilot (one component end-to-end before D3.x) | Cowork + T3 | Pilot accepted by Said |
+| **H** | pvl-cli + pvl-py + Developers nav (B17, B18, B19) | T2 | Multi-surface ecosystem |
 | **I** | D3.x landing redesign (D3.7-D3.10, D-NAV) | Cowork + T3 | New landing live |
-| **J** | MCP server (G1) | T2 | MCP exposed for Claude/local LLMs |
-| **T-PEL** | Peleg feedback batch (PEL-A through PEL-I + her PDF) — runs in parallel | T-PEL | All Peleg items closed in one coherent pass |
+| **J** | MCP server (G1) | T2 | Natural-language queries |
+| **T-PEL** | Peleg scientific REVIEWER role (not implementer) — reviews diffs from P0-P5 against PELEG_FEEDBACK_INSTRUCTIONS.md | T-PEL | All Peleg items verified before T1 commits |
 
-### Concurrency rules
-- **T2 + T3** can run in parallel only when their files don't overlap
-- **T-PEL** runs entirely on its own; coordinates with T1 only at commit time
-- **T1** never edits code in this plan; only orchestrates, reviews, commits, writes TX-INSTRUCTIONS
-- **No pushes** until the full sequence Wave 0 → Wave E is green
+**Absorbed waves**:
+- ~~Wave D (chart leftovers CH1, CH3, CH4, CH5, CH7, P7, P8)~~ → absorbed into P1+P2+P3 (most overlap with Peleg's fixes)
+- ~~Wave E (ISSUE-024 non-standard AA notification)~~ → absorbed into P0 (terminology + classification touch the same files)
+
+**Items deferred to Wave C email** (Peleg-flagged for discussion):
+- FIX-002: "Agg Per-Residue %" threshold — keep or remove?
+- FIX-012: TANGO 5% threshold justification
+- FIX-013: Consensus tier system — remove or document?
+- FIX-015: Interpretation notes decision tree
+- FIX-022: Charge handling (absolute vs signed)
+- FIX-023: Correlation matrix missing-value treatment
+
+T2/T3 leave `# PELEG-Q-FIX-XXX` TODO comments in code where these block; they don't halt P0-P5.
+
+### Concurrency rules (big-chunk mode)
+- **T2 + T3** work continuously through their assigned big batch — only ping T1 when the entire batch is done OR a true blocker
+- **T-PEL** spins up only when first Peleg P-wave is ready for review (not during early waves)
+- **T1** never edits code in this plan; only orchestrates, reviews diffs, commits, writes TX-INSTRUCTIONS
+- **No pushes** until the full sequence Wave 0 → P5 is green
 
 ### Blocked / Parked
 | Item | Blocked by |

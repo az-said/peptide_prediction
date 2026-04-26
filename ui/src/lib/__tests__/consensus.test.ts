@@ -109,7 +109,7 @@ describe("getConsensusSS", () => {
     });
     const result = getConsensusSS(p);
     expect(result.tier).toBe(4);
-    expect(result.label).toContain("No Aggregation");
+    expect(result.label).toContain("Low Aggregation");
   });
 
   it("returns Tier 5 when no TANGO data", () => {

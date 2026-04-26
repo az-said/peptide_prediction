@@ -211,6 +211,11 @@ def process_single_sequence(
     cached = get_cached(ck)
     if cached is not None:
         log_info("cache_hit", f"Returning cached result for {entry_id}", sequence_len=len(seq))
+        # Refresh per-request fields so traceId in meta matches the current request
+        # (cached result preserves the original request's traceId/runId otherwise).
+        if isinstance(cached.get("meta"), dict):
+            cached["meta"]["traceId"] = get_trace_id_for_response()
+            cached["meta"]["runId"] = str(uuid.uuid4())
         return cached
 
     # Compute FF-Helix %

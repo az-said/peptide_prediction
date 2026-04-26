@@ -149,16 +149,14 @@ async def upload_csv(
     disconnect_task = asyncio.create_task(_detect_disconnect())
 
     try:
-        result = await asyncio.get_event_loop().run_in_executor(
-            None,
-            lambda: process_upload_dataframe(
-                df=df,
-                threshold_config_requested=threshold_config_requested,
-                threshold_config_resolved=threshold_config_resolved,
-                trace_entry=trace_entry,
-                sentry_initialized=SENTRY_INITIALIZED,
-                cancel_event=cancel_event,
-            ),
+        result = await asyncio.to_thread(
+            process_upload_dataframe,
+            df=df,
+            threshold_config_requested=threshold_config_requested,
+            threshold_config_resolved=threshold_config_resolved,
+            trace_entry=trace_entry,
+            sentry_initialized=SENTRY_INITIALIZED,
+            cancel_event=cancel_event,
         )
         if cancel_event.is_set():
             raise asyncio.CancelledError()

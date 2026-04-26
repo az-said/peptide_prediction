@@ -103,7 +103,7 @@ root.render(
     fallback={({ error, resetError }) => (
       <div style={{ padding: "2rem", textAlign: "center" }}>
         <h1>Something went wrong</h1>
-        <p>{error.message}</p>
+        <p>{error instanceof Error ? error.message : String(error)}</p>
         <button onClick={resetError}>Try again</button>
       </div>
     )}

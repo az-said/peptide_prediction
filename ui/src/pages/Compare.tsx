@@ -132,7 +132,7 @@ export default function Compare() {
 
     try {
       const response = await uploadCSV(file);
-      const rows = response.rows || response.data || [];
+      const rows = response.rows ?? [];
       const mapped = rows
         .map((r: any, idx: number) => {
           try {
@@ -180,7 +180,7 @@ export default function Compare() {
     setAFilename(file.name);
     try {
       const response = await uploadCSV(file);
-      const rows = response.rows || response.data || [];
+      const rows = response.rows ?? [];
       const mapped = rows
         .map((r: any, idx: number) => {
           try {

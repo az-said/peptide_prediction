@@ -57,7 +57,7 @@ export function TrustSection({ className }: TrustSectionProps) {
       <div className="flex flex-wrap items-center justify-center gap-8 sm:gap-12 mt-12 max-w-3xl mx-auto">
         {INSTITUTIONS.map((inst) => (
           <div key={inst.name} className="flex flex-col items-center gap-1.5 opacity-60 hover:opacity-100 transition-opacity">
-            {inst.isOSS ? (
+            {"isOSS" in inst && inst.isOSS ? (
               <span className="flex items-center gap-1.5 text-lg font-semibold tracking-tight text-[hsl(var(--foreground))]">
                 <Code2 className="h-4 w-4" />
                 {inst.name}

@@ -860,8 +860,9 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
             variant={showFilters ? "default" : "outline"}
             size="sm"
             onClick={() => setShowFilters(!showFilters)}
+            title="Toggle column filters"
           >
-            <Filter className="w-4 h-4 sm:mr-2" title="Toggle column filters" />
+            <Filter className="w-4 h-4 sm:mr-2" />
             <span className="hidden sm:inline">Filters</span>
             {activeFilterCount > 0 && (
               <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
