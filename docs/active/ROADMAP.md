@@ -1,8 +1,9 @@
 # Peptide Visual Lab (PVL) — Development Roadmap
 
-**Last Updated**: 2026-04-02
-**Status**: Active Development (pre-paper, deployment-ready)
-**Branch**: `main` (merged from `ref-impl-replacement`)
+**Last Updated**: 2026-04-26
+**Status**: Active Development (pre-paper, deployment-ready, deployed at http://94.130.178.182:3000)
+**Branch**: `main` (working off `planning/wave-0-prep` for Wave 0 prep)
+**Canonical pair**: this file + `KNOWN_ISSUES.md` are the only roadmap+debug sources of truth.
 
 ---
 
@@ -149,6 +150,23 @@ Simulate concurrent load: 50, 100, 1000 simultaneous analyses. Tools: `locust` o
 
 **Phase B summary**: 9/16 done. B11 (FASTA), B13 (atom2svg), B14 (dual compare) completed. B6 (cache), B15-B16 planned.
 
+### B17. `pvl-cli` — Pip-installable CLI
+**Status**: NOT STARTED | **Effort**: 1-2 days | **When**: After DESY deployment
+Thin wrapper around the REST API: `pip install pvl-cli && pvl analyze seqs.fasta`. Targets researchers in a terminal who don't want a browser. Same predictions, FASTA in / CSV out.
+**Why**: PVL becomes infrastructure, not just a website. The JOSS paper can cite all surfaces.
+
+### B18. `pvl-py` — Importable Python Package
+**Status**: NOT STARTED | **Effort**: 1-2 days | **When**: Alongside B17
+`import pvl; results = pvl.analyze(df)` — Jupyter-native. Returns a pandas DataFrame matching the API contract. Uses the same REST backend (or local mode for offline use).
+
+### B19. "Developers" Navigation Section
+**Status**: NOT STARTED | **Effort**: 2-3h | **When**: Alongside B17/B18
+Add a top-level nav entry exposing: API docs (auto-generated at `/api/docs`), CLI install, Python package, MCP server, self-host instructions. Even items marked "coming soon" — establishes the multi-surface positioning before the packages ship.
+
+### B20. "Run Locally / Self-Host" Landing CTA
+**Status**: NOT STARTED | **Effort**: 2-4h | **When**: Phase D2 redesign
+Prominent option on the landing page: "Run PVL on your own machine — Docker, MIT licensed, no data leaves your device." Pairs with D3.1 (everything-runs-locally laptop visualization).
+
 ---
 
 ## Peleg Holistic Review
@@ -193,6 +211,7 @@ Simulate concurrent load: 50, 100, 1000 simultaneous analyses. Tools: `locust` o
 |----|------|--------|--------|---------|
 | D2.6 | Mobile responsive polish | 8h | IN PROGRESS | Typography scaling, grid stacking, table column visibility |
 | D2.7 | Code-splitting / lazy routes | 4h | DONE | React.lazy + manualChunks in vite.config |
+| D-NAV | Stripe-style top nav (or 3-dots expand menu) replacing fixed sidebar on landing | 6-8h | NOT STARTED | Said: "the dark menu which is still showing in a bright mode" + "top bar like stripe instead of a side bar...or three dots that expand into a menu but not a fixed componenet" |
 
 ## Phase D2.8: Visualization Upgrade Cycle (Cowork)
 
@@ -249,6 +268,10 @@ Each graph goes through the cycle above. Charts to redesign:
 | D3.4 | Per-residue unified profile viewer | 12h | PARKED | Multi-track synchronized viewer: sequence + S4PRED probabilities + TANGO curve + hydrophobicity + FF-Helix windows on same X axis. |
 | D3.5 | Three.js globe upgrade | 16-20h | PARKED | Replace COBE with custom Three.js globe: colorful continent dots, glowing arcs, atmospheric haze, particle effects. Exact Stripe aesthetics. ~600KB bundle cost, needs lazy loading. |
 | D3.6 | Updated screenshots for mockups | 4h | PARKED | Fresh screenshots of all redesigned pages (light + dark) for ShowcaseGallery and UseCaseSection floating browser frames. |
+| D3.7 | Stacked sliding cards (image #31 reference) | 8-12h | PARKED | Cards stacked, slide up one after another, writing on left + visualization/screenshot/dashboard on right. Use for hero or use-case section. Same vibe, generous spacing, cards not too small. |
+| D3.8 | Clickable proof cards w/ logos (image #32 reference) | 6-8h | PARKED | Click between items (e.g., DESY lab, Technion lab, TANGO, S4PRED), shows description + bright photo with logo center on right. Showcases credibility / partnerships. |
+| D3.9 | Big-bg-color hero w/ multiple top screenshots (image #36 reference) | 8h | PARKED | Orange/purple gradient bg, multiple screenshot mockups arranged at top, description bottom. |
+| D3.10 | Embedding-viz tech aesthetic (image #34 reference) | 8h | PARKED | Right-side panel with embedding visualization (lines, dots, calculation feel) on a clean white bg. Conveys proof-of-tech. Pairs with D3.5 globe aesthetic. |
 
 ---
 
@@ -517,6 +540,41 @@ Alex's vision: a scientific version of OpenClaw where researchers can connect th
 
 ---
 
+## Phase I: Multi-Predictor Consensus (Strategic — Galagos-inspired)
+
+**Source**: Galagos.ai demo (2026-04-25). Their AI agent ran 8 amyloid predictors on a single sequence and produced a per-predictor verdict table with consensus ("7/8 flag amyloid propensity — HIGH"). Reference screenshot in `New_Feedback/`.
+**Why this matters**: PVL today runs 1 aggregation predictor (TANGO) + 1 secondary structure predictor (S4PRED). Consensus across 5-8 amyloid predictors is the gold standard for credibility — and no web tool offers it visually. This is the biggest strategic differentiator after MCP integration.
+
+**Open question for Said**: confirm this is a real future direction (vs. inspiration only). Scope is large.
+
+### I1. Multi-Predictor Integration Layer
+**Status**: PROPOSED | **Effort**: 60-100h (across many predictors)
+Wrap each external predictor as a PVL provider with the same interface as TANGO. Candidates from Galagos output:
+- AGGRESCAN — already has a public REST API
+- FoldAmyloid — server, parseable HTML output
+- CamSol Intrinsic — server, parseable
+- Zyggregator — server-based
+- Pafig — local binary (like TANGO)
+- AmyloDeep — neural network, weights downloadable
+- Beta-contiguity — algorithmic, can implement directly
+- Packing density — algorithmic, can implement directly
+
+**Architecture**: Plugin interface (`backend/predictors/base.py` defines `BasePredictor`), each provider implements `predict(sequence) -> PredictionResult`. PVL pipeline runs all enabled predictors in parallel (Celery tasks), aggregates verdicts.
+
+### I2. Consensus Output UI
+**Status**: PROPOSED | **Effort**: 16-24h | **After**: I1
+Per-peptide and per-cohort consensus view:
+- Per-predictor verdict table (predictor name | verdict | key finding)
+- Consensus headline ("7/8 flag amyloid propensity — HIGH")
+- Filter table by consensus level
+- Export consensus report (extends G5 PDF report)
+
+### I3. Predictor Performance Benchmarking
+**Status**: PROPOSED | **Effort**: 40h | **After**: I2
+Run all predictors on a labeled dataset (e.g., AmyloGraph, WALTZ-DB) and report per-predictor accuracy/sensitivity/specificity. PVL becomes the only tool that lets you choose predictors based on benchmarked performance.
+
+---
+
 ## Phase H: Marketing, Content & Branding
 
 **Goal**: Professional public presence. PVL should look like a real product, not a student project.
@@ -531,8 +589,63 @@ Alex's vision: a scientific version of OpenClaw where researchers can connect th
 | H5 | Website content: landing page copy, use case pages, FAQ | 4-6h | TODO | Part of Phase D redesign |
 | H6 | Wallpapers, social media assets, shareable cards | 2-4h | TODO | From brand kit |
 | H7 | Tamarind Bio research: MCP positioning, partnership potential | 2h | TODO | Informs G1 MCP server story |
+| H8 | Email Alex+Peleg: full recap (fixes done, pending, next steps, AI integration vision, paper timeline) | 2-3h | TODO | Said-drafted, T1 polishes. Big thank you for feedback. |
+| H9 | LinkedIn animated post (mac-screenrecording style) | 6-8h | TODO | Said has a saved like-design to replicate. Post about PVL features. |
+| H10 | Manual-test sweep across all backlog items | 4-6h | TODO | Before Phase D2.8 / D3 final design lock-in |
+| H11 | Apple Notes + Slack comment review pass | 2-3h | TODO | One last comb through user feedback before next phase |
+| **G5** | Galagos-style auto-PDF scientific report | 16-24h | NOT STARTED | 12-page format with per-peptide interpretation + methods + parameters. Uses LLM (G2 RAG) for description sections. Reference: `New_Feedback/tango_viral_peptides_report.pdf`. |
 
 **Key principle**: Every LinkedIn post should showcase a real feature with a screenshot or screen recording. No fluff.
+
+---
+
+## Wave Execution (replaces former PLAN.md)
+
+CEO terminal (T1) plans waves; sub-terminals (T2/T3/T-PEL/Cowork) execute. T1 commits at end of each wave. No pushes until full sequence is green.
+
+### Completed waves (Apr 2-3, deployed to VPS)
+| Wave | Focus | Status |
+|------|-------|--------|
+| 1 | Bug fixes ISSUE-019/020/022/023 | DONE |
+| 3 | UniProt search F1-F3 + F6 + 10K pagination | DONE+ |
+| 4 | Docker prod hardening + Caddy + GHCR (E1 partial, E2/E5 remain) | MOSTLY DONE |
+| 5 | UI threshold controls T1-T10, columns C1-C5, upload UX | DONE |
+| 6 | UI charts/PeptideDetail (P1-P6, CH2, CH6 done; CH1/3/4/5/7, P7/8 remain) | PARTIAL |
+| 7 | Async B1 (Celery+Redis) + Cache B6 (DuckDB) | DONE |
+
+### Current wave plan (post-2026-04-26 feedback)
+| Wave | Focus | Terminals | Output |
+|------|-------|-----------|--------|
+| **0** | Red CI fix (ISSUE-025 + ISSUE-026) | T2, T3 | `make test` green + `tsc` clean |
+| **A** | Sentry crypto crash (ISSUE-027) | T3 | UUID polyfill across all `crypto.randomUUID()` calls |
+| **B** | Visible bugs (ISSUE-028 TANGO tooltip + ISSUE-029 dark menu) | T3 | tooltip parity + theme leak fixed |
+| **C** | Email Alex+Peleg recap (H8) | T1 + Said | Email sent, momentum kept |
+| **D** | Wave 6 chart leftovers (CH1, CH3, CH4, CH5, CH7, P7, P8) | T3 + Cowork | 7 chart items closed |
+| **E** | ISSUE-024 non-standard AA notification | T2 + T3 | API + UI banners |
+| **F** | Phase I research spike (G4 multi-predictor strategy decision) | T1 + Said | Go/no-go decision on Phase I |
+| **G** | Cowork design pilot (one component end-to-end before full redesign) | Cowork + T3 | Pilot accepted by Said |
+| **H** | pvl-cli + pvl-py packages (B17, B18, B19) | T2 | Packages on PyPI test index |
+| **I** | D3.x landing redesign (D3.7-D3.10, D-NAV) | Cowork + T3 | New landing live |
+| **J** | MCP server (G1) | T2 | MCP exposed for Claude/local LLMs |
+| **T-PEL** | Peleg feedback batch (PEL-A through PEL-I + her PDF) — runs in parallel | T-PEL | All Peleg items closed in one coherent pass |
+
+### Concurrency rules
+- **T2 + T3** can run in parallel only when their files don't overlap
+- **T-PEL** runs entirely on its own; coordinates with T1 only at commit time
+- **T1** never edits code in this plan; only orchestrates, reviews, commits, writes TX-INSTRUCTIONS
+- **No pushes** until the full sequence Wave 0 → Wave E is green
+
+### Blocked / Parked
+| Item | Blocked by |
+|------|-----------|
+| E6: Multi-arch build | DESY VM arch info |
+| C1-C6: K8s deployment | DESY K8s namespace |
+| G3: Generalized AI platform | Separate project |
+| P7: Hamodrakas 2007 research | Domain research needed |
+| AF1-AF2: AlphaFold signal peptide | Domain research needed |
+| T11: Peleg/Bader paper thresholds | Paper lookup needed |
+| A4: bio.tools registration | Live URL |
+| A5: Zenodo DOI | GitHub release |
 
 ---
 

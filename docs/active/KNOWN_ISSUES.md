@@ -1,8 +1,8 @@
 # Known Issues — Prioritized Backlog
 
-**Last Updated**: 2026-03-28
+**Last Updated**: 2026-04-26
 
-> **Status**: 17 original issues FIXED. 5 new issues open (ISSUE-018 to ISSUE-022) from Alex's testing.
+> **Status**: 17 original issues FIXED. ISSUE-018 to ISSUE-024 historic. ISSUE-025 to ISSUE-029 open (Wave 0 + Wave A + Wave B from team feedback 2026-04-26).
 
 ## Priority Definitions
 
@@ -35,6 +35,12 @@
 | ISSUE-015 | **P1** | SSW self-referential threshold | `backend/tango.py`, `backend/s4pred.py` | MEDIUM | — | ✅ FIXED |
 | ISSUE-016 | **P1** | S4PRED availability check case sensitivity | `backend/server.py` | HIGH | — | ✅ FIXED |
 | ISSUE-017 | **P1** | Non-standard amino acid crashes | `backend/biochem_calculation.py` | MEDIUM | `test_nonstandard_aa.py` | ✅ FIXED |
+| ISSUE-024 | **P1** | No notification on non-standard AA substitutions | `backend/auxiliary.py`, UI | MEDIUM | — | 🟡 OPEN |
+| ISSUE-025 | **P0** | Backend test failures: `test_trace_id.py` (2 tests) | `backend/tests/test_trace_id.py` | LOW | already exists | 🔴 OPEN (Wave 0) |
+| ISSUE-026 | **P0** | Frontend type errors: 8 in stores (Zustand storage drift + Meta↔DatasetMetadata) | `ui/src/stores/datasetStore.ts`, `ui/src/stores/jobStore.ts` | LOW | tsc clean | 🔴 OPEN (Wave 0) |
+| ISSUE-027 | **P1** | `crypto.randomUUID is not a function` on HTTP / older Safari (Sentry, DatabaseSearch) | `ui/src/**` | MEDIUM | jsdom test | 🟠 OPEN (Wave A) |
+| ISSUE-028 | **P2** | TANGO profile tooltip parity: Quick Analyze has residue#+AA, missing elsewhere | `ui/src/components/charts/TangoProfile.tsx` (or PeptideDetail Tango chart) | LOW | manual | 🟠 OPEN (Wave B) |
+| ISSUE-029 | **P2** | Dark menu component shows in light mode (theme leak) | TBD via grep | LOW | manual | 🟠 OPEN (Wave B) |
 
 ---
 
@@ -592,6 +598,216 @@ When a user submits a sequence containing non-standard amino acids (X, Z, B, U, 
 
 ### Note from Peleg
 These substitutions are intentional — chosen to get results most likely to predict fibril formation correctly. The user should know they happened but should NOT be blocked from analysis.
+
+---
+
+## ISSUE-025: Backend test failures — `test_trace_id.py`
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Status** | Open (Wave 0) |
+| **Blast Radius** | LOW |
+| **Root Module** | `backend/tests/test_trace_id.py` |
+| **Owner** | T2 |
+
+### Symptom
+```
+FAILED tests/test_trace_id.py::test_trace_id_in_meta_upload_csv
+  - aff00e9e-f90f-401b-973d-b0958dbced41
+  + a34f52bd-44dc-48e0-8249-2dd9af7bcf87
+FAILED tests/test_trace_id.py::test_trace_id_in_meta_predict
+  - e3ff818a-272a-4283-9d0b-1d191fa27e48
+  + 5955f93e-0ebd-4bcd-84cc-105b464c6b27
+```
+Two UUIDs being compared for equality — but the response trace_id is independently generated, not predicted by the test.
+
+### Reproduction
+```bash
+make test 2>&1 | grep -A2 "test_trace_id"
+```
+
+### Analysis
+- **Expected**: `meta.trace_id` matches the trace_id propagated from the request (response header `x-trace-id` or request context)
+- **Actual**: Test generates one UUID and compares against an independently-generated server UUID → never equal
+- **Cause**: Either (a) the test should set `x-trace-id` request header and assert echo, OR (b) trace_id propagation through the meta object regressed, OR (c) the test is asserting a stale snapshot
+
+### Fix path (T2 to investigate)
+1. Read `backend/tests/test_trace_id.py` end-to-end
+2. Read `backend/api/main.py` (or middleware) to see how `trace_id` is generated and where it's stored on the response
+3. Read `backend/schemas/api_models.py` `Meta` model — confirm `trace_id` field
+4. Three possible fixes:
+   - If trace_id should be echoed from header: test must send `x-trace-id` header with a known UUID
+   - If trace_id should match between meta and response header: assert equality between the two, not against a hard-coded value
+   - If trace_id is purely server-generated: assert UUID format only (regex), drop equality check
+5. **DO NOT modify `api_models.py`** (protected file) — only touch the test or the middleware
+
+### Success Criteria
+- [ ] `make test` exits 0
+- [ ] All 409 tests pass (407 + the 2 fixed)
+- [ ] No new tests added unless trace_id propagation logic was actually broken
+- [ ] If middleware logic changed, add 1 test asserting trace_id is propagated correctly
+
+---
+
+## ISSUE-026: Frontend type errors — Zustand storage drift + Meta↔DatasetMetadata
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Status** | Open (Wave 0) |
+| **Blast Radius** | LOW (types only, runtime works) |
+| **Root Module** | `ui/src/stores/datasetStore.ts`, `ui/src/stores/jobStore.ts` |
+| **Owner** | T3 |
+
+### Symptom
+```
+src/stores/datasetStore.ts(263,58): error TS2367: comparison number vs string
+src/stores/datasetStore.ts(343,62): error TS2367: comparison number vs string
+src/stores/datasetStore.ts(397,61): error TS2367: comparison number vs string
+src/stores/datasetStore.ts(535,9):  error TS2322: storage adapter returns string, expected StorageValue<any>
+src/stores/datasetStore.ts(544,40): error TS2345: StorageValue<any> not assignable to string
+src/stores/datasetStore.ts(549,43): error TS2345: StorageValue<any> not assignable to string
+src/stores/jobStore.ts(191,60):     error TS2345: Meta thresholds (Record<string,any>) ↔ DatasetMetadata thresholds ({muHCutoff,hydroCutoff})
+```
+
+### Reproduction
+```bash
+cd ui && npx tsc --noEmit
+```
+
+### Analysis
+**Errors 263/343/397** — `number === string` comparisons. Likely an ID field changed type. Open lines and read context.
+
+**Errors 535/544/549** — Zustand `persist` middleware API change. Custom storage adapter is returning `string` but Zustand now expects `StorageValue<T>` (a structured object). Either:
+- Update adapter to return `{ state, version }` structure, OR
+- Use Zustand's `createJSONStorage` helper which handles serialization
+
+**Error 191** — Two `thresholds` types in different files. `Meta.thresholds: Record<string,any>` (loose, server-generic) vs `DatasetMetadata.thresholds: { muHCutoff, hydroCutoff }` (strict, frontend-specific). When converting `Meta → DatasetMetadata`, need explicit destructure with default fallbacks.
+
+### Fix path (T3)
+1. **263/343/397**: open each line, identify the variable types, fix at the source (don't `String()`-cast unless the underlying types are genuinely both valid forms)
+2. **535/544/549**: refactor the persist storage adapter — wrap with `createJSONStorage(() => localStorage)` or update return shapes. Reference: https://github.com/pmndrs/zustand/blob/main/docs/integrations/persisting-store-data.md
+3. **191**: in `jobStore.ts:191`, when building `DatasetMetadata` from `Meta`, do:
+   ```ts
+   const thresholds = {
+     muHCutoff: Number(meta.thresholds?.muHCutoff ?? DEFAULT_MUH),
+     hydroCutoff: Number(meta.thresholds?.hydroCutoff ?? DEFAULT_HYDRO),
+   };
+   ```
+
+### Success Criteria
+- [ ] `cd ui && npx tsc --noEmit` exits 0
+- [ ] No new `any` casts (use real types)
+- [ ] Persist storage still serializes/deserializes correctly (test by reloading the app)
+
+---
+
+## ISSUE-027: `crypto.randomUUID is not a function` on HTTP / older Safari
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P1 |
+| **Status** | Open (Wave A) |
+| **Blast Radius** | MEDIUM — DatabaseSearch crashes for VPS users on HTTP |
+| **Root Module** | wherever `crypto.randomUUID()` is called in `ui/src/**` |
+| **Owner** | T3 |
+| **Reported by** | Sentry, 2026-04-26 |
+
+### Symptom
+```
+TypeError: crypto.randomUUID is not a function. (In 'crypto.randomUUID()', 'crypto.randomUUID' is undefined)
+  at None (/assets/DatabaseSearch-B4xKaaFo.js:21:3924)
+```
+
+### Root Cause
+`window.crypto.randomUUID()` requires a **secure context** (HTTPS or localhost). The VPS is served over `http://94.130.178.182:3000`. On non-secure contexts, `crypto.randomUUID` is `undefined`. Also unavailable in Safari < 15.4.
+
+### Fix
+Create `ui/src/lib/uuid.ts`:
+```ts
+export function uuid(): string {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  // RFC4122 v4 fallback
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+```
+
+Then:
+```bash
+grep -rn "crypto\.randomUUID" ui/src
+```
+Replace every call with `uuid()` from `@/lib/uuid`.
+
+### Success Criteria
+- [ ] No `crypto.randomUUID()` calls remain in `ui/src/`
+- [ ] DatabaseSearch loads on HTTP without console error
+- [ ] Add a vitest unit test that asserts `uuid()` returns a v4-shaped string when crypto is unavailable
+
+---
+
+## ISSUE-028: TANGO profile tooltip parity
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P2 |
+| **Status** | Open (Wave B) |
+| **Blast Radius** | LOW (UX) |
+| **Root Module** | TBD — T3 to identify |
+| **Owner** | T3 |
+| **Reported by** | User feedback (Gmail), 2026-04-26 |
+
+### Symptom
+> "In the Quick Analysis option, TANGO profile plot shows the number of the residue as well as which one it is when you move your mouse on top of it. However, in the [other page] [feedback was cut off]"
+
+Quick Analyze TANGO chart tooltip shows `Residue 5 — V` style. Another page's TANGO chart tooltip is missing this detail.
+
+### Fix path (T3)
+1. Find Quick Analyze TANGO chart: `grep -rn "TangoProfile\|Tango.*Profile\|tango.*chart" ui/src/components ui/src/pages`
+2. Find other TANGO chart instances (PeptideDetail, Results, Compare)
+3. Compare tooltip implementations
+4. Port the rich tooltip formatter (residue # + AA letter) to whichever chart is missing it
+5. Ask Said to confirm which page if it's not obvious
+
+### Success Criteria
+- [ ] All TANGO charts in the app show `Residue N — X` tooltip on hover
+- [ ] Single shared tooltip component if duplicated logic
+
+---
+
+## ISSUE-029: Dark menu in light mode (theme leak)
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P2 |
+| **Status** | Open (Wave B) |
+| **Blast Radius** | LOW (visual) |
+| **Root Module** | TBD — T3 to identify |
+| **Owner** | T3 |
+| **Reported by** | Said, 2026-04-26 |
+
+### Symptom
+> "the dark menu which is still showing in a bright mode still"
+
+A menu component renders with dark colors regardless of the active theme.
+
+### Fix path (T3)
+1. Ask Said which menu (sidebar? top nav? dropdown? mobile menu?)
+2. Switch to light mode locally, find the offending element
+3. `grep -rn "bg-zinc-900\|bg-slate-900\|bg-gray-900\|bg-black\|bg-neutral-900" ui/src/components` to find hardcoded dark backgrounds
+4. Replace with theme tokens: `bg-card`, `bg-popover`, `bg-background`, etc.
+5. Test in both light and dark modes
+
+### Success Criteria
+- [ ] Menu uses theme tokens, not hardcoded colors
+- [ ] Visually correct in both light and dark mode
+- [ ] No regression in dark mode appearance
 
 ---
 

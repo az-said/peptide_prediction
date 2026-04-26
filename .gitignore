@@ -81,6 +81,9 @@ htmlcov/
 # 🎯 TERMINAL ORCHESTRATION (temporary coordination files)
 T*-INSTRUCTIONS.md
 PLAN.md
+RECOVERY_PROMPT.md
+TERMINAL_SETUP.md
+New_Feedback/
 
 # 🤖 DEVELOPMENT / AI GENERATED FILES
 # Generated documentation and temporary files from AI tools
