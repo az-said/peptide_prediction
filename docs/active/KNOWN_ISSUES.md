@@ -38,9 +38,11 @@
 | ISSUE-024 | **P1** | No notification on non-standard AA substitutions | `backend/auxiliary.py`, UI | MEDIUM | — | 🟡 OPEN |
 | ISSUE-025 | **P0** | Backend test failures: `test_trace_id.py` (2 tests) | `backend/tests/test_trace_id.py` | LOW | already exists | 🔴 OPEN (Wave 0) |
 | ISSUE-026 | **P0** | Frontend type errors: 8 in stores (Zustand storage drift + Meta↔DatasetMetadata) | `ui/src/stores/datasetStore.ts`, `ui/src/stores/jobStore.ts` | LOW | tsc clean | 🔴 OPEN (Wave 0) |
-| ISSUE-027 | **P1** | `crypto.randomUUID is not a function` on HTTP / older Safari (Sentry, DatabaseSearch) | `ui/src/**` | MEDIUM | jsdom test | 🟠 OPEN (Wave A) |
-| ISSUE-028 | **P2** | TANGO profile tooltip parity: Quick Analyze has residue#+AA, missing elsewhere | `ui/src/components/charts/TangoProfile.tsx` (or PeptideDetail Tango chart) | LOW | manual | 🟠 OPEN (Wave B) |
-| ISSUE-029 | **P2** | Dark menu component shows in light mode (theme leak) | TBD via grep | LOW | manual | 🟠 OPEN (Wave B) |
+| ISSUE-027 | **P1** | `crypto.randomUUID is not a function` on Safari at `/quick` and `/database-search` (HTTP, older Safari) | `ui/src/components/UniProtQueryInput.tsx`, `ui/src/pages/Upload.tsx` | MEDIUM | jsdom test | 🟠 OPEN (Wave A) |
+| ISSUE-028 | **P2** | TANGO profile tooltip MISSING in Quick Analyze (present elsewhere). T3 to verify all TANGO charts | `ui/src/pages/QuickAnalyze.tsx` and TANGO chart components | LOW | manual | 🟠 OPEN (Wave B) |
+| ISSUE-029 | **P2** | Dark menu component shows in light mode (theme leak) | TBD via grep | LOW | manual | ✅ FIXED (2026-04-26) |
+| ISSUE-030 | **P1** | Sentry session-replay quota burn (sample rate at 1.0) | `ui/src/main.tsx` | LOW | — | ✅ FIXED (2026-04-26, replay rate → 0, error replay kept at 1.0) |
+| ISSUE-031 | **P2** | Stale Sentry errors: `HTTPException: No active job with this cancel token` (11/18 errors/month) | `backend/api/routes/jobs.py` | LOW | — | ✅ FIXED (commit 2ed386d 2026-04-03 — returns 200 ALREADY_COMPLETE; old VPS builds will stop firing after next deploy) |
 
 ---
 
@@ -703,16 +705,16 @@ cd ui && npx tsc --noEmit
 
 ---
 
-## ISSUE-027: `crypto.randomUUID is not a function` on HTTP / older Safari
+## ISSUE-027: `crypto.randomUUID is not a function` on Safari (`/quick` + `/database-search`)
 
 | Field | Value |
 |-------|-------|
 | **Priority** | P1 |
 | **Status** | Open (Wave A) |
-| **Blast Radius** | MEDIUM — DatabaseSearch crashes for VPS users on HTTP |
-| **Root Module** | wherever `crypto.randomUUID()` is called in `ui/src/**` |
+| **Blast Radius** | MEDIUM — Quick Analyze + DatabaseSearch crash on HTTP / older Safari (Said reproduced on Safari 2026-04-07 at `/quick`) |
+| **Root Module** | `ui/src/components/UniProtQueryInput.tsx:165` and `ui/src/pages/Upload.tsx:308` (the only call sites) |
 | **Owner** | T3 |
-| **Reported by** | Sentry, 2026-04-26 |
+| **Reported by** | Sentry + Said Safari repro (2026-04-07, 2026-04-26) |
 
 ### Symptom
 ```
@@ -752,32 +754,31 @@ Replace every call with `uuid()` from `@/lib/uuid`.
 
 ---
 
-## ISSUE-028: TANGO profile tooltip parity
+## ISSUE-028: TANGO profile tooltip MISSING in Quick Analyze
 
 | Field | Value |
 |-------|-------|
 | **Priority** | P2 |
 | **Status** | Open (Wave B) |
 | **Blast Radius** | LOW (UX) |
-| **Root Module** | TBD — T3 to identify |
+| **Root Module** | `ui/src/pages/QuickAnalyze.tsx` + the TANGO chart component(s) it embeds |
 | **Owner** | T3 |
-| **Reported by** | User feedback (Gmail), 2026-04-26 |
+| **Reported by** | User feedback (Gmail), 2026-04-26 — clarified by Said: "tango tooltip is missing in quick analyze / other ones please check" |
 
 ### Symptom
-> "In the Quick Analysis option, TANGO profile plot shows the number of the residue as well as which one it is when you move your mouse on top of it. However, in the [other page] [feedback was cut off]"
-
-Quick Analyze TANGO chart tooltip shows `Residue 5 — V` style. Another page's TANGO chart tooltip is missing this detail.
+Quick Analyze TANGO profile chart does NOT show the rich tooltip (residue number + amino acid letter) that the other TANGO charts show (e.g., PeptideDetail). User feedback: when hovering over a peak, they want to know "Residue 5 — V" but only see the bar value.
 
 ### Fix path (T3)
-1. Find Quick Analyze TANGO chart: `grep -rn "TangoProfile\|Tango.*Profile\|tango.*chart" ui/src/components ui/src/pages`
-2. Find other TANGO chart instances (PeptideDetail, Results, Compare)
-3. Compare tooltip implementations
-4. Port the rich tooltip formatter (residue # + AA letter) to whichever chart is missing it
-5. Ask Said to confirm which page if it's not obvious
+1. Open Quick Analyze in browser, hover over the TANGO chart, confirm tooltip is missing/poor
+2. Find the TANGO chart in QuickAnalyze: `grep -n "TangoProfile\|Tango\|tango" ui/src/pages/QuickAnalyze.tsx`
+3. Find the rich tooltip used on other pages (PeptideDetail, Results) — it likely has a `customTooltip` formatter on the Recharts chart
+4. Port that formatter to the QuickAnalyze chart instance
+5. While there: verify ALL TANGO chart instances across the app have the same tooltip (Quick Analyze, PeptideDetail, Results, Compare). Standardize to one shared `<TangoTooltip>` component if there's drift
 
 ### Success Criteria
-- [ ] All TANGO charts in the app show `Residue N — X` tooltip on hover
-- [ ] Single shared tooltip component if duplicated logic
+- [ ] Quick Analyze TANGO chart shows `Residue N — X` tooltip on hover
+- [ ] All TANGO charts app-wide use the same tooltip component
+- [ ] No regression in other charts
 
 ---
 
@@ -786,7 +787,7 @@ Quick Analyze TANGO chart tooltip shows `Residue 5 — V` style. Another page's 
 | Field | Value |
 |-------|-------|
 | **Priority** | P2 |
-| **Status** | Open (Wave B) |
+| **Status** | ✅ FIXED (2026-04-26 — Said confirmed already resolved) |
 | **Blast Radius** | LOW (visual) |
 | **Root Module** | TBD — T3 to identify |
 | **Owner** | T3 |
@@ -805,9 +806,59 @@ A menu component renders with dark colors regardless of the active theme.
 5. Test in both light and dark modes
 
 ### Success Criteria
-- [ ] Menu uses theme tokens, not hardcoded colors
-- [ ] Visually correct in both light and dark mode
-- [ ] No regression in dark mode appearance
+- [x] Menu uses theme tokens, not hardcoded colors
+- [x] Visually correct in both light and dark mode
+- [x] No regression in dark mode appearance
+
+---
+
+## ISSUE-030: Sentry session-replay quota burn (sample rate at 1.0)
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P1 |
+| **Status** | ✅ FIXED (2026-04-26) |
+| **Blast Radius** | LOW (operational, no user impact) |
+| **Root Module** | `ui/src/main.tsx` |
+| **Owner** | T1 |
+| **Reported by** | Sentry alert, 2026-04-26 (relayed by Cowork) |
+
+### Symptom
+Sentry quota alert. Session replay was recording 100% of sessions (`replaysSessionSampleRate: 1.0`). With 3 active VPS users, the free-tier replay quota is hit fast.
+
+### Fix
+`ui/src/main.tsx`: change `replaysSessionSampleRate: 1.0` → `0`. Keep `replaysOnErrorSampleRate: 1.0` so we still get full replays of sessions that hit errors. Tracks/profile rates unchanged (they're cheaper).
+
+### Success Criteria
+- [x] Sentry replay quota stops growing during normal traffic
+- [x] Replays still captured when errors occur
+- [x] Performance/trace coverage unchanged
+
+---
+
+## ISSUE-031: Stale Sentry errors — "No active job with this cancel token"
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P2 |
+| **Status** | ✅ FIXED (commit 2ed386d, 2026-04-03) |
+| **Blast Radius** | LOW (operational noise only) |
+| **Root Module** | `backend/api/routes/jobs.py` |
+| **Reported by** | Sentry alert, 2026-04-26 |
+
+### Symptom
+11 of 18 monthly Sentry errors are `HTTPException: No active job with this cancel token`. This fires when `sendBeacon` triggers `/api/jobs/cancel-sync/{token}` after the job has already completed and the token was cleaned up.
+
+### Resolution
+**Already fixed in commit 2ed386d** (2026-04-03): the endpoint now returns `200 {"status": "ALREADY_COMPLETE"}` instead of raising `HTTPException`. Verified via `git show 2ed386d` — that commit changed `backend/api/routes/jobs.py` to return 200 silently.
+
+The 11 captured Sentry errors are stale — produced by old VPS builds before commit 2ed386d deployed. They will stop accumulating once VPS pulls the latest image (currently running 1cc07ed which post-dates the fix).
+
+No additional code change required. If errors continue accumulating after the next VPS deploy, investigate whether a stale build is somehow still serving traffic.
+
+### Success Criteria
+- [x] Code path returns 200, not raises
+- [ ] (Operational) Verify error count stops growing on Sentry after next VPS deploy
 
 ---
 
