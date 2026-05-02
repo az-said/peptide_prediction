@@ -262,15 +262,30 @@ export default function PeptideDetail() {
               </Button>
 
               <div className="flex items-center gap-1">
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={handleCopySequence}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleCopySequence}
+                >
                   <Copy className="w-3.5 h-3.5 mr-1" />
                   Copy
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={handleDownloadFASTA}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleDownloadFASTA}
+                >
                   <Download className="w-3.5 h-3.5 mr-1" />
                   FASTA
                 </Button>
-                <Button variant="ghost" size="sm" className="h-8 text-xs" onClick={handleDownloadJSON}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleDownloadJSON}
+                >
                   <Download className="w-3.5 h-3.5 mr-1" />
                   JSON
                 </Button>
@@ -389,12 +404,13 @@ export default function PeptideDetail() {
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <CardTitle className="text-h3">Sequence & Structure</CardTitle>
-                {/* S4PRED composition legend */}
-                {(peptide.s4predHelixPercent != null || peptide.helixPercent != null) && (
+                {/* S4PRED composition legend — segment-based Helix % only.
+                    Hidden when S4PRED data is unavailable (no silent 0%). */}
+                {peptide.s4predHelixPercent != null && (
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <span className="w-2.5 h-2.5 rounded-sm bg-helix inline-block" />
-                      Helix ({(peptide.s4predHelixPercent ?? peptide.helixPercent ?? 0).toFixed(0)}%)
+                      Helix ({peptide.s4predHelixPercent.toFixed(0)}%)
                     </span>
                     {peptide.betaPercent != null && (
                       <span className="flex items-center gap-1">
@@ -402,10 +418,11 @@ export default function PeptideDetail() {
                         Beta ({peptide.betaPercent.toFixed(0)}%)
                       </span>
                     )}
-                    {peptide.s4predHelixPercent != null && peptide.betaPercent != null && (
+                    {peptide.betaPercent != null && (
                       <span className="flex items-center gap-1">
                         <span className="w-2.5 h-2.5 rounded-sm bg-coil inline-block" />
-                        Coil ({(100 - (peptide.s4predHelixPercent ?? 0) - (peptide.betaPercent ?? 0)).toFixed(0)}%)
+                        Coil ({(100 - peptide.s4predHelixPercent - peptide.betaPercent).toFixed(0)}
+                        %)
                       </span>
                     )}
                   </div>
@@ -772,8 +789,8 @@ export default function PeptideDetail() {
                 <CardHeader>
                   <CardTitle>FF-Helix vs Aggregation Max</CardTitle>
                   <CardDescription>
-                    Position of this peptide relative to the database. Current peptide highlighted in
-                    red.
+                    Position of this peptide relative to the database. Current peptide highlighted
+                    in red.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

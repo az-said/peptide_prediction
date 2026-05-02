@@ -140,6 +140,32 @@ describe("mapApiRowToPeptide", () => {
     expect(p.s4predHelixPercent).toBe(0);
   });
 
+  // ---------- Phantom helixPercent field (HELIX_PERCENTAGE_AUDIT.md fix #3) ----------
+  it("does NOT assign the phantom 'helixPercent' field on the output peptide", () => {
+    // Even when callers pass a row.helixPercent (legacy), the mapper must not
+    // surface it. The canonical helix % is `s4predHelixPercent` and only that
+    // field. Anything else risks silent substitution / null-as-0 rendering.
+    const row: Record<string, unknown> = minRow({
+      s4predHelixPercent: 42.7,
+      helixPercent: 999, // legacy/garbage — must be ignored
+    });
+    const p = mapApiRowToPeptide(row);
+    expect(p.s4predHelixPercent).toBe(42.7);
+    expect((p as Record<string, unknown>).helixPercent).toBeUndefined();
+  });
+
+  it("does not fall back to row.helixPercent for sswHelixPct (canonical TANGO field only)", () => {
+    // The legacy fallback to row.helixPercent in the sswHelixPct chain has been
+    // removed (audit fix #3). Setting row.helixPercent must NOT bleed into
+    // sswHelixPct.
+    const row: Record<string, unknown> = minRow({
+      sswHelixPercentage: undefined,
+      helixPercent: 88,
+    });
+    const p = mapApiRowToPeptide(row);
+    expect(p.sswHelixPct).toBeUndefined();
+  });
+
   // ---------- Segment parsing ----------
   it("parses segments from arrays", () => {
     const p = mapApiRowToPeptide(minRow({ ffHelixFragments: [[1, 5], [10, 15]] }));

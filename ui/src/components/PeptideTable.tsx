@@ -61,18 +61,25 @@ import { TangoBadge } from "@/components/TangoBadge";
 import { S4PredBadge } from "@/components/S4PredBadge";
 import { useChartSelection } from "@/stores/chartSelectionStore";
 
-/** Compute S4PRED composition summary for hover preview. Returns null if no data. */
-function getS4PredComposition(p: Peptide): string | null {
+/**
+ * Compute mean per-residue S4PRED probabilities for hover preview.
+ *
+ * Returns probability means (0..1), not percentages, to avoid colliding with
+ * the segment-based "Helix %" column. See HELIX_PERCENTAGE_AUDIT.md.
+ *
+ * Exported for unit testing only.
+ */
+export function getS4PredComposition(p: Peptide): string | null {
   const pH = p.s4pred?.pH;
   const pE = p.s4pred?.pE;
   const pC = p.s4pred?.pC;
   if (!pH?.length && !pE?.length) return null;
   const n = Math.max(pH?.length ?? 0, pE?.length ?? 0, pC?.length ?? 0);
   if (n === 0) return null;
-  const meanH = ((pH?.reduce((a, b) => a + b, 0) ?? 0) / n) * 100;
-  const meanE = ((pE?.reduce((a, b) => a + b, 0) ?? 0) / n) * 100;
-  const meanC = ((pC?.reduce((a, b) => a + b, 0) ?? 0) / n) * 100;
-  return `${meanH.toFixed(0)}% Helix · ${meanE.toFixed(0)}% Beta · ${meanC.toFixed(0)}% Coil`;
+  const meanH = (pH?.reduce((a, b) => a + b, 0) ?? 0) / n;
+  const meanE = (pE?.reduce((a, b) => a + b, 0) ?? 0) / n;
+  const meanC = (pC?.reduce((a, b) => a + b, 0) ?? 0) / n;
+  return `Dominant: H ${meanH.toFixed(2)} · E ${meanE.toFixed(2)} · C ${meanC.toFixed(2)}`;
 }
 
 /** Compact info-icon tooltip for column headers */
@@ -526,7 +533,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
             className="h-8 p-0 font-medium"
           >
             FF-Helix %
-            <HeaderTip tip="Chou-Fasman (1978) helix propensity — context-free amino acid tendency to form helices. Not comparable to S4PRED or experimental CD." />
+            <HeaderTip tip="Chou-Fasman (1978) helix propensity — context-free amino acid tendency to form helices. Not comparable to S4PRED Helix %." />
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),

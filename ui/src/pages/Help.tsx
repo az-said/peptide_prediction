@@ -80,8 +80,7 @@ const chartTypes = [
     name: "Radar Charts",
     description: "Multi-dimensional comparison profiles",
     // Peleg FIX-029 verbatim
-    insights:
-      "Compare No SSW vs SSW vs FF-SSW and No Helix vs Helix vs FF-Helix",
+    insights: "Compare No SSW vs SSW vs FF-SSW and No Helix vs Helix vs FF-Helix",
   },
 ];
 
@@ -318,23 +317,35 @@ export default function Help() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <h4 className="font-medium">FF-Helix % vs S4PRED Helix %</h4>
+                <h4 className="font-medium">Helix % (canonical) vs Chou-Fasman propensity %</h4>
                 <p className="text-sm text-muted-foreground">
-                  PVL reports two helix-related metrics that measure different things:
+                  PVL reports two helix-related percentages that measure different things:
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">S4PRED Helix %</strong> is the primary helix
-                  prediction. S4PRED predicts per-residue helix, beta-sheet, and coil probabilities
-                  considering the full sequence context. Helix segments require &ge;5 consecutive
-                  residues with P(Helix) &ge; 0.5.
+                  <strong className="text-foreground">Helix %</strong> (the canonical metric, shown
+                  in the table column and on the Peptide Detail page) is the segment-based S4PRED
+                  helix percentage: the fraction of residues that fall inside helix segments meeting
+                  the minimal-continuous-residues threshold (default &ge;5) and the minimal helix
+                  score threshold (default P(Helix) &ge; 0.5).
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">FF-Helix %</strong> (Fibril-Forming Helix
-                  Propensity) is a context-free scoring method using the Fauchere-Pliska helix
-                  propensity scale with a 6-residue sliding window. It measures the intrinsic amino
+                  <strong className="text-foreground">Chou-Fasman propensity %</strong> (legacy
+                  column "FF-Helix %") is a context-free score using the Chou-Fasman (1978) helix
+                  propensity table with a 6-residue sliding window. It measures the intrinsic amino
                   acid tendency to form helices, ignoring sequence context and environment. A value
-                  of 0% means no window exceeds the threshold; 100% means all residues participate
-                  in qualifying windows.
+                  of 0% means no window exceeds the threshold; 100% means every residue participates
+                  in a qualifying window. This is not a structure prediction.
+                </p>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="font-medium">SSW helix percentage (TANGO-side)</h4>
+                <p className="text-sm text-muted-foreground">
+                  The API field <code>sswHelixPercentage</code> is the percentage of residues with a
+                  TANGO helix-track score &gt; 0. It is used internally for SSW negative-result
+                  classification (helix track empty vs. helix-beta overlap absent vs. genuine
+                  negative) and is not the canonical Helix %. Do not compare it against the Helix
+                  column.
                 </p>
               </div>
               <Separator />
@@ -342,10 +353,10 @@ export default function Help() {
                 <h4 className="font-medium">S4PRED</h4>
                 <p className="text-sm text-muted-foreground">
                   S4PRED (Single Sequence Secondary Structure Prediction) predicts per-residue
-                  secondary structure from amino acid sequence alone (no multiple sequence
-                  alignment required). It outputs probabilities for three classes: Helix (H),
-                  Beta-strand (E), and Coil (C). The per-residue prediction shown in the Sequence
-                  Track uses the highest-probability class at each position.
+                  secondary structure from amino acid sequence alone (no multiple sequence alignment
+                  required). It outputs probabilities for three classes: Helix (H), Beta-strand (E),
+                  and Coil (C). The per-residue prediction shown in the Sequence Track uses the
+                  highest-probability class at each position.
                 </p>
               </div>
               <Separator />
@@ -355,10 +366,10 @@ export default function Help() {
                   SSW prediction identifies peptides that may switch between alpha-helix and
                   beta-sheet conformations. This is relevant for amyloid formation and
                   fibril-forming behavior. The prediction uses either TANGO (aggregation
-                  thermodynamics) or S4PRED (helix/beta balance), comparing helix and
-                  beta propensities against dataset-level averages. A "Positive" prediction suggests
-                  the peptide has significant propensity for both helix and beta structures,
-                  indicating potential for structural switching.
+                  thermodynamics) or S4PRED (helix/beta balance), comparing helix and beta
+                  propensities against dataset-level averages. A "Positive" prediction suggests the
+                  peptide has significant propensity for both helix and beta structures, indicating
+                  potential for structural switching.
                 </p>
               </div>
             </CardContent>
