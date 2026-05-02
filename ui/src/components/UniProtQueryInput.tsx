@@ -436,7 +436,7 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
             {/* Row 2: Length range + Max results */}
             <div className="grid grid-cols-3 gap-3">
               <div className="space-y-1.5">
-                <Label className="text-xs">Min Length</Label>
+                <Label className="text-xs">Minimum Length</Label>
                 <Input
                   type="number"
                   min="1"

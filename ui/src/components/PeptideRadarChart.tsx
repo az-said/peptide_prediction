@@ -19,7 +19,7 @@ export function PeptideRadarChart({ peptide, cohortStats }: PeptideRadarChartPro
   if (!cohortStats) {
     return (
       <div className="h-[300px] flex items-center justify-center text-muted-foreground">
-        No cohort data available for comparison
+        No database data available for comparison
       </div>
     );
   }
@@ -77,7 +77,7 @@ export function PeptideRadarChart({ peptide, cohortStats }: PeptideRadarChartPro
       color: 'hsl(var(--primary))',
     },
     cohort: {
-      label: 'Cohort Mean',
+      label: 'Database Mean',
       color: 'hsl(var(--muted-foreground))',
     },
   };
@@ -105,7 +105,7 @@ export function PeptideRadarChart({ peptide, cohortStats }: PeptideRadarChartPro
             strokeWidth={2}
           />
           <Radar
-            name="Cohort Mean"
+            name="Database Mean"
             dataKey="cohort"
             stroke="hsl(var(--muted-foreground))"
             fill="hsl(var(--muted-foreground))"

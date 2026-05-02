@@ -163,7 +163,7 @@ export function AggregationHeatmap({
         <div className="space-y-2" data-chart-export>
           <h3 className="text-sm font-semibold">Aggregation–Structure Overlay</h3>
           <p className="text-xs text-muted-foreground">
-            Regions where aggregation (amber) and beta propensity (blue/cyan) overlap suggest amyloid-forming stretches.
+            Regions where aggregation (amber) and beta propensity (blue/cyan) overlap suggest aggregation-prone regions.
           </p>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
@@ -199,7 +199,7 @@ export function AggregationHeatmap({
       )}
 
       <div className="text-xs text-muted-foreground">
-        TANGO predicts aggregation propensity per residue. Scores &gt;5% indicate aggregation-prone regions. High peaks suggest amyloid-forming stretches.
+        TANGO predicts aggregation propensity per residue. Higher scores indicate regions with higher aggregation propensity.
       </div>
     </div>
   );

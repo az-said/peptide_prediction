@@ -131,7 +131,7 @@ export function AACompositionGrouped({ peptides }: AACompositionGroupedProps) {
   return (
     <ExpandableChart
       title="Amino Acid Composition by Classification"
-      description="AA category % across pipeline classification groups"
+      description="AA category % across results classification groups"
       peptides={peptides}
     >
       {data.length === 0 ? (

@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pvl-cli"
+version = "0.0.1"
+description = "Command-line client for the Peptide Visual Lab (PVL) prediction API."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Said Azaizah", email = "az.said2007@gmail.com" }]
+dependencies = [
+    "click>=8.1",
+    "httpx>=0.25",
+    "rich>=13.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[project.scripts]
+pvl = "pvl.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/saidazaizah/peptide_prediction"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pvl*"]

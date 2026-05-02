@@ -71,7 +71,7 @@ const HEADER_LABELS: Record<string, React.ReactNode> = {
   ),
   s4predHelixPercent: (
     <>
-      <Abbr title="Secondary Structure Prediction (neural network)">S4PRED</Abbr> Helix %
+      <Abbr title="Secondary Structure Prediction">S4PRED</Abbr> Helix %
     </>
   ),
   sswScore: (

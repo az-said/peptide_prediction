@@ -144,15 +144,15 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
           <div>
             <div className="flex justify-between text-sm mb-1.5">
               <span>
-                <Abbr title="Hydrophobic moment">μH</Abbr> Cutoff
+                <Abbr title="Hydrophobic moment">uH</Abbr> threshold
               </span>
               <span className="tabular-nums text-muted-foreground">
                 {active.muHCutoff.toFixed(2)}
               </span>
             </div>
             <Slider
-              min={-1}
-              max={2}
+              min={0}
+              max={3.26}
               step={0.01}
               value={[active.muHCutoff]}
               onValueChange={([v]) => setThreshold("muHCutoff", v)}
@@ -160,14 +160,14 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
           </div>
           <div>
             <div className="flex justify-between text-sm mb-1.5">
-              <span>Hydrophobicity Cutoff</span>
+              <span>Hydrophobicity threshold</span>
               <span className="tabular-nums text-muted-foreground">
                 {active.hydroCutoff.toFixed(2)}
               </span>
             </div>
             <Slider
-              min={-2}
-              max={2}
+              min={-1.01}
+              max={2.25}
               step={0.01}
               value={[active.hydroCutoff]}
               onValueChange={([v]) => setThreshold("hydroCutoff", v)}
@@ -184,7 +184,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
               <span>Aggregation Flagging</span>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground tabular-nums">
-                  Agg={active.aggThreshold.toFixed(1)}%
+                  Aggregation={active.aggThreshold.toFixed(1)}%
                 </span>
                 {aggExpanded ? (
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -197,7 +197,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
               <div className="px-3 pb-3 space-y-3">
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">Per-Residue Threshold</span>
+                    <span className="text-muted-foreground">Per-residue threshold</span>
                     <span className="tabular-nums text-muted-foreground">
                       {active.aggThreshold.toFixed(1)}%
                     </span>
@@ -212,7 +212,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">% of Length Cutoff</span>
+                    <span className="text-muted-foreground">% of length</span>
                     <span className="tabular-nums text-muted-foreground">
                       {active.percentOfLengthCutoff.toFixed(0)}%
                     </span>
@@ -227,7 +227,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">Min SSW Residues</span>
+                    <span className="text-muted-foreground">Minimum SSW residues</span>
                     <span className="tabular-nums text-muted-foreground">
                       {active.minSswResidues}
                     </span>
@@ -241,8 +241,8 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
                   />
                 </div>
                 <p className="text-[10px] text-muted-foreground">
-                  A peptide is flagged if any rule triggers: ≥5 contiguous hotspot residues, high %
-                  of aggregation-prone residues, or too few SSW residues.
+                  A peptide is flagged if any rule triggers: ≥5 contiguous aggregation-prone
+                  residues, high % of aggregation-prone residues, or too few SSW residues.
                 </p>
               </div>
             )}
@@ -252,7 +252,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
         {/* Impact summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div className="rounded-md border p-3">
-            <div className="text-xs text-muted-foreground">Helix Candidates (μH)</div>
+            <div className="text-xs text-muted-foreground">Helix Candidates (uH)</div>
             <div className="text-xl font-semibold">{summary.ffHelixCandidates}</div>
             {impactLabel(summary.ffHelixCandidates, originalSummary.ffHelixCandidates) && (
               <div className="text-[10px] text-amber-600 mt-0.5">
@@ -270,7 +270,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
             )}
           </div>
           <div className="rounded-md border p-3">
-            <div className="text-xs text-muted-foreground">Agg Flagged</div>
+            <div className="text-xs text-muted-foreground">Aggregation Flagged</div>
             <div className="text-xl font-semibold">{summary.aggFlagged}</div>
             {impactLabel(summary.aggFlagged, originalSummary.aggFlagged) && (
               <div className="text-[10px] text-amber-600 mt-0.5">
@@ -291,8 +291,8 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
             <span>
               You have changed from the original thresholds. These are derived from the recommended
               rigorously tested reference dataset. Changing may affect scientific accuracy. Server
-              values: μH={original.muHCutoff.toFixed(2)}, H={original.hydroCutoff.toFixed(2)}, Agg=
-              {original.aggThreshold.toFixed(1)}%
+              values: uH={original.muHCutoff.toFixed(2)}, H={original.hydroCutoff.toFixed(2)},
+              Aggregation={original.aggThreshold.toFixed(1)}%
             </span>
           </div>
         ) : (

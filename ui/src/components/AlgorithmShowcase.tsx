@@ -133,7 +133,7 @@ const TABS: Tab[] = [
   {
     id: "s4pred", name: "S4PRED", accentBg: "bg-blue-500", accentText: "text-blue-500",
     title: "Secondary Structure Prediction",
-    desc: "S4PRED uses a deep neural network to predict three-state secondary structure (helix, beta-sheet, coil) at single-residue resolution. Trained on a non-redundant set of high-resolution crystal structures.",
+    desc: "S4PRED predicts three-state secondary structure (helix, beta-sheet, coil) at single-residue resolution from a single sequence. Trained on a non-redundant set of high-resolution crystal structures.",
     points: ["Three-state prediction: helix (H), sheet (E), coil (C)", "Single-residue resolution with confidence scores", "No sequence alignment or MSA required"],
     viz: <S4PredViz />,
   },
@@ -178,7 +178,7 @@ export function AlgorithmShowcase({ className }: AlgorithmShowcaseProps) {
       {/* Heading */}
       <div className="max-w-2xl mb-8">
         <h2 className="text-3xl sm:text-4xl font-bold tracking-tight text-[hsl(var(--foreground))] mb-3">
-          The Prediction Pipeline
+          The Prediction Workflow
         </h2>
         <p className="text-lg text-[hsl(var(--muted-foreground))] leading-relaxed">
           Four algorithms, one unified interface.

@@ -11,7 +11,7 @@ interface UpsetMatrixProps {
 // 4 sets
 const SET_LABELS = ["SSW", "Helix", "FF-SSW", "FF-Helix"] as const;
 const SET_COLORS = ["#D55E00", "#0072B2", "#A03000", "#004A75"];
-const SOURCE = "Pipeline UpSet Matrix";
+const SOURCE = "Results UpSet Matrix";
 
 type SetKey = (typeof SET_LABELS)[number];
 
@@ -100,7 +100,7 @@ export function UpsetMatrix({ peptides }: UpsetMatrixProps) {
 
   return (
     <ExpandableChart
-      title="Pipeline Intersections"
+      title="Results Intersections"
       description="UpSet-style view of set overlaps across all 4 classification sets"
       peptides={peptides}
       footer={

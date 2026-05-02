@@ -84,6 +84,13 @@ PLAN.md
 RECOVERY_PROMPT.md
 TERMINAL_SETUP.md
 New_Feedback/
+COWORK_PROMPTS_*.md
+
+# 📦 PYTHON PACKAGE BUILD ARTIFACTS
+*.egg-info/
+build/
+dist/
+.pytest_cache/
 
 # 🤖 DEVELOPMENT / AI GENERATED FILES
 # Generated documentation and temporary files from AI tools

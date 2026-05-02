@@ -70,7 +70,7 @@ function LegendContent() {
             <strong>CF</strong> — Chou-Fasman (helix propensity)
           </div>
           <div>
-            <strong>S4PRED</strong> — Secondary Structure Prediction (neural network)
+            <strong>S4PRED</strong> — Secondary Structure Prediction
           </div>
           <div>
             <strong>μH</strong> — Hydrophobic moment

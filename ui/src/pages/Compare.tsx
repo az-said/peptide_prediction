@@ -191,12 +191,12 @@ export default function Compare() {
         })
         .filter((p: any): p is Peptide => p !== null);
       if (mapped.length === 0) {
-        setError("No valid peptides in Cohort A file.");
+        setError("No valid peptides in Database A file.");
       } else {
         setCohortALocal(mapped);
       }
     } catch (err: any) {
-      setError(err?.message || "Failed to process Cohort A file.");
+      setError(err?.message || "Failed to process Database A file.");
     } finally {
       setUploadingA(false);
     }
@@ -278,9 +278,9 @@ export default function Compare() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6 relative">
         <BgDotGrid opacity={0.02} />
         <div>
-          <h1 className="text-h1 text-foreground page-header-title">Cohort Comparison</h1>
+          <h1 className="text-h1 text-foreground page-header-title">Database Comparison</h1>
           <p className="text-body text-muted-foreground mt-1">
-            Compare two datasets side by side. Upload both cohorts below.
+            Compare two datasets side by side. Upload both databases below.
           </p>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
@@ -298,7 +298,7 @@ export default function Compare() {
               <div className="w-12 h-12 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-3">
                 <Upload className="w-5 h-5 text-blue-600" />
               </div>
-              <p className="font-medium text-sm">Cohort A</p>
+              <p className="font-medium text-sm">Database A</p>
               <p className="text-xs text-muted-foreground mt-1">Drop file or click to browse</p>
             </CardContent>
           </Card>
@@ -316,7 +316,7 @@ export default function Compare() {
               <div className="w-12 h-12 rounded-xl bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center mb-3">
                 <Upload className="w-5 h-5 text-orange-600" />
               </div>
-              <p className="font-medium text-sm">Cohort B</p>
+              <p className="font-medium text-sm">Database B</p>
               <p className="text-xs text-muted-foreground mt-1">Drop file or click to browse</p>
             </CardContent>
           </Card>
@@ -395,9 +395,9 @@ export default function Compare() {
       <BgDotGrid />
       {/* Header */}
       <div>
-        <h1 className="text-h1 text-foreground page-header-title">Cohort Comparison</h1>
+        <h1 className="text-h1 text-foreground page-header-title">Database Comparison</h1>
         <p className="text-body text-muted-foreground mt-1 page-header-title">
-          Compare your current dataset (Cohort A) against a second dataset (Cohort B).
+          Compare your current dataset (Database A) against a second dataset (Database B).
         </p>
       </div>
 
@@ -438,7 +438,7 @@ export default function Compare() {
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COHORT_A_COLOR }} />
-            <span className="font-medium">Cohort A</span>
+            <span className="font-medium">Database A</span>
             <span className="text-muted-foreground">
               ({statsA.totalPeptides} peptides — current dataset)
             </span>
@@ -446,7 +446,7 @@ export default function Compare() {
           <ArrowRight className="w-4 h-4 text-muted-foreground" />
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COHORT_B_COLOR }} />
-            <span className="font-medium">Cohort B</span>
+            <span className="font-medium">Database B</span>
             <span className="text-muted-foreground">
               ({statsB?.totalPeptides} peptides — {bFilename})
             </span>
@@ -478,7 +478,7 @@ export default function Compare() {
             <Alert>
               <AlertTriangle className="h-4 w-4" />
               <AlertDescription>
-                Cohort A (N={a}) and Cohort B (N={b}) differ in size by {pctDiff}%. Statistical
+                Database A (N={a}) and Database B (N={b}) differ in size by {pctDiff}%. Statistical
                 comparisons may be skewed by unequal sample sizes.
               </AlertDescription>
             </Alert>
@@ -504,13 +504,13 @@ export default function Compare() {
                         className="text-right py-2 px-4 font-medium"
                         style={{ color: COHORT_A_COLOR }}
                       >
-                        Cohort A
+                        Database A
                       </th>
                       <th
                         className="text-right py-2 px-4 font-medium"
                         style={{ color: COHORT_B_COLOR }}
                       >
-                        Cohort B
+                        Database B
                       </th>
                       <th className="text-right py-2 pl-4 font-medium">Delta (B−A)</th>
                     </tr>
@@ -557,8 +557,8 @@ export default function Compare() {
                       <YAxis allowDecimals={false} />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="A" name="Cohort A" fill={COHORT_A_COLOR} opacity={0.7} />
-                      <Bar dataKey="B" name="Cohort B" fill={COHORT_B_COLOR} opacity={0.7} />
+                      <Bar dataKey="A" name="Database A" fill={COHORT_A_COLOR} opacity={0.7} />
+                      <Bar dataKey="B" name="Database B" fill={COHORT_B_COLOR} opacity={0.7} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -590,8 +590,8 @@ export default function Compare() {
                       <YAxis allowDecimals={false} />
                       <Tooltip />
                       <Legend />
-                      <Bar dataKey="A" name="Cohort A" fill={COHORT_A_COLOR} opacity={0.7} />
-                      <Bar dataKey="B" name="Cohort B" fill={COHORT_B_COLOR} opacity={0.7} />
+                      <Bar dataKey="A" name="Database A" fill={COHORT_A_COLOR} opacity={0.7} />
+                      <Bar dataKey="B" name="Database B" fill={COHORT_B_COLOR} opacity={0.7} />
                     </BarChart>
                   </ResponsiveContainer>
                 ) : (
@@ -608,7 +608,7 @@ export default function Compare() {
                 <div className="flex items-center gap-2">
                   <div>
                     <CardTitle className="text-base">Hydrophobicity vs μH Scatter</CardTitle>
-                    <CardDescription>Overlay of both cohorts</CardDescription>
+                    <CardDescription>Overlay of both databases</CardDescription>
                   </div>
                   <Info className="w-4 h-4 text-muted-foreground" />
                 </div>
@@ -652,13 +652,13 @@ export default function Compare() {
                       <Legend />
                       <Scatter
                         data={scatterA}
-                        name="Cohort A"
+                        name="Database A"
                         fill={COHORT_A_COLOR}
                         opacity={0.6}
                       />
                       <Scatter
                         data={scatterB}
-                        name="Cohort B"
+                        name="Database B"
                         fill={COHORT_B_COLOR}
                         opacity={0.6}
                       />

@@ -406,7 +406,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
             className="h-8 p-0 font-medium"
           >
             FF-Helix
-            <HeaderTip tip="Fibril-forming helix candidate. Based on S4PRED helix μH ≥ cohort average — helix detected with amphipathic character above threshold." />
+            <HeaderTip tip="Fibril-forming helix candidate. Based on S4PRED helix μH ≥ database average — helix detected with amphipathic character above threshold." />
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
@@ -439,7 +439,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
             className="h-8 p-0 font-medium"
           >
             FF-SSW
-            <HeaderTip tip="Fibril-forming SSW candidate. Requires SSW prediction AND hydrophobicity ≥ cohort average — structural switch with hydrophobic core." />
+            <HeaderTip tip="Fibril-forming SSW candidate. Requires SSW prediction AND hydrophobicity ≥ database average — structural switch with hydrophobic core." />
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
@@ -474,7 +474,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
             className="h-8 p-0 font-medium"
           >
             Helix %
-            <HeaderTip tip="S4PRED neural network helix content (context-dependent). Percentage of residues predicted as helical." />
+            <HeaderTip tip="S4PRED helix content (context-dependent). Percentage of residues predicted as helical." />
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
@@ -678,7 +678,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
             className="h-8 p-0 font-medium"
           >
             S4PRED SSW
-            <HeaderTip tip="Secondary Structure Switch from S4PRED neural network. Compares helix/beta probabilities to detect structure-switching regions." />
+            <HeaderTip tip="Secondary Structure Switch from S4PRED. Compares helix/beta probabilities to detect structure-switching regions." />
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),

@@ -128,7 +128,7 @@ export function getConsensusSS(
       ...TIER_META[4],
       tier: 4,
       certainty,
-      explanation: `TANGO peak aggregation (${tangoAggMax.toFixed(1)}%) is at or below the ${aggThreshold.toFixed(1)}% threshold. No significant aggregation hotspot detected.`,
+      explanation: `TANGO peak aggregation (${tangoAggMax.toFixed(1)}%) is at or below the ${aggThreshold.toFixed(1)}% threshold. No significant aggregation-prone region detected.`,
     };
   }
 
@@ -149,13 +149,13 @@ export function getConsensusSS(
 
   if (ss === "H") {
     tier = 1;
-    explanation = `TANGO detects an aggregation hotspot (peak ${tangoAggMax.toFixed(1)}%) where S4PRED predicts helical structure. This helix-to-beta conformational switch zone is a hallmark of amyloid-forming regions (Hamodrakas 2007).`;
+    explanation = `TANGO detects an aggregation-prone region (peak ${tangoAggMax.toFixed(1)}%) where S4PRED predicts helical structure. This helix-to-beta conformational switch zone is a hallmark of regions with higher aggregation propensity (Hamodrakas 2007).`;
   } else if (ss === "E") {
     tier = 3;
-    explanation = `TANGO detects an aggregation hotspot (peak ${tangoAggMax.toFixed(1)}%) where S4PRED predicts beta-strand structure. The region is already in a beta conformation, so conformational switching is less likely.`;
+    explanation = `TANGO detects an aggregation-prone region (peak ${tangoAggMax.toFixed(1)}%) where S4PRED predicts beta-strand structure. The region is already in a beta conformation, so conformational switching is less likely.`;
   } else {
     tier = 2;
-    explanation = `TANGO detects an aggregation hotspot (peak ${tangoAggMax.toFixed(1)}%) in a disordered (coil) region. The lack of stable secondary structure may facilitate aggregation through disorder-to-order transitions.`;
+    explanation = `TANGO detects an aggregation-prone region (peak ${tangoAggMax.toFixed(1)}%) in a disordered (coil) region. The lack of stable secondary structure may facilitate aggregation through disorder-to-order transitions.`;
   }
 
   let certainty = TIER_META[tier].baseCertainty;

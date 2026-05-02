@@ -62,7 +62,7 @@ export function S4PredChart({ peptide, children, className }: S4PredChartProps) 
       <CardHeader>
         <CardTitle>S4PRED Secondary Structure Probabilities</CardTitle>
         <CardDescription>
-          Per-residue helix (H), beta (E), and coil (C) probabilities from S4PRED neural network prediction.
+          Per-residue helix (H), beta (E), and coil (C) probabilities from S4PRED secondary structure prediction.
         </CardDescription>
         {n > 0 && (
           <div className="flex items-center gap-2 mt-2 text-sm">
@@ -146,7 +146,7 @@ export function S4PredChart({ peptide, children, className }: S4PredChartProps) 
           length <= 25 && (
             <p className="text-xs text-muted-foreground px-1 leading-relaxed">
               S4PRED finds no stable helix segments. Short peptides often lack
-              the context for the neural network to predict stable helices
+              the sequence context required to predict stable helices
               (requires &ge;5 consecutive residues with P(Helix) &ge; 0.5).
             </p>
           )}

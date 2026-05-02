@@ -151,9 +151,6 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
                 : "N/A"}
             </div>
             <div className="text-sm text-muted-foreground">S4PRED Helix</div>
-            <div className="text-[10px] text-muted-foreground/60">
-              neural network prediction
-            </div>
           </CardContent>
         </Card>
       </div>
@@ -186,8 +183,8 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
           <CardHeader>
             <CardTitle>TANGO Aggregation Profile</CardTitle>
             <CardDescription>
-              Per-residue aggregation propensity. High scores indicate amyloid-forming
-              regions.
+              Per-residue aggregation propensity. Higher scores indicate regions with higher
+              aggregation propensity.
             </CardDescription>
           </CardHeader>
           <CardContent>

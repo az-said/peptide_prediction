@@ -452,7 +452,7 @@ export default function PeptideDetail() {
             <Card className="shadow-soft border-[hsl(var(--border))] rounded-xl">
               <CardHeader>
                 <CardTitle>Feature Comparison</CardTitle>
-                <CardDescription>How this peptide compares to the cohort</CardDescription>
+                <CardDescription>How this peptide compares to the database</CardDescription>
               </CardHeader>
               <CardContent>
                 <PeptideRadarChart peptide={peptide} cohortStats={stats} />
@@ -461,7 +461,7 @@ export default function PeptideDetail() {
 
             <Card className="shadow-soft border-[hsl(var(--border))] rounded-xl">
               <CardHeader>
-                <CardTitle>Cohort Position</CardTitle>
+                <CardTitle>Database Position</CardTitle>
                 <CardDescription>Percentile ranking across key metrics</CardDescription>
               </CardHeader>
               <CardContent>
@@ -743,7 +743,7 @@ export default function PeptideDetail() {
               </div>
             </div>
             <div className="text-xs text-muted-foreground">
-              S4PRED: Single Sequence Secondary Structure PREDiction (neural network ensemble).
+              S4PRED: Single Sequence Secondary Structure Prediction.
             </div>
           </S4PredChart>
 
@@ -751,7 +751,7 @@ export default function PeptideDetail() {
           {peptide.tango?.agg && peptide.tango.agg.length > 0 && (
             <CollapsibleCard
               title="TANGO Aggregation Profile"
-              description="Per-residue aggregation propensity from TANGO. High scores indicate amyloid-forming regions."
+              description="Per-residue aggregation propensity from TANGO. Higher scores indicate regions with higher aggregation propensity."
             >
               <AggregationHeatmap
                 sequence={peptide.sequence}
@@ -772,7 +772,7 @@ export default function PeptideDetail() {
                 <CardHeader>
                   <CardTitle>FF-Helix vs Aggregation Max</CardTitle>
                   <CardDescription>
-                    Position of this peptide relative to the cohort. Current peptide highlighted in
+                    Position of this peptide relative to the database. Current peptide highlighted in
                     red.
                   </CardDescription>
                 </CardHeader>
@@ -860,7 +860,7 @@ export default function PeptideDetail() {
                 <div className="text-sm text-muted-foreground">Hydrophobicity</div>
                 {stats && (
                   <div className="text-xs text-muted-foreground mt-1">
-                    Cohort: {stats.meanHydrophobicity.toFixed(2)}
+                    Database: {stats.meanHydrophobicity.toFixed(2)}
                   </div>
                 )}
               </CardContent>
@@ -874,7 +874,7 @@ export default function PeptideDetail() {
                 <div className="text-sm text-muted-foreground">μH</div>
                 {stats && stats.meanMuH !== null && stats.meanMuH !== undefined && (
                   <div className="text-xs text-muted-foreground mt-1">
-                    Cohort: {stats.meanMuH.toFixed(2)}
+                    Database: {stats.meanMuH.toFixed(2)}
                   </div>
                 )}
               </CardContent>
@@ -890,7 +890,7 @@ export default function PeptideDetail() {
                 <div className="text-sm text-muted-foreground">Charge</div>
                 {stats && (
                   <div className="text-xs text-muted-foreground mt-1">
-                    Cohort: {stats.meanCharge > 0 ? "+" : ""}
+                    Database: {stats.meanCharge > 0 ? "+" : ""}
                     {stats.meanCharge.toFixed(1)}
                   </div>
                 )}
@@ -905,14 +905,11 @@ export default function PeptideDetail() {
                     : "N/A"}
                 </div>
                 <div className="text-sm text-muted-foreground">S4PRED Helix</div>
-                <div className="text-[10px] text-muted-foreground/60">
-                  neural network prediction
-                </div>
                 {stats &&
                   stats.meanS4predHelixPercent !== null &&
                   stats.meanS4predHelixPercent !== undefined && (
                     <div className="text-xs text-muted-foreground mt-1">
-                      Cohort: {stats.meanS4predHelixPercent.toFixed(0)}%
+                      Database: {stats.meanS4predHelixPercent.toFixed(0)}%
                     </div>
                   )}
               </CardContent>

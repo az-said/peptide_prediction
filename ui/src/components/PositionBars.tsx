@@ -111,7 +111,7 @@ export function PositionBars({ peptide, allPeptides }: PositionBarsProps) {
             Percentiles show where this peptide ranks <strong>within this dataset</strong> (not absolute).
           </p>
           <p>
-            A peptide at the 30th percentile has lower values than 70% of the cohort — this does not imply the value is inherently low.
+            A peptide at the 30th percentile has lower values than 70% of the database — this does not imply the value is inherently low.
           </p>
         </div>
       </div>

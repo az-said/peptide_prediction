@@ -109,8 +109,8 @@ export function EvidencePanel({ peptide, cohortStats }: EvidencePanelProps) {
       comparison: aggLevel === 'HIGH'
         ? 'Strong aggregation-prone region detected'
         : aggLevel === 'MODERATE'
-          ? 'Aggregation hotspot present'
-          : 'No significant aggregation hotspots',
+          ? 'Aggregation-prone region present'
+          : 'No significant aggregation-prone regions',
       difference: aggLevel,
       icon: aggIcon,
       color: aggColor,
@@ -225,7 +225,7 @@ export function EvidencePanel({ peptide, cohortStats }: EvidencePanelProps) {
           <div className="mt-4 p-3 rounded-lg border border-muted text-xs text-muted-foreground leading-relaxed">
             <strong>Note:</strong> Chou-Fasman propensity ({peptide.ffHelixPercent.toFixed(0)}%) measures
             context-free amino acid helix tendency (1978 method). S4PRED ({peptide.s4predHelixPercent.toFixed(0)}%)
-            uses a modern neural network. For short peptides, the residues may favor helix individually but
+            uses sequence context. For short peptides, the residues may favor helix individually but
             not form a stable segment in context. <strong>S4PRED is the authoritative prediction.</strong>
           </div>
         )}

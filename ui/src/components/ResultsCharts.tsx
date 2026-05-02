@@ -431,7 +431,7 @@ export function ResultsCharts({ peptides, providerStatus }: ResultsChartsProps) 
         transition={{ delay: 0.3 }}
       >
         <ExpandableChart
-          title="Cohort Comparison"
+          title="Database Comparison"
           description="SSW vs No SSW group means (% difference from overall mean)"
           peptides={peptides}
           headerRight={

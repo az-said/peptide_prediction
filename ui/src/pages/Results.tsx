@@ -597,7 +597,7 @@ export default function Results() {
                     directions, and presets to shortlist top candidates.
                     {peptidesTyped.length <= 1 && (
                       <span className="block mt-1 text-amber-600">
-                        Cohort ranking requires 2+ peptides.
+                        Database ranking requires 2+ peptides.
                       </span>
                     )}
                   </CardDescription>

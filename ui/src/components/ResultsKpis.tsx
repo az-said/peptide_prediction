@@ -81,7 +81,7 @@ export function ResultsKpis({ stats, meta }: ResultsKpisProps) {
         </>
       ),
       tooltip:
-        "Percentage of peptides classified as FF-Helix candidates (helix uH above cohort average)",
+        "Percentage of peptides classified as FF-Helix candidates (helix uH above database average)",
     },
     {
       title: (
@@ -107,7 +107,7 @@ export function ResultsKpis({ stats, meta }: ResultsKpisProps) {
       ),
       tooltip: !tangoAvailable
         ? "TANGO did not run or is unavailable"
-        : "Percentage of peptides classified as FF-SSW candidates (SSW + hydrophobicity above cohort average)",
+        : "Percentage of peptides classified as FF-SSW candidates (SSW + hydrophobicity above database average)",
     },
     {
       title: (

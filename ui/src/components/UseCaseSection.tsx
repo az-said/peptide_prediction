@@ -40,10 +40,10 @@ const CASES: UseCase[] = [
     accent: "text-blue-500",
     label: "Batch Analysis",
     title: "Analyze Peptide Datasets at Scale",
-    description: "Upload hundreds of peptides via CSV. Every sequence gets the full prediction pipeline — secondary structure, aggregation scoring, fibril-forming helix detection — ranked and ready to filter.",
+    description: "Upload hundreds of peptides via CSV. Every sequence gets the full prediction workflow — secondary structure, aggregation scoring, fibril-forming helix detection — ranked and ready to filter.",
     bullets: [
       "CSV batch upload with automatic validation",
-      "Multi-algorithm prediction pipeline in parallel",
+      "Multi-algorithm prediction workflow in parallel",
       "Smart ranking across all computed properties",
       "Export filtered results as CSV or FASTA",
     ],

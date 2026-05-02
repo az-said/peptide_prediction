@@ -7,6 +7,57 @@
 
 ---
 
+## ⚠️ PELEG-CRITICAL-001 — Helix % calculation audit (TOP PRIORITY)
+
+**Source**: Peleg message in Hebrew, 2026-04-26: *"אני רוצה שנבין את הסיפור הזה עם האחוז הליקויים שנראה שבאופן עקבי מחושב או נשלף מהחישוב לא בצורה נכונה"* — "I want us to understand the helix percentage which seems to be consistently miscalculated or extracted from the calculation incorrectly."
+
+**Owner**: T4 (Peleg terminal). Must be done BEFORE other P-wave fixes — touches the same metric they all depend on.
+
+**Investigation output expected**:
+A short audit report (`docs/active/HELIX_PERCENTAGE_AUDIT.md` or inline section here) listing:
+
+1. **Every place a "helix percentage" is computed** in the codebase. As of 2026-04-26 we know about 4 — verify and find any others:
+   - `backend/s4pred.py:383` — `_get_segment_percentage(helix_segments, sequence_length)` — segment-based (% residues inside helix segments)
+   - `ui/src/components/S4PredChart.tsx:51,57` — `meanH * 100` — probability mean (average P(Helix) per residue × 100)
+   - `backend/tango.py:796` — `Helix_pct` — TANGO's helix percentage (different algorithm)
+   - `backend/s4pred.py:424` — `SSW_HELIX_PERCENTAGE_S4PRED` — same value as `:383`, copied for SSW context
+   - Any others surfaced by `grep -rn "helix.*[Pp]ercent\|helixPct\|helixPercent\|helix_percent" backend/ ui/src` (excluding test files)
+
+2. **For each computation site**: scientifically what does it actually measure? Match against Peleg's 4-category definitions (FIX-001):
+   - Category 1 "Helix": "S4PRED predicts helix segments meeting (a) minimal continuous residues threshold AND (b) minimal helix score threshold"
+   - That definition is **segment-based**, NOT probability-mean-based
+   - So site `:383` is correct; site `S4PredChart.tsx` ("Avg composition") is showing a DIFFERENT metric without saying so
+
+3. **For each user-facing display**: which calculation is shown, and is the label honest about what it's showing?
+   - Search: `grep -rn "Helix.*%\|helix.*%\|% Helix" ui/src --include="*.tsx" | grep -v node_modules`
+   - For each match: which calculation feeds it? Is the label clear about which?
+
+4. **Decision**: which ONE definition is canonical for user-facing "Helix %"?
+   - Recommendation (verify with Peleg): the **segment-based** percentage (matches FIX-001 category 1 definition). The probability-mean is a different scientific concept (overall structure-prediction confidence) and either (a) gets removed per FIX-011, or (b) is shown ONLY with a different name like "Average S4PRED helix confidence".
+
+5. **Fix list**: concrete file + line edits to:
+   - Make the canonical definition the only one labeled "Helix %"
+   - Rename or remove others (per FIX-011: REMOVE the "Avg composition" line in S4PredChart.tsx entirely)
+   - Add inline tooltips explaining EXACTLY which definition is used
+   - Verify backend → API → frontend chain doesn't quietly substitute one for another
+
+**Definition of Done for the audit**:
+- [ ] All compute sites identified
+- [ ] All display sites identified
+- [ ] Matched against Peleg's definitions
+- [ ] Bug list of mislabeled / wrong-source displays
+- [ ] Concrete fix proposed for each (with file paths + line numbers)
+- [ ] Posted as `docs/active/HELIX_PERCENTAGE_AUDIT.md`
+- [ ] T1 reviews → if approved, T4 (or T3) executes the fixes
+- [ ] Includes a unit test asserting the canonical definition is used (e.g., test that asserts segment-based result == display value)
+
+**Why this is P0 (blocks the rest of P-waves)**:
+- FIX-009, FIX-011, FIX-014, FIX-027, FIX-028 all touch helix % displays
+- If we don't standardize the definition first, those fixes cement the inconsistency
+- Peleg explicitly flagged this as urgent — it's a scientific correctness issue, not a UX one
+
+---
+
 ## CRITICAL CONCEPTUAL CORRECTION (Read First)
 
 **Aggregation ≠ Fibril-formation.** This distinction runs through the ENTIRE review. TANGO predicts *aggregation propensity*, which is NOT the same as amyloid/fibril formation. PVL's pipeline detects *fibril-forming potential*, which requires additional criteria (hydrophobicity, uH) beyond aggregation. Every place in the UI, tooltips, help text, and code comments that conflates these two must be corrected.

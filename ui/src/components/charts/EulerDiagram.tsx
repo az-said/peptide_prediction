@@ -15,7 +15,7 @@ const FF_HELIX_COLOR = "#004A75"; // darker blue
 const BOTH_COLOR = "#7B4F8A"; // purple blend
 const NEITHER_COLOR = "#e5e5e5";
 
-const SOURCE = "Pipeline Venn Diagram";
+const SOURCE = "Results Venn Diagram";
 
 interface Region {
   label: string;
@@ -147,7 +147,7 @@ export function EulerDiagram({ peptides }: EulerDiagramProps) {
 
   return (
     <ExpandableChart
-      title="Pipeline Overview"
+      title="Results Overview"
       description={`Classification landscape (n=${total})`}
       peptides={peptides}
     >

@@ -29,7 +29,7 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
     description:
       "Percentage of peptides with TANGO SSW (Secondary Structure Switch) prediction = positive",
     definition:
-      "TANGO SSW (Secondary Structure Switch) prediction uses aggregation propensity analysis to identify membrane-active peptides that can switch between different secondary structures. A positive prediction (1) suggests the peptide has the potential for membrane interaction and structural switching behavior. Note: S4PRED also provides an independent SSW prediction using neural network secondary structure analysis.",
+      "TANGO SSW (Secondary Structure Switch) prediction uses aggregation propensity analysis to identify membrane-active peptides that can switch between different secondary structures. A positive prediction (1) suggests the peptide has the potential for membrane interaction and structural switching behavior. Note: S4PRED also provides an independent SSW prediction.",
     chartType: "pie",
     tableColumns: [
       "id",
@@ -50,7 +50,7 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
     title: "Chou-Fasman Propensity (legacy)",
     description: "Context-free helix propensity from the Chou-Fasman (1978) scale",
     definition:
-      "Chou-Fasman propensity score using a 6-residue sliding window with threshold 1.0. This is a legacy metric — S4PRED Helix % is the primary helix prediction. Not comparable to S4PRED or experimental CD measurements.",
+      "Chou-Fasman propensity score using a 6-residue sliding window with threshold 1.0. This is a legacy metric — S4PRED Helix % is the primary helix prediction.",
     chartType: "distribution",
     tableColumns: [
       "id",
@@ -92,7 +92,7 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
     title: "Fibril Formation (SSW)",
     description: "Peptides predicted to form fibrils via Secondary Structure Switch mechanism",
     definition:
-      "FF-Secondary Structure Switch indicates peptides that are predicted to form fibrils through a secondary structure switching mechanism. This prediction is based on TANGO analysis combined with hydrophobicity thresholds. Peptides with SSW prediction = 1 and hydrophobicity above the cohort average are flagged as fibril-forming via SSW.",
+      "FF-Secondary Structure Switch indicates peptides that are predicted to form fibrils through a secondary structure switching mechanism. This prediction is based on TANGO analysis combined with hydrophobicity thresholds. Peptides with SSW prediction = 1 and hydrophobicity above the database average are flagged as fibril-forming via SSW.",
     chartType: "pie",
     tableColumns: [
       "id",
@@ -110,7 +110,7 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
     title: "Fibril Formation (Helix)",
     description: "Peptides predicted to form fibrils via alpha-helical mechanism",
     definition:
-      "Fibril-forming helix flag classifies peptides predicted to aggregate via an alpha-helical mechanism. Uses S4PRED helix segments with hydrophobic moment (μH) above the cohort threshold.",
+      "Fibril-forming helix flag classifies peptides predicted to aggregate via an alpha-helical mechanism. Uses S4PRED helix segments with hydrophobic moment (μH) above the database threshold.",
     chartType: "pie",
     tableColumns: [
       "id",

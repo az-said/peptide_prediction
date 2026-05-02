@@ -625,6 +625,7 @@ CEO terminal (T1) plans waves; sub-terminals (T2/T3/T-PEL/Cowork) execute. T1 co
 | **A** | Sentry crypto crash (ISSUE-027) — UUID polyfill at 2 sites | T3 | crypto.randomUUID safe in HTTP/Safari |
 | **B** | TANGO tooltip in Quick Analyze (ISSUE-028) | T3 | tooltip parity |
 | **B-skip** | ISSUE-029 dark menu in light mode | — | ✅ already fixed |
+| **PEL-CRIT-001** | Helix % calculation audit (Peleg flagged 2026-04-26 in Hebrew as urgent) | T4 | `HELIX_PERCENTAGE_AUDIT.md` + canonical definition + fixes |
 | **P0** | Foundation: FIX-001 (4-category classification) + FIX-002 (threshold restructure) + FIX-003 (terminology sweep) | T2 backend + T3 UI | Classification logic, threshold defaults, Cohort→Database, Aggregation→Fibril framing, no acronyms |
 | **P1** | Tier 1 dashboard: FIX-004 KPI cards, FIX-005 badges, FIX-006 columns, FIX-007 Venn bug, FIX-008 Pipeline→Results | T3 + Cowork (icons) | Results dashboard fixed |
 | **P2** | Tier 2 PeptideDetail: FIX-009 to FIX-018 | T3 + Cowork (heavy visuals on FIX-014, 016, 017) | PeptideDetail page complete |

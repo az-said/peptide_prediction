@@ -152,7 +152,7 @@ export default function About() {
               <ul className="list-disc pl-5 space-y-1">
                 <li>Flexible upload with QC (+ rejected rows export)</li>
                 <li>Hydrophobicity, Charge, μH; SSW & Helix prediction</li>
-                <li>Cohort visualizations + correlation matrix</li>
+                <li>Database visualizations + correlation matrix</li>
                 <li>Sliding-window profiles with helix overlays</li>
                 <li>Helical wheel projection (HeliQuest colors)</li>
               </ul>
