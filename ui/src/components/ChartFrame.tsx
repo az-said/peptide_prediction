@@ -221,7 +221,10 @@ export function ChartFrame({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        {/* Peleg bug-fix: clip chart contents to the card boundary so Recharts
+            axis labels / lollipop dots / bar edges cannot bleed outside the
+            card at narrow viewports. */}
+        <CardContent className="overflow-hidden">
           <ChartFrameContext.Provider value={COLLAPSED_CTX}>{children}</ChartFrameContext.Provider>
           {footer}
         </CardContent>

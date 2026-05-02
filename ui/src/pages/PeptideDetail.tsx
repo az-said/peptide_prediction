@@ -21,7 +21,7 @@ import { ChartExportButtons } from "@/components/ChartExportButtons";
 import { AlphaFoldViewer } from "@/components/AlphaFoldViewer";
 import { BackboneViewer } from "@/components/BackboneViewer";
 import { S4PredChart } from "@/components/S4PredChart";
-import { ConsensusCard } from "@/components/ConsensusCard";
+// Peleg FIX-013: ConsensusCard tier system removed (certainty math unjustified).
 import { useChartSelection } from "@/stores/chartSelectionStore";
 import { cn } from "@/lib/utils";
 import { BgDotGrid } from "@/components/BgDotGrid";
@@ -855,10 +855,8 @@ export default function PeptideDetail() {
           <BackboneViewer peptideId={peptide.id} />
 
           {/* Peleg FIX-016: standalone feature tiles removed — moved into the
-              BiochemComparison stat-card sub-panel above. */}
-
-          {/* Consensus Analysis */}
-          <ConsensusCard peptide={peptide} />
+              BiochemComparison stat-card sub-panel above.
+              Peleg FIX-013: ConsensusCard tier system removed. */}
 
           <EvidencePanel peptide={peptide} cohortStats={stats} />
 

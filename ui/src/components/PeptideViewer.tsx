@@ -1,10 +1,13 @@
 /**
  * Shared peptide display component.
  *
- * Renders KPI tiles, SequenceTrack, ConsensusCard, HelicalWheel,
- * S4PredChart, AggregationHeatmap, and AlphaFoldViewer for a single peptide.
+ * Renders KPI tiles, SequenceTrack, HelicalWheel, S4PredChart,
+ * AggregationHeatmap, and AlphaFoldViewer for a single peptide.
  *
  * Used by QuickAnalyze.tsx. PeptideDetail.tsx will adopt this after redesign.
+ *
+ * Peleg FIX-013: ConsensusCard tier system removed (certainty math
+ * unjustified). See lib/consensus.ts header.
  */
 import { AlertTriangle, Copy, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +21,6 @@ import { HelicalWheel } from "@/components/HelicalWheel";
 import { AggregationHeatmap } from "@/components/AggregationHeatmap";
 import { AlphaFoldViewer } from "@/components/AlphaFoldViewer";
 import { S4PredChart } from "@/components/S4PredChart";
-import { ConsensusCard } from "@/components/ConsensusCard";
 
 interface PeptideViewerProps {
   peptide: Peptide;
@@ -154,9 +156,6 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
           </CardContent>
         </Card>
       </div>
-
-      {/* ── Consensus Analysis ── */}
-      <ConsensusCard peptide={p} />
 
       {/* ── Helical Wheel ── */}
       {p.length != null && p.length <= 40 && (

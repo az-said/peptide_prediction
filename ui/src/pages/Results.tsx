@@ -551,7 +551,7 @@ export default function Results() {
           <ActiveThresholdsPanel />
 
           {/* KPIs */}
-          <ResultsKpis stats={stats} meta={meta} />
+          <ResultsKpis stats={stats} meta={meta} allPeptides={peptidesTyped} />
 
           {/* Main Content Tabs — Data Table first (researcher workflow) */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

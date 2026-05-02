@@ -1,6 +1,9 @@
 /// <reference types="@testing-library/jest-dom" />
 /**
  * CorrelationMatrix — Unit tests for correlation computation and rendering.
+ *
+ * Covers: computation correctness, header styles (rotate/wrap/short),
+ * hatched cells for insufficient N, diagonal treatment, empty state (<2 peptides).
  */
 
 import { render, screen } from "@testing-library/react";
@@ -8,6 +11,7 @@ import { describe, it, expect, vi } from "vitest";
 import {
   CorrelationMatrix,
   computeCorrelationMatrix,
+  DEFAULT_CORRELATION_METRICS,
   type CorrelationMetric,
 } from "../CorrelationMatrix";
 import type { Peptide } from "@/types/peptide";
@@ -30,12 +34,14 @@ function makePeptide(overrides: Partial<Peptide>): Peptide {
 const metricA: CorrelationMetric = {
   id: "a",
   label: "Metric A",
+  shortLabel: "A",
   getValue: (p) => p.hydrophobicity,
 };
 
 const metricB: CorrelationMetric = {
   id: "b",
   label: "Metric B",
+  shortLabel: "B",
   getValue: (p) => p.charge,
 };
 
@@ -44,6 +50,17 @@ const metricC: CorrelationMetric = {
   label: "Metric C",
   getValue: (p) => p.muH,
 };
+
+/** Generate N peptides with incrementing values for testing. */
+function makePeptides(count: number): Peptide[] {
+  return Array.from({ length: count }, (_, i) =>
+    makePeptide({
+      id: String(i),
+      hydrophobicity: i,
+      charge: i * 2,
+    }),
+  );
+}
 
 // ── Computation tests ──
 
@@ -152,6 +169,22 @@ describe("CorrelationMatrix component", () => {
       />,
     );
 
+    // Should show empty state for < 2 peptides
+    expect(screen.getByText("Need at least 2 peptides for correlation analysis.")).toBeInTheDocument();
+  });
+
+  it("renders empty state for single peptide", () => {
+    render(
+      <CorrelationMatrix
+        peptides={[makePeptide({ id: "1" })]}
+        metrics={[metricA, metricB]}
+      />,
+    );
+
+    expect(
+      screen.getByText("Need at least 2 peptides for correlation analysis."),
+    ).toBeInTheDocument();
+    // Title should still render
     expect(screen.getByText("Correlation matrix")).toBeInTheDocument();
   });
 
@@ -173,6 +206,25 @@ describe("CorrelationMatrix component", () => {
     // There should be at least one em dash cell
     const cells = screen.getAllByText("—");
     expect(cells.length).toBeGreaterThan(0);
+  });
+
+  it("renders hatched cells for insufficient sample size", () => {
+    const peptides: Peptide[] = [
+      makePeptide({ id: "1", hydrophobicity: 1, charge: 2 }),
+      makePeptide({ id: "2", hydrophobicity: 2, charge: 4 }),
+    ];
+
+    const { container } = render(
+      <CorrelationMatrix
+        peptides={peptides}
+        metrics={[metricA, metricB]}
+        minSampleSize={5}
+      />,
+    );
+
+    // Hatched cells should have data-testid starting with "cell-hatched"
+    const hatchedCells = container.querySelectorAll("[data-testid^='cell-hatched']");
+    expect(hatchedCells.length).toBeGreaterThan(0);
   });
 
   it("renders em dash for all-null column", () => {
@@ -204,13 +256,7 @@ describe("CorrelationMatrix component", () => {
   });
 
   it("upper triangle display hides cells below diagonal", () => {
-    const peptides: Peptide[] = Array.from({ length: 6 }, (_, i) =>
-      makePeptide({
-        id: String(i),
-        hydrophobicity: i,
-        charge: i * 2,
-      }),
-    );
+    const peptides = makePeptides(6);
 
     const { container } = render(
       <CorrelationMatrix
@@ -243,5 +289,131 @@ describe("CorrelationMatrix component", () => {
     expect(
       screen.getByText("No metrics configured for correlation analysis."),
     ).toBeInTheDocument();
+  });
+
+  it("renders diagonal cells with recessed treatment", () => {
+    const peptides = makePeptides(6);
+
+    const { container } = render(
+      <CorrelationMatrix
+        peptides={peptides}
+        metrics={[metricA, metricB]}
+        display="full"
+        minSampleSize={2}
+      />,
+    );
+
+    // Diagonal cells should have data-testid "cell-diagonal-*"
+    const diagonalCells = container.querySelectorAll("[data-testid^='cell-diagonal']");
+    expect(diagonalCells.length).toBe(2);
+
+    // Each should show "1.00"
+    diagonalCells.forEach((cell) => {
+      expect(cell.textContent).toBe("1.00");
+    });
+  });
+});
+
+// ── Header style tests ──
+
+describe("CorrelationMatrix header styles", () => {
+  const peptides = makePeptides(6);
+  const longLabelMetric: CorrelationMetric = {
+    id: "long",
+    label: "Hydrophobicity",
+    shortLabel: "Hydro",
+    getValue: (p) => p.hydrophobicity,
+  };
+
+  it("rotate: renders column headers with rotate transform", () => {
+    const { container } = render(
+      <CorrelationMatrix
+        peptides={peptides}
+        metrics={[longLabelMetric, metricB]}
+        headerStyle="rotate"
+        minSampleSize={2}
+      />,
+    );
+
+    const colHeader = container.querySelector("[data-testid='col-header-long']");
+    expect(colHeader).toBeInTheDocument();
+    // Should have rotate transform style
+    expect(colHeader?.getAttribute("style")).toContain("rotate(-45deg)");
+    // Full label shown (not short)
+    expect(colHeader?.textContent).toBe("Hydrophobicity");
+  });
+
+  it("short: uses shortLabel when available", () => {
+    const { container } = render(
+      <CorrelationMatrix
+        peptides={peptides}
+        metrics={[longLabelMetric, metricB]}
+        headerStyle="short"
+        minSampleSize={2}
+      />,
+    );
+
+    const colHeader = container.querySelector("[data-testid='col-header-long']");
+    expect(colHeader).toBeInTheDocument();
+    expect(colHeader?.textContent).toBe("Hydro");
+
+    // metricB has shortLabel "B"
+    const colHeaderB = container.querySelector("[data-testid='col-header-b']");
+    expect(colHeaderB?.textContent).toBe("B");
+  });
+
+  it("short: falls back to full label when shortLabel not set", () => {
+    const noShortMetric: CorrelationMetric = {
+      id: "noshort",
+      label: "Full Label Only",
+      getValue: (p) => p.charge,
+    };
+
+    const { container } = render(
+      <CorrelationMatrix
+        peptides={peptides}
+        metrics={[noShortMetric, metricA]}
+        headerStyle="short"
+        minSampleSize={2}
+      />,
+    );
+
+    const colHeader = container.querySelector("[data-testid='col-header-noshort']");
+    expect(colHeader?.textContent).toBe("Full Label Only");
+  });
+
+  it("wrap: renders column headers without rotate", () => {
+    const { container } = render(
+      <CorrelationMatrix
+        peptides={peptides}
+        metrics={[longLabelMetric, metricB]}
+        headerStyle="wrap"
+        minSampleSize={2}
+      />,
+    );
+
+    const colHeader = container.querySelector("[data-testid='col-header-long']");
+    expect(colHeader).toBeInTheDocument();
+    // Should NOT have rotate transform
+    expect(colHeader?.getAttribute("style")).not.toContain("rotate");
+    // Full label shown
+    expect(colHeader?.textContent).toBe("Hydrophobicity");
+  });
+});
+
+// ── DEFAULT_CORRELATION_METRICS tests ──
+
+describe("DEFAULT_CORRELATION_METRICS", () => {
+  it("all metrics have shortLabel defined", () => {
+    for (const metric of DEFAULT_CORRELATION_METRICS) {
+      expect(metric.shortLabel).toBeDefined();
+      expect(typeof metric.shortLabel).toBe("string");
+      expect((metric.shortLabel as string).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("has the expected short labels", () => {
+    const shortLabels = DEFAULT_CORRELATION_METRICS.map((m) => m.shortLabel);
+    expect(shortLabels).toEqual(["Hydro", "μH", "Charge", "Length", "Helix"]);
   });
 });

@@ -1,5 +1,14 @@
 /**
- * SetDiagram — Generalized N-way set/Venn/Euler diagram.
+ * SetDiagram v2 — Premium interactive set/Venn/Euler diagram.
+ *
+ * Design decisions:
+ * - Framer-motion animated circles with smooth transitions on data change
+ * - Bidirectional hover highlighting between SVG regions and summary table
+ * - HTML-based hover cards (not SVG tooltips) for rich region detail
+ * - "Neither" rendered as a styled HTML chip (not faint SVG text)
+ * - Collision-aware label placement with leader lines for overlaps
+ * - Click-to-filter with scale pulse animation
+ * - Scientific overlap labels ("Helix and SSW (no FF)")
  *
  * Layout algorithm:
  * 1. Primary sets (no parentSet) are arranged as overlapping circles along a horizontal axis.
@@ -15,12 +24,8 @@
  * @see docs/active/PELEG_FEEDBACK_INSTRUCTIONS.md FIX-007
  */
 
-import { useMemo, useCallback } from "react";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
+import { useMemo, useState, useCallback, useRef } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Public types ──
 
@@ -77,6 +82,11 @@ const DEFAULT_COLORS = [
   "#009E73",
   "#CC79A7",
 ];
+
+// ── Animation constants ──
+
+const CIRCLE_TRANSITION = { duration: 0.3, ease: [0.25, 0.1, 0.25, 1] as const };
+const PULSE_TRANSITION = { duration: 0.2, ease: "easeInOut" as const };
 
 // ── Helpers ──
 
@@ -256,12 +266,19 @@ function computeRegions(
     });
   }
 
+  // Build scientific intersection label
+  const childLabels = allChildSets.map((c) => c.label);
+  const intersectionLabel =
+    childLabels.length > 0
+      ? `${pA.label} and ${pB.label} (no ${childLabels.join(", ")})`
+      : `${pA.label} and ${pB.label}`;
+
   // Intersection plain (both but not in any child subset)
   const bothPlain = subtractChildren(both, allChildSets);
   if (bothPlain.size > 0) {
     regions.push({
       id: `${pA.id}∩${pB.id}`,
-      label: `${pA.label} ∩ ${pB.label}`,
+      label: intersectionLabel,
       members: [...bothPlain],
       color: mixColors(colorA, colorB),
     });
@@ -340,17 +357,30 @@ interface CircleLayout {
   onClick?: () => void;
 }
 
+/** Label placement with optional leader line for collision avoidance */
+interface LabelPlacement {
+  regionId: string;
+  x: number;
+  y: number;
+  count: number;
+  label: string;
+  color: string;
+  /** If set, draw a leader line from (leaderFromX,leaderFromY) to (x,y) */
+  leaderFromX?: number;
+  leaderFromY?: number;
+}
+
 function computeLayout(data: ComputedData, W: number, H: number): CircleLayout[] {
-  const { primarySets, subsets, total } = data;
+  const { primarySets, subsets } = data;
   const layouts: CircleLayout[] = [];
 
   if (primarySets.length === 0) return layouts;
 
-  const centerY = H * 0.5;
+  const centerY = H * 0.48;
 
   if (primarySets.length === 1) {
     const p = primarySets[0];
-    const r = Math.min(W, H) * 0.35;
+    const r = Math.min(W, H) * 0.34;
     layouts.push({
       id: p.def.id,
       cx: W / 2,
@@ -386,7 +416,7 @@ function computeLayout(data: ComputedData, W: number, H: number): CircleLayout[]
 
   // Two primary sets
   const [pA, pB] = primarySets;
-  const rA = Math.min(W * 0.25, H * 0.38);
+  const rA = Math.min(W * 0.24, H * 0.37);
   const rB = rA;
 
   // Overlap distance: proportion of intersection to min set size
@@ -454,6 +484,204 @@ function computeLayout(data: ComputedData, W: number, H: number): CircleLayout[]
   return layouts;
 }
 
+/** Compute label positions and add leader lines for overlapping labels */
+function computeLabelPlacements(
+  data: ComputedData,
+  circleLayouts: CircleLayout[],
+  W: number,
+  _H: number
+): LabelPlacement[] {
+  const placements: LabelPlacement[] = [];
+  const LABEL_HEIGHT = 28; // approximate height of count + label text
+  const LABEL_WIDTH = 70;
+
+  // Collect all placement candidates
+  for (const c of circleLayouts) {
+    const region = c.isSubset
+      ? data.regions.find((r) => r.id === c.id)
+      : data.regions.find((r) => r.id === `${c.id}-only`);
+
+    if (!region || region.members.length === 0) continue;
+
+    placements.push({
+      regionId: region.id,
+      x: c.cx,
+      y: c.cy,
+      count: region.members.length,
+      label: c.isSubset ? c.label : `${c.label} only`,
+      color: c.color,
+    });
+  }
+
+  // Add intersection label for 2 primaries
+  if (circleLayouts.length >= 2 && !circleLayouts[0].isSubset && !circleLayouts[1].isSubset) {
+    const bothRegion = data.regions.find((r) => r.id.includes("∩"));
+    if (bothRegion && bothRegion.members.length > 0) {
+      const midX = (circleLayouts[0].cx + circleLayouts[1].cx) / 2;
+      const midY = circleLayouts[0].cy;
+      placements.push({
+        regionId: bothRegion.id,
+        x: midX,
+        y: midY,
+        count: bothRegion.members.length,
+        label: "Both",
+        color: bothRegion.color,
+      });
+    }
+  }
+
+  // Simple overlap detection and resolution
+  const PADDING = 28;
+  for (let i = 0; i < placements.length; i++) {
+    for (let j = i + 1; j < placements.length; j++) {
+      const a = placements[i];
+      const b = placements[j];
+      const dx = Math.abs(a.x - b.x);
+      const dy = Math.abs(a.y - b.y);
+
+      if (dx < LABEL_WIDTH && dy < LABEL_HEIGHT) {
+        // Labels overlap — move the smaller count label outside with a leader line
+        const toMove = a.count < b.count ? a : b;
+        const anchor = a.count < b.count ? b : a;
+        const origX = toMove.x;
+        const origY = toMove.y;
+
+        // Move to the side with more room
+        if (toMove.x < W / 2) {
+          toMove.x = Math.max(PADDING + 30, toMove.x - 60);
+        } else {
+          toMove.x = Math.min(W - PADDING - 30, toMove.x + 60);
+        }
+        // Also shift vertically to avoid the anchor
+        if (toMove.y <= anchor.y) {
+          toMove.y = Math.max(PADDING + 20, toMove.y - 30);
+        } else {
+          toMove.y = Math.min(_H - PADDING - 20, toMove.y + 30);
+        }
+
+        toMove.leaderFromX = origX;
+        toMove.leaderFromY = origY;
+      }
+    }
+  }
+
+  return placements;
+}
+
+/** Determine which region the mouse is over based on SVG coordinates */
+function hitTestRegion(
+  svgX: number,
+  svgY: number,
+  circleLayouts: CircleLayout[],
+  data: ComputedData
+): ComputedRegion | null {
+  // Test subsets first (they're on top)
+  const subsetLayouts = circleLayouts.filter((c) => c.isSubset);
+  for (const c of subsetLayouts) {
+    const dx = svgX - c.cx;
+    const dy = svgY - c.cy;
+    if (dx * dx + dy * dy <= c.r * c.r) {
+      const region = data.regions.find((r) => r.id === c.id);
+      if (region) return region;
+    }
+  }
+
+  // Test primary circle intersections
+  const primaries = circleLayouts.filter((c) => !c.isSubset);
+  if (primaries.length >= 2) {
+    const [cA, cB] = primaries;
+    const inA = (svgX - cA.cx) ** 2 + (svgY - cA.cy) ** 2 <= cA.r ** 2;
+    const inB = (svgX - cB.cx) ** 2 + (svgY - cB.cy) ** 2 <= cB.r ** 2;
+
+    if (inA && inB) {
+      // In intersection
+      const bothRegion = data.regions.find((r) => r.id.includes("∩"));
+      if (bothRegion) return bothRegion;
+    }
+    if (inA && !inB) {
+      const aOnly = data.regions.find((r) => r.id === `${cA.id}-only`);
+      if (aOnly) return aOnly;
+    }
+    if (!inA && inB) {
+      const bOnly = data.regions.find((r) => r.id === `${cB.id}-only`);
+      if (bOnly) return bOnly;
+    }
+  } else if (primaries.length === 1) {
+    const c = primaries[0];
+    const inC = (svgX - c.cx) ** 2 + (svgY - c.cy) ** 2 <= c.r ** 2;
+    if (inC) {
+      const region = data.regions.find((r) => r.id === `${c.id}-only`);
+      if (region) return region;
+    }
+  }
+
+  // Outside all circles — "neither"
+  const neither = data.regions.find((r) => r.id === "neither");
+  return neither || null;
+}
+
+// ── Hover Card Component ──
+
+interface HoverCardData {
+  region: ComputedRegion;
+  total: number;
+  x: number;
+  y: number;
+}
+
+function RegionHoverCard({ region, total, x, y }: HoverCardData) {
+  const examples = region.members.slice(0, 3);
+  const remaining = region.members.length - examples.length;
+
+  return (
+    <div
+      className="absolute z-50 pointer-events-none"
+      style={{
+        left: `${x}px`,
+        top: `${y}px`,
+        transform: "translate(-50%, -100%) translateY(-12px)",
+      }}
+    >
+      <div className="bg-popover border border-border rounded-lg shadow-lg px-3.5 py-2.5 text-xs min-w-[180px] max-w-[240px]">
+        <div className="font-semibold text-foreground text-[13px] mb-1 leading-tight">
+          {region.label}
+        </div>
+        <div className="flex items-baseline gap-1.5 mb-1.5">
+          <span className="text-foreground font-bold text-sm tabular-nums">
+            {region.members.length}
+          </span>
+          <span className="text-muted-foreground">
+            ({pct(region.members.length, total)}% of total)
+          </span>
+        </div>
+        {examples.length > 0 && (
+          <div className="border-t border-border/60 pt-1.5 mt-1">
+            <div className="text-muted-foreground mb-0.5">Peptides:</div>
+            <div className="flex flex-wrap gap-1">
+              {examples.map((id) => (
+                <span
+                  key={id}
+                  className="bg-muted/60 px-1.5 py-0.5 rounded text-[10px] font-mono text-foreground"
+                >
+                  {id}
+                </span>
+              ))}
+              {remaining > 0 && (
+                <span className="text-muted-foreground text-[10px] self-center">
+                  +{remaining} more
+                </span>
+              )}
+            </div>
+          </div>
+        )}
+        <div className="text-muted-foreground/70 text-[9px] mt-1.5 italic">
+          Click to filter table
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Component ──
 
 export function SetDiagram({
@@ -465,6 +693,11 @@ export function SetDiagram({
   universe,
   className,
 }: SetDiagramProps) {
+  const [hoveredRegionId, setHoveredRegionId] = useState<string | null>(null);
+  const [clickedRegionId, setClickedRegionId] = useState<string | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
+  const svgContainerRef = useRef<HTMLDivElement>(null);
+
   const data = useMemo(
     () => computeRegions(sets, universe, outsideLabel),
     [sets, universe, outsideLabel]
@@ -476,51 +709,153 @@ export function SetDiagram({
       ? data.regions.filter((r) => r.members.length > 0)
       : data.regions;
 
-  const W = 480;
-  const H = 320;
+  const W = 560;
+  const H = 380;
   const circleLayouts = useMemo(() => computeLayout(data, W, H), [data]);
+
+  const labelPlacements = useMemo(
+    () => computeLabelPlacements(data, circleLayouts, W, H),
+    [data, circleLayouts]
+  );
 
   const handleClick = useCallback(
     (region: ComputedRegion) => {
       if (onRegionClick && region.members.length > 0) {
         onRegionClick(region.id, region.members);
+        // Trigger pulse animation
+        setClickedRegionId(region.id);
+        setTimeout(() => setClickedRegionId(null), 250);
       }
     },
     [onRegionClick]
   );
 
+  const handleSvgMouseMove = useCallback(
+    (e: React.MouseEvent<SVGSVGElement>) => {
+      const svg = e.currentTarget;
+      const rect = svg.getBoundingClientRect();
+      const scaleX = W / rect.width;
+      const scaleY = H / rect.height;
+      const svgX = (e.clientX - rect.left) * scaleX;
+      const svgY = (e.clientY - rect.top) * scaleY;
+
+      const region = hitTestRegion(svgX, svgY, circleLayouts, data);
+      setHoveredRegionId(region?.id || null);
+
+      // Position hover card relative to container
+      if (svgContainerRef.current) {
+        const containerRect = svgContainerRef.current.getBoundingClientRect();
+        setHoverPos({
+          x: e.clientX - containerRect.left,
+          y: e.clientY - containerRect.top,
+        });
+      }
+    },
+    [circleLayouts, data]
+  );
+
+  const handleSvgMouseLeave = useCallback(() => {
+    setHoveredRegionId(null);
+    setHoverPos(null);
+  }, []);
+
+  const handleTableRowHover = useCallback((regionId: string | null) => {
+    setHoveredRegionId(regionId);
+  }, []);
+
   const total = data.total;
   const neither = data.regions.find((r) => r.id === "neither");
+  const hoveredRegion = hoveredRegionId
+    ? data.regions.find((r) => r.id === hoveredRegionId)
+    : null;
+
+  /** Determine if a circle should be highlighted based on hovered region */
+  const getCircleOpacity = useCallback(
+    (circleId: string, isSubset: boolean) => {
+      if (!hoveredRegionId) return { fill: isSubset ? 0.25 : 0.12, stroke: 0.4 };
+
+      // Check if the hovered region is related to this circle
+      const isRelated =
+        hoveredRegionId === circleId ||
+        hoveredRegionId === `${circleId}-only` ||
+        hoveredRegionId.includes(circleId) ||
+        // For subsets, highlight when their circle is hovered
+        (isSubset && hoveredRegionId === circleId);
+
+      if (isRelated) {
+        return { fill: isSubset ? 0.4 : 0.22, stroke: 0.7 };
+      }
+      return { fill: isSubset ? 0.12 : 0.06, stroke: 0.2 };
+    },
+    [hoveredRegionId]
+  );
+
+  /** Get scale for click pulse animation */
+  const getClickScale = useCallback(
+    (circleId: string) => {
+      if (!clickedRegionId) return 1;
+      if (
+        clickedRegionId === circleId ||
+        clickedRegionId === `${circleId}-only` ||
+        clickedRegionId.includes(circleId)
+      ) {
+        return 1.05;
+      }
+      return 1;
+    },
+    [clickedRegionId]
+  );
 
   return (
-    <div className={className}>
-      {/* SVG Diagram */}
-      <div className="flex justify-center">
+    <div className={`${className || ""}`}>
+      {/* SVG Diagram Container (relative for absolute hover overlay) */}
+      <div className="flex justify-center" ref={svgContainerRef} style={{ position: "relative" }}>
         <svg
           viewBox={`0 0 ${W} ${H}`}
-          className="select-none w-full h-auto max-w-[480px]"
+          className="select-none w-full h-auto max-w-[560px]"
           role="img"
           aria-label="Set diagram showing classification overlaps"
+          onMouseMove={handleSvgMouseMove}
+          onMouseLeave={handleSvgMouseLeave}
         >
+          <defs>
+            {/* Clip path for intersection highlight */}
+            {circleLayouts.length >= 2 &&
+              !circleLayouts[0].isSubset &&
+              !circleLayouts[1].isSubset && (
+                <clipPath id="set-clip-a">
+                  <circle
+                    cx={circleLayouts[0].cx}
+                    cy={circleLayouts[0].cy}
+                    r={circleLayouts[0].r}
+                  />
+                </clipPath>
+              )}
+          </defs>
+
           {/* Universe rectangle */}
           <rect
-            x={10}
-            y={10}
-            width={W - 20}
-            height={H - 20}
-            rx={8}
+            x={16}
+            y={16}
+            width={W - 32}
+            height={H - 32}
+            rx={10}
             fill="currentColor"
-            fillOpacity={0.04}
+            fillOpacity={0.03}
             stroke="currentColor"
-            strokeOpacity={0.2}
+            strokeOpacity={0.15}
             strokeWidth={1.5}
             strokeDasharray="6 3"
-            className={onRegionClick && neither && neither.members.length > 0 ? "cursor-pointer" : ""}
+            className={
+              onRegionClick && neither && neither.members.length > 0
+                ? "cursor-pointer"
+                : ""
+            }
             onClick={() => neither && handleClick(neither)}
           />
           <text
-            x={W - 20}
-            y={28}
+            x={W - 24}
+            y={34}
             textAnchor="end"
             fontSize={10}
             className="fill-muted-foreground"
@@ -528,182 +863,159 @@ export function SetDiagram({
             All: {total}
           </text>
 
-          {/* Primary circles (rendered first, below subsets) */}
+          {/* Primary circles (rendered first, below subsets) — animated */}
           {circleLayouts
             .filter((c) => !c.isSubset)
-            .map((c) => (
-              <g key={c.id}>
-                <circle
-                  cx={c.cx}
-                  cy={c.cy}
-                  r={c.r}
-                  fill={c.color}
-                  fillOpacity={0.12}
-                  stroke={c.color}
-                  strokeWidth={2}
-                  className={onRegionClick ? "cursor-pointer" : ""}
-                />
-                {/* Set label at top */}
-                <text
-                  x={c.cx}
-                  y={c.cy - c.r - 8}
-                  textAnchor="middle"
-                  fontSize={12}
-                  fontWeight={600}
-                  fill={c.color}
-                >
-                  {c.label} ({c.count})
-                </text>
-              </g>
-            ))}
-
-          {/* Overlap region for two primaries */}
-          {circleLayouts.length >= 2 && !circleLayouts[0].isSubset && !circleLayouts[1].isSubset && (
-            <>
-              <clipPath id="set-clip-a">
-                <circle cx={circleLayouts[0].cx} cy={circleLayouts[0].cy} r={circleLayouts[0].r} />
-              </clipPath>
-              <circle
-                cx={circleLayouts[1].cx}
-                cy={circleLayouts[1].cy}
-                r={circleLayouts[1].r}
-                clipPath="url(#set-clip-a)"
-                fill={mixColors("", "")}
-                fillOpacity={0.15}
-                className={onRegionClick ? "cursor-pointer" : ""}
-              />
-            </>
-          )}
-
-          {/* Subset circles (rendered on top) */}
-          {circleLayouts
-            .filter((c) => c.isSubset)
-            .map((c) => (
-              <g key={c.id}>
-                <circle
-                  cx={c.cx}
-                  cy={c.cy}
-                  r={c.r}
-                  fill={c.color}
-                  fillOpacity={0.3}
-                  stroke={c.color}
-                  strokeWidth={2}
-                  className={onRegionClick ? "cursor-pointer" : ""}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const region = data.regions.find((r) => r.id === c.id);
-                    if (region) handleClick(region);
-                  }}
-                />
-              </g>
-            ))}
-
-          {/* Count labels */}
-          {showCounts &&
-            circleLayouts.map((c) => {
-              // For primary circles, show "X-only" count (members not in any other primary or child)
-              const region = data.regions.find(
-                (r) => r.id === c.id || r.id === `${c.id}-only`
-              );
-              if (!region) return null;
-
-              // For subsets, show subset count; for primaries, show the -only count
-              const displayRegion = c.isSubset
-                ? data.regions.find((r) => r.id === c.id)
-                : data.regions.find((r) => r.id === `${c.id}-only`);
-
-              if (!displayRegion || displayRegion.members.length === 0) return null;
-
+            .map((c) => {
+              const opacities = getCircleOpacity(c.id, false);
+              const scale = getClickScale(c.id);
               return (
-                <g key={`count-${c.id}`}>
-                  <text
-                    x={c.isSubset ? c.cx : c.cx + (c.isSubset ? 0 : 0)}
-                    y={c.isSubset ? c.cy - 3 : c.cy - 5}
+                <g key={c.id}>
+                  <motion.circle
+                    animate={{
+                      cx: c.cx,
+                      cy: c.cy,
+                      r: c.r,
+                      fillOpacity: opacities.fill,
+                      strokeOpacity: opacities.stroke,
+                    }}
+                    transition={CIRCLE_TRANSITION}
+                    fill={c.color}
+                    stroke={c.color}
+                    strokeWidth={2}
+                    className={onRegionClick ? "cursor-pointer" : ""}
+                    style={{
+                      transformOrigin: `${c.cx}px ${c.cy}px`,
+                      scale,
+                      transition: "scale 0.2s ease-in-out",
+                    }}
+                  />
+                  {/* Set label at top of circle */}
+                  <motion.text
+                    animate={{ x: c.cx, y: c.cy - c.r - 10 }}
+                    transition={CIRCLE_TRANSITION}
                     textAnchor="middle"
-                    fontSize={14}
-                    fontWeight={700}
-                    className="fill-foreground cursor-pointer"
-                    onClick={() => handleClick(displayRegion)}
+                    fontSize={11}
+                    fontWeight={600}
+                    fill={c.color}
+                    className="select-none"
                   >
-                    {displayRegion.members.length}
-                  </text>
-                  <text
-                    x={c.isSubset ? c.cx : c.cx}
-                    y={c.isSubset ? c.cy + 12 : c.cy + 10}
-                    textAnchor="middle"
-                    fontSize={9}
-                    className="fill-muted-foreground cursor-pointer"
-                    onClick={() => handleClick(displayRegion)}
-                  >
-                    {c.isSubset
-                      ? `${c.label} (${pct(displayRegion.members.length, total)}%)`
-                      : `${c.label} only (${pct(displayRegion.members.length, total)}%)`}
-                  </text>
+                    {c.label} ({c.count})
+                  </motion.text>
                 </g>
               );
             })}
 
-          {/* Intersection count (for 2 primaries) */}
-          {circleLayouts.length >= 2 && (() => {
-            const bothRegion = data.regions.find(
-              (r) => r.id.includes("∩") && !r.id.startsWith("ff")
-            );
-            if (!bothRegion || bothRegion.members.length === 0) return null;
-            const midX = (circleLayouts[0].cx + circleLayouts[1].cx) / 2;
-            const midY = circleLayouts[0].cy;
-            return (
-              <g>
-                <text
-                  x={midX}
-                  y={midY - 8}
-                  textAnchor="middle"
-                  fontSize={14}
-                  fontWeight={700}
-                  className="fill-foreground cursor-pointer"
-                  onClick={() => handleClick(bothRegion)}
-                >
-                  {bothRegion.members.length}
-                </text>
-                <text
-                  x={midX}
-                  y={midY + 7}
-                  textAnchor="middle"
-                  fontSize={9}
-                  className="fill-muted-foreground cursor-pointer"
-                  onClick={() => handleClick(bothRegion)}
-                >
-                  Both ({pct(bothRegion.members.length, total)}%)
-                </text>
-              </g>
-            );
-          })()}
+          {/* Overlap region for two primaries — animated */}
+          {circleLayouts.length >= 2 &&
+            !circleLayouts[0].isSubset &&
+            !circleLayouts[1].isSubset && (
+              <motion.circle
+                animate={{
+                  cx: circleLayouts[1].cx,
+                  cy: circleLayouts[1].cy,
+                  r: circleLayouts[1].r,
+                  fillOpacity:
+                    hoveredRegionId?.includes("∩") ? 0.25 : 0.12,
+                }}
+                transition={CIRCLE_TRANSITION}
+                clipPath="url(#set-clip-a)"
+                fill={mixColors("", "")}
+                className={onRegionClick ? "cursor-pointer" : ""}
+              />
+            )}
 
-          {/* Neither count — rendered in BLACK per Peleg FIX-007 */}
-          {neither && neither.members.length > 0 && (
-            <g>
-              <text
-                x={50}
-                y={40}
-                textAnchor="middle"
-                fontSize={12}
-                fontWeight={600}
-                className="fill-foreground cursor-pointer"
-                onClick={() => handleClick(neither)}
-              >
-                {neither.members.length}
-              </text>
-              <text
-                x={50}
-                y={53}
-                textAnchor="middle"
-                fontSize={9}
-                className="fill-foreground cursor-pointer"
-                onClick={() => handleClick(neither)}
-              >
-                {outsideLabel}
-              </text>
-            </g>
-          )}
+          {/* Subset circles (rendered on top) — animated */}
+          {circleLayouts
+            .filter((c) => c.isSubset)
+            .map((c) => {
+              const opacities = getCircleOpacity(c.id, true);
+              const scale = getClickScale(c.id);
+              return (
+                <g key={c.id}>
+                  <motion.circle
+                    animate={{
+                      cx: c.cx,
+                      cy: c.cy,
+                      r: c.r,
+                      fillOpacity: opacities.fill,
+                      strokeOpacity: opacities.stroke,
+                    }}
+                    transition={CIRCLE_TRANSITION}
+                    fill={c.color}
+                    stroke={c.color}
+                    strokeWidth={2}
+                    strokeDasharray="4 2"
+                    className={onRegionClick ? "cursor-pointer" : ""}
+                    style={{
+                      transformOrigin: `${c.cx}px ${c.cy}px`,
+                      scale,
+                      transition: "scale 0.2s ease-in-out",
+                    }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const region = data.regions.find((r) => r.id === c.id);
+                      if (region) handleClick(region);
+                    }}
+                  />
+                </g>
+              );
+            })}
+
+          {/* Leader lines for displaced labels */}
+          {showCounts &&
+            labelPlacements
+              .filter((lp) => lp.leaderFromX !== undefined)
+              .map((lp) => (
+                <line
+                  key={`leader-${lp.regionId}`}
+                  x1={lp.leaderFromX!}
+                  y1={lp.leaderFromY!}
+                  x2={lp.x}
+                  y2={lp.y}
+                  stroke="currentColor"
+                  strokeOpacity={0.25}
+                  strokeWidth={1}
+                  strokeDasharray="3 2"
+                />
+              ))}
+
+          {/* Count + label text at computed placements */}
+          {showCounts &&
+            labelPlacements.map((lp) => {
+              const isHovered = hoveredRegionId === lp.regionId;
+              return (
+                <g
+                  key={`label-${lp.regionId}`}
+                  className={onRegionClick ? "cursor-pointer" : ""}
+                  onClick={() => {
+                    const region = data.regions.find((r) => r.id === lp.regionId);
+                    if (region) handleClick(region);
+                  }}
+                >
+                  <text
+                    x={lp.x}
+                    y={lp.y - 4}
+                    textAnchor="middle"
+                    fontSize={isHovered ? 17 : 16}
+                    fontWeight={700}
+                    className="fill-foreground select-none"
+                    style={{ transition: "font-size 0.15s ease" }}
+                  >
+                    {lp.count}
+                  </text>
+                  <text
+                    x={lp.x}
+                    y={lp.y + 10}
+                    textAnchor="middle"
+                    fontSize={10}
+                    className="fill-muted-foreground select-none"
+                  >
+                    {lp.label} ({pct(lp.count, total)}%)
+                  </text>
+                </g>
+              );
+            })}
 
           {/* Empty state */}
           {circleLayouts.length === 0 && (
@@ -718,20 +1030,62 @@ export function SetDiagram({
             </text>
           )}
         </svg>
+
+        {/* "Neither" chip — HTML overlay, top-right corner */}
+        {neither && neither.members.length > 0 && (
+          <div
+            className={`absolute top-5 left-5 flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-medium cursor-pointer transition-all duration-150 select-none ${
+              hoveredRegionId === "neither"
+                ? "bg-muted/60 border-foreground/30 text-foreground shadow-sm"
+                : "bg-background/80 border-border/60 text-foreground/80 hover:bg-muted/40"
+            }`}
+            data-testid="neither-chip"
+            onClick={() => handleClick(neither)}
+            onMouseEnter={() => setHoveredRegionId("neither")}
+            onMouseLeave={() => setHoveredRegionId(null)}
+          >
+            <span
+              className="w-2 h-2 rounded-full shrink-0"
+              style={{ backgroundColor: "hsl(var(--muted-foreground))", opacity: 0.5 }}
+            />
+            <span>{outsideLabel}:</span>
+            <span className="font-bold tabular-nums">{neither.members.length}</span>
+            <span className="text-muted-foreground">({pct(neither.members.length, total)}%)</span>
+          </div>
+        )}
+
+        {/* Hover card — HTML overlay positioned at mouse */}
+        <AnimatePresence>
+          {hoveredRegion && hoverPos && hoveredRegionId !== "neither" && (
+            <motion.div
+              initial={{ opacity: 0, y: 4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 4 }}
+              transition={{ duration: 0.1 }}
+            >
+              <RegionHoverCard
+                region={hoveredRegion}
+                total={total}
+                x={hoverPos.x}
+                y={hoverPos.y}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Summary table — reads from the SAME computed regions (single source of truth) */}
-      <div className="mt-3 overflow-x-auto">
+      <div className="mt-4 overflow-x-auto">
         <table className="w-full text-xs">
           <thead>
-            <tr className="border-b">
-              <th className="text-left py-1 px-2 font-medium text-muted-foreground">
+            <tr className="border-b border-border/60">
+              <th className="text-left py-1.5 px-2.5 font-medium text-muted-foreground">
                 Region
               </th>
-              <th className="text-right py-1 px-2 font-medium text-muted-foreground">
+              <th className="text-right py-1.5 px-2.5 font-medium text-muted-foreground">
                 Count
               </th>
-              <th className="text-right py-1 px-2 font-medium text-muted-foreground">
+              <th className="text-right py-1.5 px-2.5 font-medium text-muted-foreground">
                 %
               </th>
             </tr>
@@ -739,40 +1093,50 @@ export function SetDiagram({
           <tbody>
             {visibleRegions
               .sort((a, b) => b.members.length - a.members.length)
-              .map((r) => (
-                <tr
-                  key={r.id}
-                  className={`border-b transition-colors ${
-                    onRegionClick && r.members.length > 0
-                      ? "cursor-pointer hover:bg-muted/40"
-                      : ""
-                  }`}
-                  onClick={() => handleClick(r)}
-                >
-                  <td className="py-1 px-2 flex items-center gap-2">
-                    <span
-                      className="inline-block w-3 h-3 rounded-sm shrink-0"
-                      style={{
-                        backgroundColor: r.color,
-                        opacity: r.id === "neither" ? 0.4 : 0.6,
-                      }}
-                    />
-                    {r.label}
-                  </td>
-                  <td className="py-1 px-2 text-right font-mono">
-                    {r.members.length}
-                  </td>
-                  <td className="py-1 px-2 text-right text-muted-foreground">
-                    {pct(r.members.length, total)}%
-                  </td>
-                </tr>
-              ))}
+              .map((r) => {
+                const isHighlighted = hoveredRegionId === r.id;
+                return (
+                  <tr
+                    key={r.id}
+                    data-region-id={r.id}
+                    className={`border-b border-border/40 transition-colors duration-150 ${
+                      isHighlighted ? "bg-muted/50" : ""
+                    } ${
+                      onRegionClick && r.members.length > 0
+                        ? "cursor-pointer hover:bg-muted/40"
+                        : ""
+                    }`}
+                    onClick={() => handleClick(r)}
+                    onMouseEnter={() => handleTableRowHover(r.id)}
+                    onMouseLeave={() => handleTableRowHover(null)}
+                  >
+                    <td className="py-1.5 px-2.5 flex items-center gap-2">
+                      <span
+                        className="inline-block w-2.5 h-2.5 rounded-full shrink-0 ring-1 ring-inset ring-black/10"
+                        style={{
+                          backgroundColor: r.color,
+                          opacity: r.id === "neither" ? 0.4 : 0.7,
+                        }}
+                      />
+                      <span className={isHighlighted ? "font-medium text-foreground" : ""}>
+                        {r.label}
+                      </span>
+                    </td>
+                    <td className="py-1.5 px-2.5 text-right font-mono tabular-nums">
+                      {r.members.length}
+                    </td>
+                    <td className="py-1.5 px-2.5 text-right text-muted-foreground tabular-nums">
+                      {pct(r.members.length, total)}%
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
 
-      <p className="text-[9px] text-muted-foreground/60 text-center mt-1">
-        Click any region or table row to view peptides.
+      <p className="text-[9px] text-muted-foreground/60 text-center mt-2">
+        Hover for details. Click any region or table row to filter.
       </p>
     </div>
   );

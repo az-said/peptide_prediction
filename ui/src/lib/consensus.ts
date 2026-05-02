@@ -1,3 +1,6 @@
+// PELEG-Q-FIX-013: tier system removed from PeptideDetail/Viewer per Peleg;
+// certainty math unjustified, consensus.ts retained only for getConsensusSS
+// export used by PeptidePreviewSheet.
 /**
  * Consensus secondary structure reconciliation logic.
  *

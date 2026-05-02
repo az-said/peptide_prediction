@@ -1,35 +1,30 @@
-import { useMemo, useState } from 'react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import type { Peptide } from '@/types/peptide';
+import { useMemo, useState } from "react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import type { Peptide } from "@/types/peptide";
 
 interface SequenceTrackProps {
   peptide: Peptide;
 }
 
-type SSClass = 'H' | 'E' | 'C';
+type SSClass = "H" | "E" | "C";
 
 const SS_COLORS: Record<SSClass, string> = {
-  H: 'hsl(var(--helix))',
-  E: 'hsl(var(--beta))',
-  C: 'hsl(var(--coil))',
+  H: "hsl(var(--helix))",
+  E: "hsl(var(--beta))",
+  C: "hsl(var(--coil))",
 };
 
 const SS_BG: Record<SSClass, string> = {
-  H: 'hsl(var(--helix) / 0.15)',
-  E: 'hsl(var(--beta) / 0.15)',
-  C: 'transparent',
+  H: "hsl(var(--helix) / 0.15)",
+  E: "hsl(var(--beta) / 0.15)",
+  C: "transparent",
 };
 
 const SS_LABELS: Record<SSClass, string> = {
-  H: 'Helix',
-  E: 'Beta',
-  C: 'Coil',
+  H: "Helix",
+  E: "Beta",
+  C: "Coil",
 };
 
 function classifyResidue(
@@ -37,23 +32,25 @@ function classifyResidue(
   ssPrediction?: string[],
   pH?: number[],
   pE?: number[],
-  pC?: number[],
+  pC?: number[]
 ): SSClass {
   // Prefer explicit prediction string
   if (ssPrediction && ssPrediction[idx]) {
     const p = ssPrediction[idx].toUpperCase();
-    if (p === 'H') return 'H';
-    if (p === 'E') return 'E';
-    return 'C';
+    if (p === "H") return "H";
+    if (p === "E") return "E";
+    return "C";
   }
   // Fallback: use max probability
   if (pH && pE && pC && pH[idx] != null && pE[idx] != null && pC[idx] != null) {
-    const h = pH[idx], e = pE[idx], c = pC[idx];
-    if (h >= e && h >= c) return 'H';
-    if (e >= h && e >= c) return 'E';
-    return 'C';
+    const h = pH[idx],
+      e = pE[idx],
+      c = pC[idx];
+    if (h >= e && h >= c) return "H";
+    if (e >= h && e >= c) return "E";
+    return "C";
   }
-  return 'C';
+  return "C";
 }
 
 /** Position markers for the ruler (every 10 residues) */
@@ -71,25 +68,31 @@ export function SequenceTrack({ peptide }: SequenceTrackProps) {
   const marks = useRulerMarks(len);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
-  const hasS4pred = Boolean(
-    s4pred?.ssPrediction?.length || s4pred?.pH?.length,
-  );
+  const hasS4pred = Boolean(s4pred?.ssPrediction?.length || s4pred?.pH?.length);
 
-  // Pre-compute classification for every residue
+  // Pre-compute classification for every residue (used only for residue coloring)
   const classifications = useMemo(() => {
     if (!hasS4pred) return null;
     return Array.from({ length: len }, (_, i) =>
-      classifyResidue(i, s4pred?.ssPrediction, s4pred?.pH, s4pred?.pE, s4pred?.pC),
+      classifyResidue(i, s4pred?.ssPrediction, s4pred?.pH, s4pred?.pE, s4pred?.pC)
     );
   }, [hasS4pred, len, s4pred]);
 
-  // Summary counts
-  const counts = useMemo(() => {
-    if (!classifications) return null;
-    const c = { H: 0, E: 0, C: 0 };
-    for (const cls of classifications) c[cls]++;
-    return c;
-  }, [classifications]);
+  // Peleg HELIX_PERCENTAGE_AUDIT (fix #3): legend percentages must come from the
+  // canonical fields (peptide.s4predHelixPercent / peptide.betaPercent), not from
+  // re-counting ssPrediction labels — the latter collides with the canonical
+  // helix % shown elsewhere on the same page. Hide the percentages entirely
+  // when the canonical helix value is null (short peptide / missing data).
+  const legendPercents = useMemo(() => {
+    const helix = peptide.s4predHelixPercent;
+    if (typeof helix !== "number" || !Number.isFinite(helix)) return null;
+    const beta =
+      typeof peptide.betaPercent === "number" && Number.isFinite(peptide.betaPercent)
+        ? peptide.betaPercent
+        : null;
+    const coil = beta !== null ? Math.max(0, 100 - helix - beta) : null;
+    return { H: helix, E: beta, C: coil };
+  }, [peptide.s4predHelixPercent, peptide.betaPercent]);
 
   if (!hasS4pred) {
     return (
@@ -118,26 +121,31 @@ export function SequenceTrack({ peptide }: SequenceTrackProps) {
 
   return (
     <div className="space-y-3">
-      {/* Header with legend */}
+      {/* Header with legend.
+          Peleg HELIX_PERCENTAGE_AUDIT (fix #3): percentages come from canonical
+          peptide.s4predHelixPercent / peptide.betaPercent (not from counting
+          ssPrediction labels). When the canonical helix value is null we hide
+          the entire legend rather than rendering "(0%)". */}
       <div className="flex items-center justify-between flex-wrap gap-2">
         <h4 className="font-medium text-sm">Predicted Secondary Structure</h4>
         <div className="flex items-center gap-3">
-          {(['H', 'E', 'C'] as SSClass[]).map((cls) => (
-            <div key={cls} className="flex items-center gap-1.5">
-              <span
-                className="inline-block w-3 h-3 rounded-sm"
-                style={{ backgroundColor: SS_COLORS[cls] }}
-              />
-              <span className="text-xs text-muted-foreground">
-                {SS_LABELS[cls]}
-                {counts && (
-                  <span className="ml-1 tabular-nums">
-                    ({((counts[cls] / len) * 100).toFixed(0)}%)
-                  </span>
-                )}
-              </span>
-            </div>
-          ))}
+          {(["H", "E", "C"] as SSClass[]).map((cls) => {
+            const pct = legendPercents ? legendPercents[cls] : null;
+            return (
+              <div key={cls} className="flex items-center gap-1.5">
+                <span
+                  className="inline-block w-3 h-3 rounded-sm"
+                  style={{ backgroundColor: SS_COLORS[cls] }}
+                />
+                <span className="text-xs text-muted-foreground">
+                  {SS_LABELS[cls]}
+                  {legendPercents && pct !== null && (
+                    <span className="ml-1 tabular-nums">({pct.toFixed(0)}%)</span>
+                  )}
+                </span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -165,9 +173,10 @@ export function SequenceTrack({ peptide }: SequenceTrackProps) {
                             <span
                               className="cursor-default transition-all duration-75 rounded-[2px] px-[1px]"
                               style={{
-                                color: cls === 'C' ? 'hsl(var(--muted-foreground))' : SS_COLORS[cls],
+                                color:
+                                  cls === "C" ? "hsl(var(--muted-foreground))" : SS_COLORS[cls],
                                 backgroundColor: isHovered ? SS_BG[cls] : undefined,
-                                fontWeight: cls !== 'C' ? 600 : 400,
+                                fontWeight: cls !== "C" ? 600 : 400,
                               }}
                               onMouseEnter={() => setHoveredIdx(idx)}
                               onMouseLeave={() => setHoveredIdx(null)}
@@ -189,9 +198,7 @@ export function SequenceTrack({ peptide }: SequenceTrackProps) {
                                 >
                                   {SS_LABELS[cls]}
                                 </Badge>
-                                <span className="text-muted-foreground">
-                                  pos {idx + 1}
-                                </span>
+                                <span className="text-muted-foreground">pos {idx + 1}</span>
                               </div>
                               {s4pred?.pH && s4pred?.pE && s4pred?.pC && (
                                 <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/50">

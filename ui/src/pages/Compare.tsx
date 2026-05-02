@@ -542,7 +542,7 @@ export default function Compare() {
                 <CardTitle className="text-base">Hydrophobicity Distribution</CardTitle>
                 <CardDescription>Overlay histogram</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="overflow-hidden">
                 {hydroHist.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={hydroHist} barGap={0}>
@@ -575,7 +575,7 @@ export default function Compare() {
                 <CardTitle className="text-base">Sequence Length Distribution</CardTitle>
                 <CardDescription>Overlay histogram</CardDescription>
               </CardHeader>
-              <CardContent>
+              <CardContent className="overflow-hidden">
                 {lenHist.length > 0 ? (
                   <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={lenHist} barGap={0}>
@@ -613,7 +613,7 @@ export default function Compare() {
                   <Info className="w-4 h-4 text-muted-foreground" />
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="overflow-hidden">
                 {scatterA.length > 0 || scatterB.length > 0 ? (
                   <ResponsiveContainer width="100%" height={350}>
                     <ScatterChart margin={{ top: 10, right: 30, bottom: 20, left: 20 }}>

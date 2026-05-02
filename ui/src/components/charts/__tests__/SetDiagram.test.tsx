@@ -72,7 +72,7 @@ describe("SetDiagram", () => {
     expect(container.textContent).toContain("FF-Helix");
   });
 
-  it("shows Neither count in foreground color (not faint gray)", () => {
+  it("renders 'Neither' chip with correct count", () => {
     const { container } = render(
       <SetDiagram
         sets={[{ id: "a", label: "A", members: ["1", "2"] }]}
@@ -80,12 +80,13 @@ describe("SetDiagram", () => {
       />
     );
 
-    // The "Neither" label should use fill-foreground class, not fill-muted
-    const neitherTexts = container.querySelectorAll("text.fill-foreground");
-    const neitherFound = Array.from(neitherTexts).some(
-      (el) => el.textContent === "Neither"
-    );
-    expect(neitherFound).toBe(true);
+    // The "Neither" chip should exist as an HTML element (not SVG text)
+    const chip = container.querySelector("[data-testid='neither-chip']");
+    expect(chip).toBeInTheDocument();
+    // Should contain the count "1"
+    expect(chip?.textContent).toContain("1");
+    // Should contain the label
+    expect(chip?.textContent).toContain("Neither");
   });
 
   it("calls onRegionClick when a table row is clicked", () => {
@@ -141,6 +142,65 @@ describe("SetDiagram", () => {
     );
 
     expect(container.textContent).toContain("Unclassified");
+  });
+
+  it("does not render count text for 0-count regions", () => {
+    // Set A has members, Set B is empty — B-only region has 0 count
+    const sets: SetDefinition[] = [
+      { id: "a", label: "A", members: ["1", "2", "3"], color: "#f00" },
+      { id: "b", label: "B", members: [], color: "#00f" },
+    ];
+
+    const { container } = render(
+      <SetDiagram sets={sets} universe={["1", "2", "3"]} showCounts={true} />
+    );
+
+    // The SVG should not contain a "0" count label
+    const svgTexts = container.querySelectorAll("svg text");
+    const zeroLabels = Array.from(svgTexts).filter(
+      (el) => el.textContent?.trim() === "0"
+    );
+    expect(zeroLabels).toHaveLength(0);
+  });
+
+  it("highlights table row when hoveredRegionId matches", () => {
+    const { container } = render(
+      <SetDiagram sets={TWO_SETS} universe={["1", "2", "3", "4", "5"]} />
+    );
+
+    // Find a table row and hover it
+    const tableRows = container.querySelectorAll("tbody tr");
+    expect(tableRows.length).toBeGreaterThan(0);
+
+    // Hover over the first data row
+    fireEvent.mouseEnter(tableRows[0]);
+
+    // The hovered row should have the highlight class
+    expect(tableRows[0].className).toContain("bg-muted/50");
+
+    // Mouse leave should remove highlight
+    fireEvent.mouseLeave(tableRows[0]);
+    expect(tableRows[0].className).not.toContain("bg-muted/50");
+  });
+
+  it("renders summary table rows with color dots", () => {
+    const { container } = render(
+      <SetDiagram sets={TWO_SETS} universe={["1", "2", "3", "4", "5"]} />
+    );
+
+    // Each table row should have a color dot (rounded-full span)
+    const colorDots = container.querySelectorAll("tbody td .rounded-full");
+    expect(colorDots.length).toBeGreaterThan(0);
+  });
+
+  it("uses scientific overlap labels with child set names", () => {
+    const { container } = render(
+      <SetDiagram sets={FOUR_SETS_WITH_SUBSETS} universe={UNIVERSE_12} />
+    );
+
+    // The intersection region label should mention "no FF-SSW, FF-Helix"
+    expect(container.textContent).toContain("SSW and Helix");
+    expect(container.textContent).toContain("no FF-SSW");
   });
 });
 
