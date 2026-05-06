@@ -85,10 +85,14 @@ describe("MetricHover", () => {
     );
     // Should render definition but not value/distribution
     expect(screen.getByText("Hydrophobicity")).toBeInTheDocument();
-    // The definition text should be present
+    // The definition text should mention hydrophobic character
+    // (PELEG-Q1-RESOLVED 2026-05-06: Fauchere-Pliska text was removed
+    // because the metric is no longer surfaced; the registry's
+    // hydrophobicity definition now describes hydrophilic vs hydrophobic
+    // character without naming an outdated scale)
     expect(
-      screen.getByText(/Fauchere-Pliska scale/)
-    ).toBeInTheDocument();
+      screen.getAllByText(/hydrophobic character/i).length
+    ).toBeGreaterThan(0);
   });
 
   it("handles unknown metric ID gracefully", () => {
