@@ -1,6 +1,27 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { execSync } from "child_process";
+import { readFileSync } from "fs";
+
+// Read version from package.json at build time
+function getAppVersion(): string {
+  try {
+    const pkg = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf-8"));
+    return pkg.version || "0.0.0";
+  } catch {
+    return "0.0.0";
+  }
+}
+
+// Read short git SHA at build time
+function getBuildSha(): string {
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf-8" }).trim();
+  } catch {
+    return "dev";
+  }
+}
 
 export default defineConfig(({ mode }) => {
   // Load env vars (only available in config, not in client code)
@@ -37,6 +58,10 @@ export default defineConfig(({ mode }) => {
           },
         },
       },
+    },
+    define: {
+      __APP_VERSION__: JSON.stringify(getAppVersion()),
+      __BUILD_SHA__: JSON.stringify(env.VITE_BUILD_SHA || getBuildSha()),
     },
     plugins: [react()],
     resolve: { alias: { "@": path.resolve(__dirname, "./src") } },

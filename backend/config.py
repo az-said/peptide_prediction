@@ -68,6 +68,19 @@ class Settings:
     """Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)"""
 
     # ============================================================================
+    # Build / Version Identity (Cowork V4-1 reproducibility ribbon)
+    # ============================================================================
+
+    VERSION: str = os.getenv("VERSION", "0.1.0")
+    """Application version string. Override via VERSION env var (default: 0.1.0)."""
+
+    BUILD_SHA: Optional[str] = os.getenv("BUILD_SHA") or None
+    """Build commit SHA — populated from BUILD_SHA env var at deploy time. None in dev."""
+
+    BUILD_TIMESTAMP: Optional[str] = os.getenv("BUILD_TIMESTAMP") or None
+    """Build timestamp (ISO-8601) — populated from BUILD_TIMESTAMP env var at deploy time. None in dev."""
+
+    # ============================================================================
     # CORS Configuration
     # ============================================================================
 

@@ -824,3 +824,31 @@ class TestHealthEndpoints:
         assert "uniprot" in data
         assert "available" in data["uniprot"]
         assert "reason" in data["uniprot"]
+
+    def test_version_endpoint_returns_expected_fields(self):
+        """
+        /api/version returns the reproducibility-ribbon payload
+        (Cowork V4-1): version + optional build_sha + optional build_timestamp.
+        """
+        from config import settings
+
+        response = client.get("/api/version")
+        assert response.status_code == 200
+        data = response.json()
+
+        # Exactly the three contract keys, no extras.
+        assert set(data.keys()) == {"version", "build_sha", "build_timestamp"}, (
+            f"Unexpected keys in /api/version response: {sorted(data.keys())}"
+        )
+
+        # version is always a non-empty string mirrored from settings.
+        assert isinstance(data["version"], str) and data["version"]
+        assert data["version"] == settings.VERSION
+
+        # build_sha / build_timestamp are populated from env at deploy time;
+        # they may be None in dev. Either str or None — never empty string.
+        for k in ("build_sha", "build_timestamp"):
+            value = data[k]
+            assert value is None or (isinstance(value, str) and value), (
+                f"{k} must be a non-empty string or None; got {value!r}"
+            )
