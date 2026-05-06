@@ -86,11 +86,36 @@ I'm writing with two things:
 
 ---
 
+### Already resolved between us (Said + Peleg, 2026-05-06)
+
+A few of the questions you'd flagged earlier — Said and I went through them with your previous review notes in hand:
+
+- **Q1 Drop `ffHelixPercent` from UI** — yes, dropped everywhere. We retain the backend field for backwards-compat but the UI never displays it again. The "FF-Helix" name is now reserved exclusively for your category-2 flag.
+- **Q5 Remove "Aggregation per-residue %" threshold** — yes, removed entirely. It had no scientific anchor.
+- **Q6 TANGO 5% threshold** — exposed as configurable for now (default 5, range 0-50). When you confirm the citation or value, we'll lock it.
+- **Q7 Consensus tier system** — fully deleted (`ConsensusCard.tsx` + `getConsensusSS` + types). The advantages of having a single-glance summary are preserved by the existing classification pills.
+
+We also extended your "I don't understand this threshold" feedback to remove **"% of length cutoff"** — same reasoning, no scientific anchor we could find. If we missed something there and it was actually load-bearing, please flag in your reply.
+
+---
+
 ### Part 2 — Open questions where we need your decision
 
 We've parked these in the code (`# PELEG-Q-FIX-XXX` TODO comments) so we don't ship implementations of things you'd want differently. Each has a recommended option but the call is yours.
 
-#### Q1 — Drop or rename `ffHelixPercent` (Chou-Fasman propensity)
+#### Q-NEW — Complex sequence notation handling (raised by Said 2026-05-06)
+
+Researchers sometimes write peptide sequences with internal dashes — could be:
+- Chemical modifications (`Ac-PEPTIDE-NH2`) — already supported by PVL.
+- Multi-chain notation (`Chain1-Chain2`) — currently treated as a single sequence with the dash stripped.
+- Disulfide / linker notation — varies by lab.
+- Single-letter with dashes between for readability (`M-V-G-L-K`).
+
+Alex — you might have a clearer sense of which conventions your collaborators use. Would PVL benefit from a smarter parser (with a popup explaining what was detected and how it was handled)? Or is the current "strip and warn" behaviour fine? Lower priority — added to the v0.2 roadmap but flagged for your input.
+
+---
+
+#### Q1 — Drop or rename `ffHelixPercent` (Chou-Fasman propensity) — RESOLVED
 
 Currently PVL exposes a metric called "FF-Helix %" that is a Chou-Fasman P_α sliding-window value — a *helix-propensity* score, not the FF-Helix flag from your category 2.
 
@@ -116,7 +141,7 @@ When `s4predHelixPercent === null` (e.g., short peptide < 15 aa, or S4PRED skipp
 
 Recommend: hide the row (current behavior). Alex, you've used the tool more than anyone — does the hidden row feel like missing data, or correct behavior?
 
-#### Q5 — "Aggregation per-residue %" threshold
+#### Q5 — "Aggregation per-residue %" threshold — RESOLVED
 
 This is a leftover threshold in the panel (now in an "Advanced (TANGO aggregation)" sub-section). Peleg, in your review you said you don't understand where it comes from. Three options:
 - **(a)** Remove entirely. This was likely an early Said implementation choice that didn't survive your scientific review.
@@ -125,7 +150,7 @@ This is a leftover threshold in the panel (now in an "Advanced (TANGO aggregatio
 
 Recommend: (a). But this needs your decision since removing a threshold may affect any analyses you've already run.
 
-#### Q6 — TANGO 5% threshold justification
+#### Q6 — TANGO 5% threshold justification — PARTIAL (need your citation)
 
 The TANGO chart annotation says "scores >5% indicate aggregation-prone regions". Where did 5% come from? Either:
 - **(a)** Cite the source (Fernandez-Escamilla et al. 2004 Nat Biotechnol? Or another paper?) — we'll add the citation in a footnote.
@@ -134,7 +159,7 @@ The TANGO chart annotation says "scores >5% indicate aggregation-prone regions".
 
 Recommend: (b) — make it a configurable threshold in the panel, default 5, with the citation in a tooltip.
 
-#### Q7 — Consensus tier system
+#### Q7 — Consensus tier system — RESOLVED
 
 Already removed from PeptideDetail and Quick Analyze (per your FIX-013 option a recommendation). The component file (`ConsensusCard.tsx`) is retained for now in case you want a redesigned version later. Confirm: delete the component file and `getConsensusSS` function entirely?
 

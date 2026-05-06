@@ -87,6 +87,15 @@ Critical reliability fix surfaced 2026-05-02:
 - Fix: set `model_config = ConfigDict(extra="forbid")` on every request schema; add `AliasChoices` so legacy field names (`max_results`) route to canonical (`size`); audit ALL request schemas in `backend/schemas/api_models.py`.
 - Add contract regression tests: `pytest backend/tests/test_api_contract_strictness.py` — assert 422 on unknown fields, assert aliases work.
 
+### B-COMPLEX-SEQ — Complex sequence notation handling (research item, raised 2026-05-06)
+**Status**: PROPOSED | **Effort**: 8-12h | **Priority**: v0.2 (post-launch)
+Researchers sometimes write peptide sequences with internal dashes/modifiers in conventions PVL doesn't currently parse robustly:
+- Chemical modifications: `Ac-PEPTIDE-NH2` ✅ already supported (B10).
+- Multi-chain disulfide notation: `Chain1-Chain2` (currently treated as single sequence with dashes stripped — may be wrong for some labs).
+- Single-letter with readability dashes: `M-V-G-L-K`.
+- Linker/spacer notation varying by lab convention.
+**Next step**: Wave C email asks Alex which conventions his collaborators use. Implementation = parser refactor with explicit detection + popup explaining what was parsed and how. Show the user "We detected X chains separated by Y, treating them as Z. Click to override." Block off as a research item for v0.2.
+
 ### B-S4PRED-CAP — S4PRED length cap (Wave B)
 **Status**: PROPOSED | **Effort**: 2-3h | **Owner**: T2
 - S4PRED runs a 5-model BiLSTM ensemble per residue. On 770aa proteins (e.g., APP) this is ~120s/sequence × 5 sequences = 600+s.
