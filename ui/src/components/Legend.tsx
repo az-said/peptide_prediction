@@ -66,9 +66,7 @@ function LegendContent() {
           <div>
             <strong>FF</strong> — Fibril-Forming
           </div>
-          <div>
-            <strong>CF</strong> — Chou-Fasman (helix propensity)
-          </div>
+          {/* PELEG-Q1-RESOLVED: CF / Chou-Fasman legend entry removed per Said+Peleg 2026-05-06. */}
           <div>
             <strong>S4PRED</strong> — Secondary Structure Prediction
           </div>

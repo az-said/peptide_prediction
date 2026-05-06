@@ -92,11 +92,7 @@ describe("SetDiagram", () => {
   it("calls onRegionClick when a table row is clicked", () => {
     const onClick = vi.fn();
     render(
-      <SetDiagram
-        sets={TWO_SETS}
-        universe={["1", "2", "3", "4", "5"]}
-        onRegionClick={onClick}
-      />
+      <SetDiagram sets={TWO_SETS} universe={["1", "2", "3", "4", "5"]} onRegionClick={onClick} />
     );
 
     // Click on a table row
@@ -108,26 +104,38 @@ describe("SetDiagram", () => {
     }
   });
 
-  it("hides empty regions in euler mode", () => {
-    // Only set A has member "1", set B has no overlap with universe
+  // PELEG-FIX-1-RESOLVED (2026-05-06): empty regions disappear from the SVG
+  // (no floating empty circles) but the summary table keeps a count=0 row so
+  // users still see the category. Replaces the old "hides empty regions" test.
+  it("empty region: circle suppressed in SVG, summary row kept with count=0", () => {
     const sets: SetDefinition[] = [
       { id: "a", label: "A", members: ["1"] },
       { id: "b", label: "B", members: [] },
     ];
 
-    const { container } = render(
-      <SetDiagram sets={sets} universe={["1", "2"]} mode="euler" />
-    );
+    const { container } = render(<SetDiagram sets={sets} universe={["1", "2"]} mode="euler" />);
 
-    // B-only should not appear in the table (empty)
+    // Summary table MUST list both categories — including the empty B-only row.
     const tableText = container.querySelector("tbody")?.textContent || "";
-    expect(tableText).not.toContain("B only");
+    expect(tableText).toContain("B only");
+    // The empty region's count cell renders as 0.
+    const tableRows = container.querySelectorAll("tbody tr");
+    const bOnlyRow = Array.from(tableRows).find((tr) => tr.textContent?.includes("B only"));
+    expect(bOnlyRow?.textContent).toMatch(/\b0\b/);
+
+    // The SVG should NOT render any circle whose label text is "B" — only
+    // populated set circles render. Inspect the rendered set-label texts.
+    const svgTexts = Array.from(container.querySelectorAll("svg text")).map(
+      (el) => el.textContent?.trim() ?? ""
+    );
+    // The format is "Label (count)" for primary circles. With B suppressed,
+    // there should be no text starting with "B (".
+    const bCircleLabel = svgTexts.find((t) => t.startsWith("B ("));
+    expect(bCircleLabel).toBeUndefined();
   });
 
   it("renders with empty sets gracefully", () => {
-    const { container } = render(
-      <SetDiagram sets={[]} universe={["1", "2"]} />
-    );
+    const { container } = render(<SetDiagram sets={[]} universe={["1", "2"]} />);
 
     expect(container.textContent).toContain("No classification predictions detected");
   });
@@ -157,9 +165,7 @@ describe("SetDiagram", () => {
 
     // The SVG should not contain a "0" count label
     const svgTexts = container.querySelectorAll("svg text");
-    const zeroLabels = Array.from(svgTexts).filter(
-      (el) => el.textContent?.trim() === "0"
-    );
+    const zeroLabels = Array.from(svgTexts).filter((el) => el.textContent?.trim() === "0");
     expect(zeroLabels).toHaveLength(0);
   });
 

@@ -101,6 +101,8 @@ function HeaderTip({ tip }: { tip: string }) {
 // --- Column filter types ---
 type CategoricalFilterValue = "all" | "1" | "-1" | "0" | "null";
 
+// PELEG-Q1-RESOLVED: ffHelixPercentMin/Max filters dropped (FF-Helix %
+// column removed per Said+Peleg 2026-05-06).
 interface ColumnFilters {
   sswPrediction: CategoricalFilterValue;
   ffHelixFlag: CategoricalFilterValue;
@@ -112,8 +114,6 @@ interface ColumnFilters {
   hydrophobicityMax: string;
   muHMin: string;
   muHMax: string;
-  ffHelixPercentMin: string;
-  ffHelixPercentMax: string;
   lengthMin: string;
   lengthMax: string;
   species: string;
@@ -130,8 +130,6 @@ const EMPTY_FILTERS: ColumnFilters = {
   hydrophobicityMax: "",
   muHMin: "",
   muHMax: "",
-  ffHelixPercentMin: "",
-  ffHelixPercentMax: "",
   lengthMin: "",
   lengthMax: "",
   species: "",
@@ -162,7 +160,6 @@ function countActiveFilters(filters: ColumnFilters): number {
   if (filters.chargeMin || filters.chargeMax) count++;
   if (filters.hydrophobicityMin || filters.hydrophobicityMax) count++;
   if (filters.muHMin || filters.muHMax) count++;
-  if (filters.ffHelixPercentMin || filters.ffHelixPercentMax) count++;
   if (filters.lengthMin || filters.lengthMax) count++;
   if (filters.species) count++;
   return count;
@@ -187,7 +184,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
     geneName: false, // Optional: toggle via Columns dropdown
     proteinFunction: false, // Optional: toggle via Columns dropdown
     s4predSswPrediction: false, // S4PRED SSW is secondary to TANGO SSW
-    ffHelixPercent: false, // Chou-Fasman propensity — demoted to advanced (S4PRED Helix is primary)
+    // PELEG-Q1-RESOLVED: ffHelixPercent column removed entirely.
     tangoSswResidues: false, // TANGO SSW residue overlap count — advanced
   });
   const navigate = useNavigate();
@@ -237,14 +234,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
       )
         return false;
       if (!matchesRange(p.muH, columnFilters.muHMin, columnFilters.muHMax)) return false;
-      if (
-        !matchesRange(
-          p.ffHelixPercent,
-          columnFilters.ffHelixPercentMin,
-          columnFilters.ffHelixPercentMax
-        )
-      )
-        return false;
+      // PELEG-Q1-RESOLVED: ffHelixPercent range filter removed.
       if (!matchesRange(p.length, columnFilters.lengthMin, columnFilters.lengthMax)) return false;
       if (
         columnFilters.species &&
@@ -498,7 +488,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
             className="h-8 p-0 font-medium"
           >
             H
-            <HeaderTip tip="Hydrophobicity (Fauchere-Pliska scale). Higher values = greater preference for non-polar environments, correlating with membrane affinity." />
+            <HeaderTip tip="Hydrophobicity. Higher values = greater preference for non-polar environments, correlating with membrane affinity." />
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
@@ -524,24 +514,10 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
         cell: (info) => <span className="font-mono">{info.getValue()?.toFixed(2) || "-"}</span>,
       }),
 
-      // 11. FF-Helix %
-      columnHelper.accessor("ffHelixPercent", {
-        header: ({ column }) => (
-          <Button
-            variant="ghost"
-            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            className="h-8 p-0 font-medium"
-          >
-            FF-Helix %
-            <HeaderTip tip="Chou-Fasman (1978) helix propensity — context-free amino acid tendency to form helices. Not comparable to S4PRED Helix %." />
-            <ArrowUpDown className="ml-2 h-4 w-4" />
-          </Button>
-        ),
-        cell: (info) => {
-          const value = info.getValue();
-          return <span className="font-mono">{value != null ? `${value.toFixed(1)}%` : "-"}</span>;
-        },
-      }),
+      // PELEG-Q1-RESOLVED: FF-Helix % column removed from table (Chou-Fasman
+      // propensity dropped from UI per Said+Peleg 2026-05-06; backend field
+      // retained for back-compat). FF-Helix CANDIDATE (ffHelixFlag) is a
+      // separate column above and remains the user-facing classification.
 
       /* ── Far right: optional metadata (via column toggle) ── */
 
@@ -720,6 +696,9 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
       .join(";");
   };
 
+  // PELEG-SSW-SCORE-RESOLVED: SSW score / SSW diff / S4PRED SSW diff dropped
+  //   per Peleg "no real meaning" (FIX-023.3 broader sweep, 2026-05-06).
+  // PELEG-Q1-RESOLVED: FF-Helix score (Chou-Fasman) dropped from default export.
   const GOLD_STANDARD_HEADERS = [
     "Entry",
     "Sequence",
@@ -729,8 +708,6 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
     "Full length uH",
     "Beta full length uH",
     "SSW prediction",
-    "SSW score",
-    "SSW diff",
     "SSW helix percentage",
     "SSW beta percentage",
     "SSW fragments",
@@ -738,12 +715,10 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
     "Helix score (S4PRED)",
     "Helix fragments (S4PRED)",
     "S4PRED SSW prediction",
-    "S4PRED SSW diff",
     "TANGO Agg Max",
     "FF-Secondary structure switch",
     "FF-SSW score",
     "FF-Helix",
-    "FF-Helix score",
     "Species",
     "Protein names",
   ];
@@ -757,8 +732,6 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
     p.muH ?? "",
     p.extra?.["Beta full length uH"] ?? "",
     p.sswPrediction ?? "",
-    p.sswScore ?? "",
-    p.sswDiff ?? "",
     p.sswHelixPct ?? "",
     p.sswBetaPct ?? "",
     fmtFragments(p.extra?.["SSW fragments"]),
@@ -766,12 +739,10 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
     p.s4predHelixScore ?? "",
     fmtFragments(p.s4predHelixFragments),
     p.s4predSswPrediction ?? "",
-    p.s4predSswDiff ?? "",
     p.tangoAggMax ?? "",
     p.ffSswFlag ?? "",
     p.ffSswScore ?? "",
     p.ffHelixFlag ?? "",
-    p.ffHelixScore ?? "",
     p.species || "",
     p.name || "",
   ];
@@ -875,7 +846,6 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
                     charge: "Charge",
                     hydrophobicity: "Hydrophobicity",
                     muH: "μH",
-                    ffHelixPercent: "FF-Helix %",
                     species: "Organism",
                     geneName: "Gene",
                     proteinFunction: "Function",
@@ -1123,32 +1093,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
                   </div>
                 </div>
 
-                {/* FF-Helix % */}
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">CF Propensity %</label>
-                  <div className="flex gap-1">
-                    <Input
-                      type="number"
-                      step="1"
-                      placeholder="Min"
-                      value={columnFilters.ffHelixPercentMin}
-                      onChange={(e) =>
-                        setColumnFilters((f) => ({ ...f, ffHelixPercentMin: e.target.value }))
-                      }
-                      className="h-8 text-xs"
-                    />
-                    <Input
-                      type="number"
-                      step="1"
-                      placeholder="Max"
-                      value={columnFilters.ffHelixPercentMax}
-                      onChange={(e) =>
-                        setColumnFilters((f) => ({ ...f, ffHelixPercentMax: e.target.value }))
-                      }
-                      className="h-8 text-xs"
-                    />
-                  </div>
-                </div>
+                {/* PELEG-Q1-RESOLVED: FF-Helix % / CF Propensity range filter removed. */}
 
                 {/* Length */}
                 <div className="space-y-1">

@@ -26,8 +26,10 @@ function makePeptide(overrides: Partial<Peptide> & { id: string }): Peptide {
 describe("METRIC_REGISTRY completeness", () => {
   const entries = Object.values(METRIC_REGISTRY);
 
-  it("has at least 10 entries", () => {
-    expect(entries.length).toBeGreaterThanOrEqual(10);
+  // PELEG-Q1-RESOLVED (2026-05-06): ffHelixPercent (Chou-Fasman) was removed
+  // from the registry per Said+Peleg, lowering the entry count by one.
+  it("has at least 9 entries", () => {
+    expect(entries.length).toBeGreaterThanOrEqual(9);
   });
 
   it.each(entries.map((e) => [e.id, e]))(
@@ -126,8 +128,11 @@ describe("getValue extraction", () => {
     expect(getMetric("s4predHelixPercent")!.getValue(pep)).toBe(55);
   });
 
-  it("ffHelixPercent extracts correctly", () => {
-    expect(getMetric("ffHelixPercent")!.getValue(pep)).toBe(40);
+  // PELEG-Q1-RESOLVED: ffHelixPercent registry entry removed; getMetric()
+  // for it should now return undefined (the field is still on the Peptide
+  // type for back-compat, but never surfaced in the registry).
+  it("ffHelixPercent is no longer in the registry (Cleanup-1)", () => {
+    expect(getMetric("ffHelixPercent")).toBeUndefined();
   });
 
   it("ffHelixFlag extracts correctly", () => {

@@ -47,7 +47,7 @@ import { smoothEase } from "@/lib/animations";
 
 import type { Peptide } from "@/types/peptide";
 
-import { getConsensusSS } from "@/lib/consensus";
+// PELEG-Q7-RESOLVED: getConsensusSS import removed (tier system deleted).
 import { CorrelationCard } from "@/components/CorrelationCard";
 import { PeptidePreviewSheet } from "@/components/PeptidePreviewSheet";
 import { BinPeptideDialog } from "@/components/BinPeptideDialog";
@@ -238,17 +238,16 @@ export default function Results() {
       "Entry",
       "Composite Score",
       ...metricHeaders,
-      "Consensus Tier",
-      "Consensus Label",
+      // PELEG-Q7-RESOLVED: Consensus Tier/Label removed.
+      // PELEG-Q1-RESOLVED: FF-Helix % removed from default export.
+      // PELEG-SSW-SCORE-RESOLVED: SSW score removed from default export.
       "Sequence",
       "Length",
       "Charge",
       "Hydrophobicity",
       "Full length uH",
       "SSW prediction",
-      "SSW score",
       "TANGO Agg Max",
-      "FF-Helix %",
       "Helix %",
       "Species",
       "Protein names",
@@ -262,7 +261,6 @@ export default function Results() {
       .map((r, i) => {
         const p = peptidesTyped.find((pp) => pp.id === r.peptideId);
         if (!p) return "";
-        const consensus = getConsensusSS(p);
         return [
           i + 1,
           p.id,
@@ -271,17 +269,13 @@ export default function Results() {
             const pct = r.metricPercentiles[m];
             return pct != null ? pct.toFixed(1) : "";
           }),
-          `T${consensus.tier}`,
-          consensus.label,
           p.sequence,
           p.length,
           p.charge,
           p.hydrophobicity,
           p.muH ?? "",
           p.sswPrediction ?? "",
-          p.sswScore ?? "",
           p.tangoAggMax ?? "",
-          p.ffHelixPercent ?? "",
           p.s4predHelixPercent ?? "",
           p.species || "",
           p.name || "",

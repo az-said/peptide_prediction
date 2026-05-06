@@ -229,7 +229,194 @@ Prominent option on the landing page: "Run PVL on your own machine — Docker, M
 | D1.11 | Inner pages redesign (Results, Upload, etc.) | 8h | DONE | All 9 data pages + sidebar redesigned |
 | D1.12 | Navigation guard (QuickAnalyze) | 2h | DONE | AlertDialog + global nav guard hook |
 
-## Phase D5: V4 Transformative Differentiators (NEW — Wave V4)
+## Phase S: Sentry Upgrade — Production-Grade Observability (NEW)
+
+**Goal**: Sentry currently runs at minimum config (DSN + sample rates). Upgrade to a production observability stack so PVL self-monitors during MIT semesters when Said has minimum bandwidth. Target: zero unknown unknowns; every error reaches Said as a triaged, actionable Sentry issue with full context.
+
+### S1 — Source maps uploaded in CI
+**Effort**: 2-3h | **Status**: TODO
+- Install `@sentry/vite-plugin` in `ui/`. Add to `vite.config.ts` `sentryVitePlugin({ org, project, authToken })`.
+- Set `SENTRY_AUTH_TOKEN` as a GitHub Actions secret. CI uploads source maps automatically on every release-tag build.
+- Verify: trigger a frontend error, confirm Sentry shows readable function names + line numbers (not minified `Tk` / `Ik`).
+- Reference: https://docs.sentry.io/platforms/javascript/guides/react/sourcemaps/uploading/vite/
+
+### S2 — Release tagging + version correlation
+**Effort**: 1-2h | **Status**: TODO
+- Frontend: `Sentry.init({ release: __APP_VERSION__ + '-' + __BUILD_SHA__ })` (already have version + SHA from V4-1).
+- Backend: `sentry_sdk.init(release=settings.VERSION + '-' + settings.BUILD_SHA)`.
+- Tag every Sentry issue with the release that emitted it. When Said cuts v0.1.1 hotfix, errors from v0.1.0 vs v0.1.1 are visible side-by-side.
+- Auto-resolve issues that haven't appeared in 3+ releases (Sentry built-in setting).
+
+### S3 — Rich context per event
+**Effort**: 3-4h | **Status**: TODO
+Every Sentry event captures:
+- **User context** (anonymous): session UUID stored in localStorage. `Sentry.setUser({ id: sessionId })`. Allows grouping "same user hitting 3 errors in a row" without PII.
+- **Custom tags** for error grouping:
+  - `peptide_count`: small (<10) / medium (10-100) / large (>100)
+  - `predictors`: `tango,s4pred` / `s4pred-only` / `none`
+  - `data_source`: `quick` / `csv` / `uniprot` / `fasta`
+  - `route`: from React Router location
+  - `theme`: light / dark
+  - `viewport`: mobile / tablet / desktop
+- **Custom contexts**: threshold preset name, dataset hash (truncated), browser language, time zone.
+- Wrap key user actions with `Sentry.startTransaction({ name: 'peptide.analyze.batch' })` so slow ones show up in performance dashboards.
+
+### S4 — Backend FastAPI integration
+**Effort**: 2-3h | **Status**: PARTIAL
+- Verify `sentry_sdk[fastapi]` is installed and `SentryAsgiMiddleware` is wired (search `sentry_sdk` in `backend/`).
+- Add the FastAPI integration: `sentry_sdk.init(integrations=[FastApiIntegration()])`.
+- Capture `trace_id` from request middleware → set as Sentry tag → so frontend trace_id and backend trace_id correlate (already 50% done; verify).
+- Add `before_send` filter to drop expected non-error 4xx responses (404 on missing peptides, 422 contract errors that are actually user input issues).
+
+### S5 — Custom alerts + Slack webhook
+**Effort**: 2h | **Status**: TODO
+In Sentry dashboard (manual setup, document in `docs/active/SENTRY_RUNBOOK.md`):
+- **Alert 1**: New issue (severity: error or fatal) → email Said + Slack #pvl-alerts.
+- **Alert 2**: Issue spike (10+ events of same fingerprint in 1 hour) → email + Slack.
+- **Alert 3**: Performance degradation (p95 >2× baseline for `/api/predict`) → email.
+- Suppress: 4xx contract validation errors, expected `cancelToken` errors.
+- Quiet hours: no Slack alerts 23:00-07:00 Israel time.
+
+### S6 — Performance dashboards
+**Effort**: 2h | **Status**: TODO
+- Configure Sentry performance views: p50/p95/p99 latency for `/api/predict`, `/api/upload`, `/api/uniprot/execute`.
+- Set web-vitals targets: LCP < 2.5s, FID < 100ms, CLS < 0.1.
+- Auto-flag any 7-day regression > 20%.
+
+### S7 — Replay sampling tuning
+**Effort**: 1h | **Status**: PARTIAL
+- Currently: `replaysSessionSampleRate: 0`, `replaysOnErrorSampleRate: 1.0`.
+- Add explicit ignore patterns for routine actions (button hovers, form typing).
+- Mask all PII fields: `maskAllText: false` (already), but mask any input field that might contain a sequence (privacy guard for proprietary peptides).
+- Replays only on actual errors, not on user-cancellations.
+
+### S8 — Cron / health monitoring
+**Effort**: 1-2h | **Status**: TODO
+- Sentry Cron Monitoring on the backend `/api/health` endpoint — pings every 5 min, alerts if missed for 15 min (VPS down).
+- Add Sentry Cron monitor for the daily VPS backup job (set up in Phase O).
+
+### S9 — Issue ownership rules
+**Effort**: 30min | **Status**: TODO
+- Assign all `backend/api/routes/uniprot.py` errors to Said.
+- Assign frontend `ui/src/components/charts/*` errors to Said with secondary @cowork tag.
+- Future: when contributors arrive, route their owned files to them.
+
+### S10 — Sentry version + SDK upgrade
+**Effort**: 2h | **Status**: TODO
+- Audit current `@sentry/react` and `sentry-sdk` versions.
+- Upgrade to latest stable. Test with one intentional throw + capture.
+- Pin in `requirements.txt` and `package.json` to known-good versions.
+- Re-run after Dependabot proposes a major version bump.
+
+**Phase S Definition of Done**: a fresh production error from any user produces a Sentry issue with: readable stack trace + source line + user session ID + route + viewport + active threshold preset + dataset size + browser version + 5-minute replay starting at the moment the error occurred. Said sees it in his email + Slack within 5 minutes. Time to triage: < 2 minutes.
+
+---
+
+## Phase O: Operational Sustainability (NEW — long-term)
+
+**Goal**: PVL keeps working with ~30 min/month of Said's time during MIT semesters.
+
+### O1 — Dependabot + Renovate setup
+**Effort**: 1h | **Status**: TODO
+- Add `.github/dependabot.yml` with:
+  - npm + pip ecosystems
+  - Daily security updates auto-PR
+  - Weekly minor-version updates (group all together to reduce PR noise)
+  - Major-version updates: weekly, individual PRs (Said reviews case-by-case)
+- Add Renovate alongside for finer-grained config (e.g., automerge dev deps).
+
+### O2 — Daily VPS backup automation
+**Effort**: 2-3h | **Status**: TODO
+- Cron job on the VPS: nightly backup of `/data/cache/`, `/data/uploads/`, redis snapshot, env files (encrypted).
+- Push to a second location: Backblaze B2 (cheap, S3-compatible) or Cloudflare R2 (free tier 10GB).
+- Sentry Cron monitor on the backup script (S8) — Said gets paged if backups stop.
+- Quarterly restore drill (script tested by Said in summer).
+
+### O3 — Multi-region resilience (future)
+**Effort**: 8-12h | **Status**: PROPOSED
+- Cloudflare Pages or Render as a fallback frontend host (currently DESY VPS is single point of failure).
+- DNS-level health check that fails over.
+- Phase O3 only matters if PVL gets traction — defer until usage warrants it.
+
+### O4 — CONTRIBUTING.md community polish
+**Effort**: 2h | **Status**: TODO
+- Clear "good first issue" label scheme on GitHub.
+- Issue templates for: bug report, feature request, scientific question.
+- A v0.2 roadmap pointer ("These are the features Phase I onwards — community contributions welcome.").
+- Code-of-conduct (use Contributor Covenant).
+- Said does NOT actively recruit — just makes it open. Community management is itself a job.
+
+### O5 — Self-host README + Docker quickstart
+**Effort**: 1-2h | **Status**: TODO
+- Front-page README section: "Run PVL on your own machine in 3 minutes."
+- `docker-compose up` instructions, env file template, one-command demo.
+- This is also a backup story: if DESY VPS dies, anyone can self-host.
+
+### O6 — Monthly maintenance protocol
+**Effort**: 30min documentation | **Status**: TODO
+- `docs/active/MAINTENANCE_PROTOCOL.md` — Said's checklist:
+  - Sentry dashboard review
+  - Dependabot PRs review/merge
+  - VPS uptime check
+  - bio.tools listing still active
+  - Quick smoke test (one peptide, one CSV upload)
+- 30 minutes per month, calendar-blocked.
+
+### O7 — Status page (future)
+**Effort**: 3-4h | **Status**: PROPOSED
+- Public uptime page using Cloudflare's free status-page service or Better Stack free tier.
+- Communicates trust to potential paper citers and bio.tools registrants.
+
+---
+
+## Phase L: Landing Page + Demo Mode (NEW)
+
+**Goal**: First-time visitor lands → understands what PVL does in 5 seconds → sees results in 15 seconds → wants to upload their own data in 30 seconds.
+
+### L1 — Demo mode (auto-loaded example dataset)
+**Effort**: 4h | **Status**: TODO
+- On first visit (no localStorage flag), the homepage auto-loads the Staphylococcus 2023 example dataset (already in repo) into datasetStore.
+- A non-intrusive "Demo data — click here to upload yours" chip in the corner.
+- All Results / PeptideDetail routes work immediately without uploading.
+- Tracked via Sentry custom tag `data_source: demo` for analytics.
+
+### L2 — Hero section polish
+**Effort**: 4h | **Status**: TODO
+- Replace existing hero with a clear value-prop block:
+  - **H1**: "Peptide Visual Lab — the all-in-one peptide aggregation + structure prediction dashboard."
+  - **3-4 differentiator bullets**:
+    - Multi-tool consensus (TANGO + S4PRED + biochem + AlphaFold) in one place
+    - Live 3D structure overlay of TANGO peaks + S4PRED segments
+    - Reproducible permalinks for every analysis (cite + share)
+    - Open source · MIT · runs locally
+  - **2 CTAs**: "Try it now" (scrolls to demo) + "Self-host" (links to Docker section)
+  - **Logo strip**: DESY, Technion, partner labs — credibility.
+- Hero image: an animated screenshot (loop) showing the SetDiagram + classification pills + 3D viewer rotating.
+
+### L3 — "How it works" section
+**Effort**: 3h | **Status**: TODO
+- 4-step walkthrough cards:
+  1. Paste a sequence OR upload a CSV / FASTA
+  2. PVL runs TANGO + S4PRED + FF-Helix + biochem
+  3. Interactive dashboard with classifications, distributions, drill-down
+  4. Export figure pack OR copy permalink for your paper
+- Each card has a tiny screenshot.
+
+### L4 — Trust + citations section
+**Effort**: 2h | **Status**: TODO
+- "Citing PVL": pre-filled BibTeX block (uses Zenodo DOI once live).
+- "Used by": logos of DESY + Technion + any other labs that adopt.
+- Link to JOSS paper once published.
+
+### L5 — Footer overhaul
+**Effort**: 1h | **Status**: TODO
+- Documentation, GitHub, Sentry status, MIT license, security policy.
+- Contact / feedback links.
+- ORCID iDs for Said, Peleg, Alex.
+
+---
+
+## Phase D5: V4 Transformative Differentiators (Wave V4)
 
 The "first of its kind" round. Three additions no peptide tool has, that make PVL genuinely transformative.
 

@@ -85,7 +85,10 @@ export default function Upload() {
     // Group 4: Fibril-formation
     muHCutoff: 0.5,
     hydroCutoff: 0.5,
-    // Legacy aggregation flagging (Peleg flagged for discussion)
+    // PELEG-Q6-PARTIAL: configurable TANGO aggregation threshold (default 5.0).
+    tangoAggregationThreshold: 5.0,
+    // PELEG-Q5-RESOLVED + PELEG-PEL-G-RESOLVED: legacy fields kept on payload
+    // for back-compat but no longer surfaced as user controls.
     aggThreshold: 5.0,
     percentOfLengthCutoff: 20,
     minSswResidues: 3,

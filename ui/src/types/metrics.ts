@@ -31,12 +31,11 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
     definition:
       "TANGO SSW (Secondary Structure Switch) prediction uses aggregation propensity analysis to identify membrane-active peptides that can switch between different secondary structures. A positive prediction (1) suggests the peptide has the potential for membrane interaction and structural switching behavior. Note: S4PRED also provides an independent SSW prediction.",
     chartType: "pie",
+    // PELEG-SSW-SCORE-RESOLVED: sswScore / sswDiff dropped from default columns.
     tableColumns: [
       "id",
       "name",
       "sswPrediction",
-      "sswScore",
-      "sswDiff",
       "sswHelixPct",
       "sswBetaPct",
       "hydrophobicity",
@@ -45,23 +44,17 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
     statKey: "sswPositivePercent",
     statFormatter: (value) => `${value.toFixed(1)}%`,
   },
+  // PELEG-Q1-RESOLVED: ff-helix metric definition retained internally for
+  // backwards-compat (legacy ranks/exports may reference id), but the
+  // definition text is rewritten to drop Chou-Fasman framing per Said's directive.
   "ff-helix": {
     id: "ff-helix",
-    title: "Chou-Fasman Propensity (legacy)",
-    description: "Context-free helix propensity from the Chou-Fasman (1978) scale",
+    title: "FF-Helix candidate",
+    description: "Peptides classified as fibril-forming helix candidates",
     definition:
-      "Chou-Fasman propensity score using a 6-residue sliding window with threshold 1.0. This is a legacy metric — S4PRED Helix % is the primary helix prediction.",
+      "FF-Helix candidate flag (ffHelixFlag): a peptide is classified as FF-Helix if S4PRED predicts a helix segment AND uH is above the configured threshold.",
     chartType: "distribution",
-    tableColumns: [
-      "id",
-      "name",
-      "ffHelixPercent",
-      "ffHelixFragments",
-      "muH",
-      "hydrophobicity",
-      "charge",
-      "length",
-    ],
+    tableColumns: ["id", "name", "ffHelixFlag", "muH", "hydrophobicity", "charge", "length"],
     statKey: "meanFFHelixPercent",
     statFormatter: (value) => `${value.toFixed(1)}%`,
   },
@@ -94,16 +87,8 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
     definition:
       "FF-Secondary Structure Switch indicates peptides that are predicted to form fibrils through a secondary structure switching mechanism. This prediction is based on TANGO analysis combined with hydrophobicity thresholds. Peptides with SSW prediction = 1 and hydrophobicity above the database average are flagged as fibril-forming via SSW.",
     chartType: "pie",
-    tableColumns: [
-      "id",
-      "name",
-      "sswPrediction",
-      "hydrophobicity",
-      "sswScore",
-      "sswDiff",
-      "charge",
-      "muH",
-    ],
+    // PELEG-SSW-SCORE-RESOLVED: sswScore / sswDiff dropped from default columns.
+    tableColumns: ["id", "name", "sswPrediction", "hydrophobicity", "charge", "muH"],
   },
   "ff-helix-flag": {
     id: "ff-helix-flag",
@@ -112,14 +97,7 @@ export const METRIC_DEFINITIONS: Record<MetricId, MetricDefinition> = {
     definition:
       "Fibril-forming helix flag classifies peptides predicted to aggregate via an alpha-helical mechanism. Uses S4PRED helix segments with hydrophobic moment (μH) above the database threshold.",
     chartType: "pie",
-    tableColumns: [
-      "id",
-      "name",
-      "ffHelixPercent",
-      "ffHelixFragments",
-      "muH",
-      "hydrophobicity",
-      "charge",
-    ],
+    // PELEG-Q1-RESOLVED: ffHelixPercent / ffHelixFragments dropped from default columns.
+    tableColumns: ["id", "name", "ffHelixFlag", "muH", "hydrophobicity", "charge"],
   },
 };

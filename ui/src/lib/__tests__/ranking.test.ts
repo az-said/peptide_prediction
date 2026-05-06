@@ -247,9 +247,11 @@ describe("rankPeptides", () => {
     }
   });
 
-  it("optional metric toggle: 5 vs 7 metrics", () => {
-    // Peleg FIX-024 swapped tangoAggMax (now optional) with hydrophobicity (now default)
-    const w5: ProportionalWeights = { ...PRESETS.equal.weights };
+  it("optional metric toggle: 3 default vs all 7 metrics", () => {
+    // PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED: defaults are now 3
+    // (s4predHelixPercent / muH / hydrophobicity); optionals = tangoAggMax,
+    // absCharge, ffHelixPercent, sswScore (the latter two demoted from default).
+    const w3: ProportionalWeights = { ...PRESETS.equal.weights };
     const w7: ProportionalWeights = {
       ...PRESETS.equal.weights,
       tangoAggMax: 14,
@@ -261,15 +263,19 @@ describe("rankPeptides", () => {
       sswScore: 15,
     };
 
-    const r5 = rankPeptides(cohort, w5);
+    const r3 = rankPeptides(cohort, w3);
     const r7 = rankPeptides(cohort, w7);
 
-    // With 7 metrics, optional add-ons should be set
+    // With 7 metrics, all optional add-ons should be populated
     expect(r7[0].metricPercentiles.tangoAggMax).not.toBeNull();
     expect(r7[0].metricPercentiles.absCharge).not.toBeNull();
-    // With 5 metrics, optional metrics should be null
-    expect(r5[0].metricPercentiles.tangoAggMax).toBeNull();
-    expect(r5[0].metricPercentiles.absCharge).toBeNull();
+    expect(r7[0].metricPercentiles.ffHelixPercent).not.toBeNull();
+    expect(r7[0].metricPercentiles.sswScore).not.toBeNull();
+    // With only the 3 default metrics, every optional must be null
+    expect(r3[0].metricPercentiles.tangoAggMax).toBeNull();
+    expect(r3[0].metricPercentiles.absCharge).toBeNull();
+    expect(r3[0].metricPercentiles.ffHelixPercent).toBeNull();
+    expect(r3[0].metricPercentiles.sswScore).toBeNull();
   });
 });
 
@@ -316,22 +322,23 @@ describe("presets v2", () => {
   });
 
   it("amyloid (Fibril-formation Focus) preset emphasises uH and hydrophobicity", () => {
-    // Peleg FIX-024: fibril-formation classification uses uH + hydrophobicity, not TANGO Agg
+    // PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED: ffHelixPercent + sswScore
+    // dropped from default presets; rebalanced across the 3 default metrics + S4PRED.
     const w = PRESETS.amyloid.weights;
-    expect(w.muH).toBe(30);
-    expect(w.hydrophobicity).toBe(30);
+    expect(w.muH).toBe(40);
+    expect(w.hydrophobicity).toBe(40);
     expect((w.muH ?? 0) > (w.s4predHelixPercent ?? 0)).toBe(true);
   });
 
-  it("helix preset emphasises S4PRED helix (35%)", () => {
+  it("helix preset emphasises S4PRED helix (50%)", () => {
     const w = PRESETS.helix.weights;
-    expect(w.s4predHelixPercent).toBe(35);
+    expect(w.s4predHelixPercent).toBe(50);
     expect(PRESETS.helix.directions.s4predHelixPercent).toBe("high");
   });
 
-  it("switch preset emphasizes S4PRED (30%)", () => {
+  it("switch preset emphasizes S4PRED (40%)", () => {
     const w = PRESETS.switch.weights;
-    expect(w.s4predHelixPercent).toBe(30);
+    expect(w.s4predHelixPercent).toBe(40);
     expect((w.s4predHelixPercent ?? 0) > (w.muH ?? 0)).toBe(true);
   });
 
@@ -346,9 +353,11 @@ describe("presets v2", () => {
     }
   });
 
-  it("DEFAULT_METRICS has 5 entries, OPTIONAL_METRICS has 2", () => {
-    expect(DEFAULT_METRICS).toHaveLength(5);
-    expect(OPTIONAL_METRICS).toHaveLength(2);
+  it("DEFAULT_METRICS has 3 entries, OPTIONAL_METRICS has 4", () => {
+    // PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED: ffHelixPercent + sswScore
+    // moved from default → optional (2026-05-06).
+    expect(DEFAULT_METRICS).toHaveLength(3);
+    expect(OPTIONAL_METRICS).toHaveLength(4);
     expect(ALL_METRICS).toHaveLength(7);
   });
 });

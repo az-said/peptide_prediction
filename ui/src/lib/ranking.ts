@@ -1,7 +1,7 @@
 /**
  * Percentile-based peptide ranking engine v2.
  *
- * 5 default metrics + 2 optional add-ons. Proportional weights sum to 100%.
+ * 3 default metrics + 4 optional add-ons. Proportional weights sum to 100%.
  * Direction toggles allow inverting "high is good" vs "low is good".
  *
  * Peleg FIX-024 (2026-04): TANGO Agg Max moved out of default metrics
@@ -10,8 +10,13 @@
  * Renamed "Amyloid Focus" UI label → "Fibril-formation Focus" (code key
  * `amyloid` retained for back-compat).
  *
- * Default metrics:  s4predHelixPercent, ffHelixPercent, muH, sswScore, hydrophobicity
- * Optional add-ons: tangoAggMax, absCharge
+ * PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED (2026-05-06):
+ *   ffHelixPercent (Chou-Fasman) and sswScore moved from default → optional
+ *   per Said+Peleg. Both are dropped from user-facing surfaces; the keys
+ *   remain on the RankingMetric union for back-compat with persisted state.
+ *
+ * Default metrics:  s4predHelixPercent, muH, hydrophobicity
+ * Optional add-ons: tangoAggMax, absCharge, ffHelixPercent, sswScore
  */
 import type { Peptide } from "@/types/peptide";
 
@@ -47,16 +52,16 @@ export type RankingPreset = "equal" | "amyloid" | "helix" | "switch";
 
 // ---- Constants ----
 
-// Peleg FIX-024: TANGO Agg Max → optional; hydrophobicity → default
-export const DEFAULT_METRICS: RankingMetric[] = [
-  "s4predHelixPercent",
-  "ffHelixPercent",
-  "muH",
-  "sswScore",
-  "hydrophobicity",
-];
+// PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED (2026-05-06):
+//   ffHelixPercent (Chou-Fasman) + sswScore relegated to optional.
+export const DEFAULT_METRICS: RankingMetric[] = ["s4predHelixPercent", "muH", "hydrophobicity"];
 
-export const OPTIONAL_METRICS: RankingMetric[] = ["tangoAggMax", "absCharge"];
+export const OPTIONAL_METRICS: RankingMetric[] = [
+  "tangoAggMax",
+  "absCharge",
+  "ffHelixPercent",
+  "sswScore",
+];
 
 export const ALL_METRICS: RankingMetric[] = [...DEFAULT_METRICS, ...OPTIONAL_METRICS];
 
@@ -121,23 +126,26 @@ export const DEFAULT_DIRECTIONS: MetricDirections = {
   absCharge: "high",
 };
 
-/** Equal weights across 5 default metrics (20% each). */
+/** Equal weights across 3 default metrics (sums to 100; 34/33/33). */
 function equalWeights(): ProportionalWeights {
   return {
-    s4predHelixPercent: 20,
-    ffHelixPercent: 20,
-    muH: 20,
-    sswScore: 20,
-    hydrophobicity: 20,
+    s4predHelixPercent: 34,
+    muH: 33,
+    hydrophobicity: 33,
   };
 }
 
 /**
- * Peleg FIX-024 preset rebalance.
+ * PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED preset rebalance (2026-05-06):
+ *   ffHelixPercent (Chou-Fasman) and sswScore are no longer surfaced — presets
+ *   now distribute weight across the 3 default metrics + S4PRED. Each preset's
+ *   weights still sum to 100.
+ *
  * - `amyloid` (UI label: "Fibril-formation Focus") emphasises uH + hydrophobicity
  *   — the two thresholds that drive Peleg's FF-Helix and FF-SSW classifications.
- * - `helix` (UI label: "Helix Focus") emphasises helix-prediction metrics.
- * - `switch` (UI label: "Switch Focus") emphasises SSW + S4PRED helix balance.
+ * - `helix` (UI label: "Helix Focus") emphasises S4PRED helix + uH.
+ * - `switch` (UI label: "Switch Focus") emphasises S4PRED helix balance against
+ *   uH + hydrophobicity (was previously SSW-score weighted; that metric is gone).
  * Code key `amyloid` retained for back-compat with existing tests/state.
  */
 export const PRESETS: Record<
@@ -150,21 +158,17 @@ export const PRESETS: Record<
   },
   amyloid: {
     weights: {
-      muH: 30,
-      hydrophobicity: 30,
-      ffHelixPercent: 20,
-      s4predHelixPercent: 10,
-      sswScore: 10,
+      muH: 40,
+      hydrophobicity: 40,
+      s4predHelixPercent: 20,
     },
     directions: { ...DEFAULT_DIRECTIONS },
   },
   helix: {
     weights: {
-      s4predHelixPercent: 35,
-      muH: 25,
-      ffHelixPercent: 25,
-      sswScore: 10,
-      hydrophobicity: 5,
+      s4predHelixPercent: 50,
+      muH: 30,
+      hydrophobicity: 20,
     },
     directions: {
       ...DEFAULT_DIRECTIONS,
@@ -173,11 +177,9 @@ export const PRESETS: Record<
   },
   switch: {
     weights: {
-      s4predHelixPercent: 30,
-      sswScore: 25,
-      ffHelixPercent: 15,
-      muH: 15,
-      hydrophobicity: 15,
+      s4predHelixPercent: 40,
+      muH: 30,
+      hydrophobicity: 30,
     },
     directions: {
       ...DEFAULT_DIRECTIONS,

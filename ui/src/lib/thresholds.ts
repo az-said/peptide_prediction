@@ -39,8 +39,14 @@ export type ResolvedThresholds = {
   // Group 4: Fibril-formation thresholds
   muHCutoff: number;
   hydroCutoff: number;
+  // PELEG-Q6-PARTIAL: TANGO aggregation threshold (default 5.0). Replaces
+  // the hardcoded "5%" annotation on the TANGO chart per Said+Peleg 2026-05-06.
+  tangoAggregationThreshold: number;
 
-  // Legacy aggregation-flagging (Peleg flagged for discussion — under Advanced)
+  // PELEG-Q5-RESOLVED + PELEG-PEL-G-RESOLVED: aggThreshold +
+  //   percentOfLengthCutoff are no longer surfaced as user controls but
+  //   remain on the resolved-thresholds shape for back-compat with the
+  //   aggregation-flag pipeline.
   aggThreshold: number;
   percentOfLengthCutoff: number;
   minSswResidues: number;
@@ -68,6 +74,7 @@ export const DEFAULT_THRESHOLDS: ResolvedThresholds = {
   // Group 4
   muHCutoff: 0.5,
   hydroCutoff: 0.5,
+  tangoAggregationThreshold: 5.0,
   // Legacy
   aggThreshold: 5.0,
   percentOfLengthCutoff: 20.0,

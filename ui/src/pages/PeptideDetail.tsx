@@ -485,23 +485,15 @@ export default function PeptideDetail() {
               <div className="flex justify-center">
                 <HelicalWheel sequence={peptide.sequence} />
               </div>
-              {typeof peptide.s4predHelixPercent === "number" &&
-                peptide.s4predHelixPercent === 0 &&
-                typeof peptide.ffHelixPercent === "number" &&
-                peptide.ffHelixPercent > 0 && (
-                  <div className="mt-3 p-2 rounded bg-muted/50 text-xs text-muted-foreground">
-                    <strong>Note:</strong> S4PRED predicts no helical segments for this sequence.
-                    The wheel shows the hypothetical helix projection based on Chou-Fasman
-                    propensity ({peptide.ffHelixPercent.toFixed(0)}%).
-                  </div>
-                )}
+              {/* PELEG-Q1-RESOLVED: Chou-Fasman fallback note removed — wheel
+                  is shown only when S4PRED predicts helical structure. */}
             </CollapsibleCard>
           ) : peptide.length <= 40 ? (
             <Card className="shadow-soft border-[hsl(var(--border))] rounded-xl">
               <CardContent className="py-6">
                 <p className="text-sm text-muted-foreground text-center">
-                  Helical wheel not shown — neither Chou-Fasman nor S4PRED predict helical structure
-                  for this sequence.
+                  Helical wheel not shown — S4PRED does not predict helical structure for this
+                  sequence.
                 </p>
               </CardContent>
             </Card>

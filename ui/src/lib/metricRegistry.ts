@@ -7,10 +7,9 @@
  * sparklines) resolve their rendering metadata here rather than duplicating
  * labels, units, formatters, and scientific definitions in each component.
  *
- * Definitions follow Peleg's axioms:
- *   - Hydrophobicity uses Fauchere-Pliska (NOT helix propensity).
- *   - S4PRED is the primary helix predictor; Chou-Fasman is legacy.
- *   - FF-Helix% is always computed locally (no external dependency).
+ * PELEG-Q1-RESOLVED (2026-05-06): the `ffHelixPercent` (Chou-Fasman) entry
+ * has been removed from the registry per Said+Peleg. The backend field
+ * remains for back-compat but is no longer surfaced in any UI metric lookup.
  */
 
 import type { Peptide, DatasetStats } from "@/types/peptide";
@@ -53,9 +52,8 @@ export const METRIC_REGISTRY: Record<string, MetricRegistryEntry> = {
     name: "Hydrophobicity",
     shortName: "H",
     definition:
-      "Average residue hydrophobicity computed with the Fauchere-Pliska scale. " +
-      "Negative values indicate hydrophilic character; positive values indicate hydrophobic character.",
-    unit: "F-P",
+      "Average residue hydrophobicity. Negative values indicate hydrophilic character; positive values indicate hydrophobic character.",
+    unit: "",
     getValue: (p) => p.hydrophobicity,
     getMean: (s) => s.meanHydrophobicity,
     format: (v) => v.toFixed(2),
@@ -130,27 +128,12 @@ export const METRIC_REGISTRY: Record<string, MetricRegistryEntry> = {
     interpretation:
       "Higher helix content suggests the peptide can form stable alpha-helical structures, " +
       "relevant for membrane interaction and fibril-formation via the helix pathway.",
-    relatedMetrics: ["ffHelixPercent", "muH", "ffHelixFlag"],
+    relatedMetrics: ["muH", "ffHelixFlag"],
     color: "hsl(var(--s4pred-helix))",
   },
 
-  ffHelixPercent: {
-    id: "ffHelixPercent",
-    name: "FF-Helix Propensity",
-    shortName: "FF-H%",
-    definition:
-      "Chou-Fasman helix propensity computed with a 6-residue sliding window (threshold 1.0). " +
-      "This is a legacy metric; S4PRED Helix % is the primary helix prediction.",
-    unit: "%",
-    getValue: (p) => p.ffHelixPercent,
-    getMean: (s) => s.meanFFHelixPercent,
-    format: (v) => `${v.toFixed(1)}%`,
-    interpretation:
-      "Higher values indicate greater context-free helix-forming propensity based on " +
-      "the Chou-Fasman (1978) amino acid scale.",
-    relatedMetrics: ["s4predHelixPercent", "ffHelixFlag"],
-    color: "hsl(var(--ff-helix))",
-  },
+  // PELEG-Q1-RESOLVED: ffHelixPercent (Chou-Fasman) registry entry removed
+  // per Said+Peleg 2026-05-06. Backend field retained on the Peptide type.
 
   ffHelixFlag: {
     id: "ffHelixFlag",

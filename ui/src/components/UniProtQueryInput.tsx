@@ -120,6 +120,17 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
     searchIn: "all" as SearchField,
   });
 
+  // PELEG-FIX-3-RESOLVED (2026-05-06): listen for a custom event from the
+  // results-banner ("Enable now") so the parent page can flip both toggles
+  // on without prop-drilling state up.
+  useEffect(() => {
+    const handler = () => {
+      setControls((p) => ({ ...p, runTango: true, runS4pred: true }));
+    };
+    window.addEventListener("pvl:uniprot-enable-predictions", handler);
+    return () => window.removeEventListener("pvl:uniprot-enable-predictions", handler);
+  }, []);
+
   // Auto-parse query (debounced, non-blocking)
   useEffect(() => {
     if (!query.trim()) {
@@ -176,7 +187,10 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
       const tangoTime = controls.runTango ? Math.ceil(controls.size / 4) * 2_000 : 0;
       const baseMs = controls.runS4pred || controls.runTango ? 120_000 : 60_000;
       // Cap at 30 minutes — user can cancel anytime
-      const timeoutMs = Math.min(30 * 60_000, Math.max(180_000, baseMs + fetchTime + s4predTime + tangoTime));
+      const timeoutMs = Math.min(
+        30 * 60_000,
+        Math.max(180_000, baseMs + fetchTime + s4predTime + tangoTime)
+      );
       const timeoutId = setTimeout(() => abortController.abort(), timeoutMs);
 
       try {

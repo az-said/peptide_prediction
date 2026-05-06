@@ -69,27 +69,21 @@ export function EvidencePanel({ peptide, cohortStats }: EvidencePanelProps) {
   }
 
   // Aggregation propensity evidence (TANGO)
+  // PELEG-FIX-014.4-RESOLVED: removed unjustified MODERATE / HIGH / LOW labels
+  // per Peleg 2026-05-06. Show the raw TANGO peak + the configured threshold so
+  // users see exactly which value crosses the line, rather than a qualitative band.
   if (typeof peptide.tangoAggMax === "number" && peptide.tangoAggMax > 0) {
-    const aggLevel =
-      peptide.tangoAggMax > 20 ? "HIGH" : peptide.tangoAggMax > 5 ? "MODERATE" : "LOW";
-    const aggIcon = peptide.tangoAggMax > 5 ? TrendingUp : Minus;
-    const aggColor =
-      peptide.tangoAggMax > 20
-        ? "text-red-600"
-        : peptide.tangoAggMax > 5
-          ? "text-amber-600"
-          : "text-green-600";
+    const aboveThreshold = peptide.tangoAggMax > 5; // threshold default — see TANGO threshold control
+    const aggIcon = aboveThreshold ? TrendingUp : Minus;
+    const aggColor = aboveThreshold ? "text-foreground" : "text-muted-foreground";
 
     evidenceItems.push({
       property: "Aggregation Propensity",
-      value: `Peak: ${peptide.tangoAggMax.toFixed(1)}%`,
-      comparison:
-        aggLevel === "HIGH"
-          ? "Strong aggregation-prone region detected"
-          : aggLevel === "MODERATE"
-            ? "Aggregation-prone region present"
-            : "No significant aggregation-prone regions",
-      difference: aggLevel,
+      value: `TANGO peak: ${peptide.tangoAggMax.toFixed(1)}%`,
+      comparison: aboveThreshold
+        ? "Peak is above the configured TANGO threshold (5)."
+        : "Peak is at or below the configured TANGO threshold (5).",
+      difference: "",
       icon: aggIcon,
       color: aggColor,
     });

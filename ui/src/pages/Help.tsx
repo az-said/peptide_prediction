@@ -284,9 +284,11 @@ export default function Help() {
                   },
                   {
                     name: "Threshold Presets",
-                    // Peleg FIX-030: clarify which aggregation thresholds are used
+                    // Peleg FIX-030 + PELEG-Q5/Q6/PEL-G-RESOLVED (2026-05-06):
+                    // legacy aggregation-flagging parameters were removed; only
+                    // the configurable TANGO aggregation threshold remains under Group 4.
                     description:
-                      "Recommended (default): thresholds computed from your data using database median. Custom: manually set the 9 thresholds (general SS, helical, SS-switch, fibril-formation). The aggregation-flagging parameters (per-residue aggregation %, % of length, minimum SSW residues) are listed under 'Advanced (TANGO aggregation)' in the threshold panel and are pending discussion.",
+                      "Recommended (default): thresholds computed from your data using database median. Custom: manually set the thresholds across the 4 groups (general SS, helical, SS-switch, fibril-formation). The TANGO aggregation threshold (default 5) is configurable under fibril-formation thresholds; pending citation.",
                   },
                 ].map((topic, index) => (
                   <motion.div
@@ -317,24 +319,15 @@ export default function Help() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <h4 className="font-medium">Helix % (canonical) vs Chou-Fasman propensity %</h4>
+                <h4 className="font-medium">Helix %</h4>
                 <p className="text-sm text-muted-foreground">
-                  PVL reports two helix-related percentages that measure different things:
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">Helix %</strong> (the canonical metric, shown
-                  in the table column and on the Peptide Detail page) is the segment-based S4PRED
+                  {/* PELEG-Q1-RESOLVED: Chou-Fasman / Fauchere-Pliska helix-propensity
+                      framing dropped per Said+Peleg 2026-05-06. Helix % is now a single
+                      canonical metric (segment-based S4PRED). */}
+                  <strong className="text-foreground">Helix %</strong> is the segment-based S4PRED
                   helix percentage: the fraction of residues that fall inside helix segments meeting
                   the minimal-continuous-residues threshold (default &ge;5) and the minimal helix
                   score threshold (default P(Helix) &ge; 0.5).
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">Chou-Fasman propensity %</strong> (legacy
-                  column "FF-Helix %") is a context-free score using the Chou-Fasman (1978) helix
-                  propensity table with a 6-residue sliding window. It measures the intrinsic amino
-                  acid tendency to form helices, ignoring sequence context and environment. A value
-                  of 0% means no window exceeds the threshold; 100% means every residue participates
-                  in a qualifying window. This is not a structure prediction.
                 </p>
               </div>
               <Separator />

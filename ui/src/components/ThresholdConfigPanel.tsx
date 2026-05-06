@@ -56,7 +56,10 @@ export interface CustomThresholds {
   // Group 4: Fibril-formation
   muHCutoff: number;
   hydroCutoff: number;
-  // Legacy (Advanced — Peleg flagged for discussion)
+  // PELEG-Q6-PARTIAL: TANGO 5%-style aggregation threshold (configurable, awaiting citation).
+  tangoAggregationThreshold: number;
+  // Legacy back-compat fields — not surfaced in the panel anymore but kept
+  // so existing CustomThresholds payloads keep round-tripping.
   aggThreshold: number;
   percentOfLengthCutoff: number;
   minSswResidues: number;
@@ -87,6 +90,7 @@ const RECOMMENDED_DEFAULTS: Required<CustomThresholds> = {
   // Group 4
   muHCutoff: 0.5,
   hydroCutoff: 0.5,
+  tangoAggregationThreshold: 5.0,
   // Legacy
   aggThreshold: 5.0,
   percentOfLengthCutoff: 20,
@@ -370,63 +374,25 @@ function ThresholdFields({
           readOnly={isReadOnly}
           onChange={(v) => update("hydroCutoff", v)}
         />
-      </ThresholdSection>
-
-      {/* ── Advanced (TANGO aggregation) — Peleg flagged for discussion ── */}
-      <ThresholdSection title="Advanced (TANGO aggregation)" defaultOpen={false}>
-        <p className="text-xs text-muted-foreground pb-2">
-          These TANGO aggregation-flagging parameters are kept for back-compat. They are
-          under review for scientific clarity.
-        </p>
+        {/* PELEG-Q6-PARTIAL: TANGO aggregation threshold made configurable per
+            Said 2026-05-06; awaiting Peleg's citation in the Wave C email. */}
         <ThresholdInput
-          id="agg-threshold"
-          label="Aggregation per-residue %"
-          value={t.aggThreshold}
-          defaultValue={d.aggThreshold}
+          id="tango-aggregation-threshold"
+          label="TANGO aggregation threshold"
+          value={t.tangoAggregationThreshold}
+          defaultValue={d.tangoAggregationThreshold}
           step="0.5"
           min="0"
           max="50"
-          description="Per-residue TANGO aggregation score above which a residue counts as part of an aggregation-prone region."
+          description="TANGO score above which a residue is considered aggregation-prone. Default = 5; pending citation. Editable until validated."
           readOnly={isReadOnly}
-          onChange={(v) => update("aggThreshold", v)}
-        />
-        <ThresholdInput
-          id="pct-length"
-          label="% of length"
-          value={t.percentOfLengthCutoff}
-          defaultValue={d.percentOfLengthCutoff}
-          step="1"
-          min="0"
-          max="100"
-          description="Percentage of sequence length required to flag a peptide as aggregation-prone."
-          readOnly={isReadOnly}
-          onChange={(v) => update("percentOfLengthCutoff", v)}
-        />
-        <ThresholdInput
-          id="min-prediction-pct"
-          label="Minimum prediction %"
-          value={t.minPredictionPercent}
-          defaultValue={d.minPredictionPercent}
-          step="1"
-          min="0"
-          max="100"
-          description="Minimum percentage of residues that must be predicted before a sequence is flagged."
-          readOnly={isReadOnly}
-          onChange={(v) => update("minPredictionPercent", v)}
-        />
-        <ThresholdInput
-          id="min-ssw-residues"
-          label="Minimum SSW residues"
-          value={t.minSswResidues}
-          defaultValue={d.minSswResidues}
-          step="1"
-          min="0"
-          max="20"
-          description="Minimum residues in a structural-switch window."
-          readOnly={isReadOnly}
-          onChange={(v) => update("minSswResidues", Math.round(v))}
+          onChange={(v) => update("tangoAggregationThreshold", v)}
         />
       </ThresholdSection>
+
+      {/* PELEG-Q5-RESOLVED: removed per Said+Peleg 2026-05-06; previously
+          unclear "Aggregation per-residue %" threshold with no scientific justification. */}
+      {/* PELEG-PEL-G-RESOLVED: removed; "% of length cutoff" lacked scientific source and was confusing. */}
     </div>
   );
 }

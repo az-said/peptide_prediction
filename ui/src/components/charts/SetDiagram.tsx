@@ -233,10 +233,7 @@ function computeRegions(
   const both = intersect(setA, setB);
 
   // For each primary-level region, subtract child subsets to get "plain" members
-  function subtractChildren(
-    base: Set<string>,
-    children: typeof childrenA
-  ): Set<string> {
+  function subtractChildren(base: Set<string>, children: typeof childrenA): Set<string> {
     let result = new Set(base);
     for (const child of children) {
       result = difference(result, memberSets.get(child.id)!);
@@ -291,9 +288,7 @@ function computeRegions(
     // Members of this child that are in both primaries vs only in parent
     const childInBoth = intersect(childSet, both);
     const childInParentOnly =
-      child.parentSet === pA.id
-        ? intersect(childSet, aOnly)
-        : intersect(childSet, bOnly);
+      child.parentSet === pA.id ? intersect(childSet, aOnly) : intersect(childSet, bOnly);
 
     // Combine — child regions shown as one (the child circle encompasses all its members)
     const allChildMembers = new Set([...childInBoth, ...childInParentOnly]);
@@ -704,10 +699,52 @@ export function SetDiagram({
   );
 
   const effectiveMode = mode === "auto" ? "euler" : mode;
-  const visibleRegions =
-    effectiveMode === "euler"
-      ? data.regions.filter((r) => r.members.length > 0)
-      : data.regions;
+  // PELEG-FIX-1-RESOLVED (2026-05-06): the summary table always shows ALL
+  // configured regions — including count=0 rows — so users can verify which
+  // categories produced zero peptides without inferring it from a missing
+  // chip. computeRegions only emits rows for non-empty regions, so we
+  // synthesise count=0 placeholders for every configured primary / subset
+  // that doesn't already have one.
+  const visibleRegions = useMemo<ComputedRegion[]>(() => {
+    const seenIds = new Set(data.regions.map((r) => r.id));
+    const placeholders: ComputedRegion[] = [];
+    for (const p of sets.filter((s) => !s.parentSet)) {
+      const onlyId = `${p.id}-only`;
+      if (!seenIds.has(onlyId)) {
+        placeholders.push({
+          id: onlyId,
+          label: `${p.label} only`,
+          members: [],
+          color: p.color || "hsl(var(--muted-foreground))",
+        });
+      }
+    }
+    for (const s of sets.filter((s) => !!s.parentSet)) {
+      if (!seenIds.has(s.id)) {
+        placeholders.push({
+          id: s.id,
+          label: s.label,
+          members: [],
+          color: s.color || "hsl(var(--muted-foreground))",
+        });
+      }
+    }
+    return [...data.regions, ...placeholders];
+  }, [data.regions, sets]);
+  // Track which CONFIGURED set IDs are empty (no members at all in this
+  // dataset) so circle rendering can suppress them.
+  const emptySetIds = useMemo(
+    () =>
+      new Set(
+        sets.filter((s) => !s.members || s.members.length === 0).map((s) => s.id)
+      ),
+    [sets]
+  );
+  // Region IDs whose summary row is a synthesised count=0 placeholder.
+  const emptyRegionIds = useMemo(
+    () => new Set(visibleRegions.filter((r) => r.members.length === 0).map((r) => r.id)),
+    [visibleRegions]
+  );
 
   const W = 560;
   const H = 380;
@@ -765,9 +802,7 @@ export function SetDiagram({
 
   const total = data.total;
   const neither = data.regions.find((r) => r.id === "neither");
-  const hoveredRegion = hoveredRegionId
-    ? data.regions.find((r) => r.id === hoveredRegionId)
-    : null;
+  const hoveredRegion = hoveredRegionId ? data.regions.find((r) => r.id === hoveredRegionId) : null;
 
   /** Determine if a circle should be highlighted based on hovered region */
   const getCircleOpacity = useCallback(
@@ -847,25 +882,21 @@ export function SetDiagram({
             strokeWidth={1.5}
             strokeDasharray="6 3"
             className={
-              onRegionClick && neither && neither.members.length > 0
-                ? "cursor-pointer"
-                : ""
+              onRegionClick && neither && neither.members.length > 0 ? "cursor-pointer" : ""
             }
             onClick={() => neither && handleClick(neither)}
           />
-          <text
-            x={W - 24}
-            y={34}
-            textAnchor="end"
-            fontSize={10}
-            className="fill-muted-foreground"
-          >
+          <text x={W - 24} y={34} textAnchor="end" fontSize={10} className="fill-muted-foreground">
             All: {total}
           </text>
 
-          {/* Primary circles (rendered first, below subsets) — animated */}
+          {/* Primary circles (rendered first, below subsets) — animated.
+              PELEG-FIX-1-RESOLVED: skip circles for sets that have zero
+              members in this dataset so they do not float in the diagram.
+              The summary table still lists them with count=0 so the category
+              is not silently hidden. */}
           {circleLayouts
-            .filter((c) => !c.isSubset)
+            .filter((c) => !c.isSubset && c.count > 0 && !emptySetIds.has(c.id))
             .map((c) => {
               const opacities = getCircleOpacity(c.id, false);
               const scale = getClickScale(c.id);
@@ -915,8 +946,7 @@ export function SetDiagram({
                   cx: circleLayouts[1].cx,
                   cy: circleLayouts[1].cy,
                   r: circleLayouts[1].r,
-                  fillOpacity:
-                    hoveredRegionId?.includes("∩") ? 0.25 : 0.12,
+                  fillOpacity: hoveredRegionId?.includes("∩") ? 0.25 : 0.12,
                 }}
                 transition={CIRCLE_TRANSITION}
                 clipPath="url(#set-clip-a)"
@@ -926,8 +956,9 @@ export function SetDiagram({
             )}
 
           {/* Subset circles (rendered on top) — animated */}
+          {/* PELEG-FIX-1-RESOLVED: skip subset circles with count=0 too. */}
           {circleLayouts
-            .filter((c) => c.isSubset)
+            .filter((c) => c.isSubset && c.count > 0 && !emptySetIds.has(c.id))
             .map((c) => {
               const opacities = getCircleOpacity(c.id, true);
               const scale = getClickScale(c.id);
@@ -980,42 +1011,46 @@ export function SetDiagram({
                 />
               ))}
 
-          {/* Count + label text at computed placements */}
+          {/* Count + label text at computed placements.
+              PELEG-FIX-1-RESOLVED: skip placements for empty regions so the
+              "Neither" / empty-set chip disappears with its circle. */}
           {showCounts &&
-            labelPlacements.map((lp) => {
-              const isHovered = hoveredRegionId === lp.regionId;
-              return (
-                <g
-                  key={`label-${lp.regionId}`}
-                  className={onRegionClick ? "cursor-pointer" : ""}
-                  onClick={() => {
-                    const region = data.regions.find((r) => r.id === lp.regionId);
-                    if (region) handleClick(region);
-                  }}
-                >
-                  <text
-                    x={lp.x}
-                    y={lp.y - 4}
-                    textAnchor="middle"
-                    fontSize={isHovered ? 17 : 16}
-                    fontWeight={700}
-                    className="fill-foreground select-none"
-                    style={{ transition: "font-size 0.15s ease" }}
+            labelPlacements
+              .filter((lp) => !emptyRegionIds.has(lp.regionId))
+              .map((lp) => {
+                const isHovered = hoveredRegionId === lp.regionId;
+                return (
+                  <g
+                    key={`label-${lp.regionId}`}
+                    className={onRegionClick ? "cursor-pointer" : ""}
+                    onClick={() => {
+                      const region = data.regions.find((r) => r.id === lp.regionId);
+                      if (region) handleClick(region);
+                    }}
                   >
-                    {lp.count}
-                  </text>
-                  <text
-                    x={lp.x}
-                    y={lp.y + 10}
-                    textAnchor="middle"
-                    fontSize={10}
-                    className="fill-muted-foreground select-none"
-                  >
-                    {lp.label} ({pct(lp.count, total)}%)
-                  </text>
-                </g>
-              );
-            })}
+                    <text
+                      x={lp.x}
+                      y={lp.y - 4}
+                      textAnchor="middle"
+                      fontSize={isHovered ? 17 : 16}
+                      fontWeight={700}
+                      className="fill-foreground select-none"
+                      style={{ transition: "font-size 0.15s ease" }}
+                    >
+                      {lp.count}
+                    </text>
+                    <text
+                      x={lp.x}
+                      y={lp.y + 10}
+                      textAnchor="middle"
+                      fontSize={10}
+                      className="fill-muted-foreground select-none"
+                    >
+                      {lp.label} ({pct(lp.count, total)}%)
+                    </text>
+                  </g>
+                );
+              })}
 
           {/* Empty state */}
           {circleLayouts.length === 0 && (
@@ -1063,12 +1098,7 @@ export function SetDiagram({
               exit={{ opacity: 0, y: 4 }}
               transition={{ duration: 0.1 }}
             >
-              <RegionHoverCard
-                region={hoveredRegion}
-                total={total}
-                x={hoverPos.x}
-                y={hoverPos.y}
-              />
+              <RegionHoverCard region={hoveredRegion} total={total} x={hoverPos.x} y={hoverPos.y} />
             </motion.div>
           )}
         </AnimatePresence>
@@ -1079,15 +1109,9 @@ export function SetDiagram({
         <table className="w-full text-xs">
           <thead>
             <tr className="border-b border-border/60">
-              <th className="text-left py-1.5 px-2.5 font-medium text-muted-foreground">
-                Region
-              </th>
-              <th className="text-right py-1.5 px-2.5 font-medium text-muted-foreground">
-                Count
-              </th>
-              <th className="text-right py-1.5 px-2.5 font-medium text-muted-foreground">
-                %
-              </th>
+              <th className="text-left py-1.5 px-2.5 font-medium text-muted-foreground">Region</th>
+              <th className="text-right py-1.5 px-2.5 font-medium text-muted-foreground">Count</th>
+              <th className="text-right py-1.5 px-2.5 font-medium text-muted-foreground">%</th>
             </tr>
           </thead>
           <tbody>
@@ -1148,7 +1172,15 @@ export function SetDiagram({
  * Build the PVL 4-category set definitions from a peptide array.
  * Returns sets ready to pass to <SetDiagram>.
  */
-export function buildPVLSets(peptides: { id: string; sswPrediction?: number | null; s4predHelixPrediction?: number | null; ffSswFlag?: number | null; ffHelixFlag?: number | null }[]): SetDefinition[] {
+export function buildPVLSets(
+  peptides: {
+    id: string;
+    sswPrediction?: number | null;
+    s4predHelixPrediction?: number | null;
+    ffSswFlag?: number | null;
+    ffHelixFlag?: number | null;
+  }[]
+): SetDefinition[] {
   return [
     {
       id: "ssw",
@@ -1159,9 +1191,7 @@ export function buildPVLSets(peptides: { id: string; sswPrediction?: number | nu
     {
       id: "helix",
       label: "Helix",
-      members: peptides
-        .filter((p) => p.s4predHelixPrediction === 1)
-        .map((p) => p.id),
+      members: peptides.filter((p) => p.s4predHelixPrediction === 1).map((p) => p.id),
       color: "hsl(var(--helix))",
     },
     {

@@ -53,6 +53,8 @@ function pickValues<T extends number | null | undefined>(
   return { peptideValues, values };
 }
 
+// PELEG-Q1-RESOLVED: ffHelixPercent metric removed from classification comparison
+// per Said+Peleg 2026-05-06.
 const COMPARISON_METRICS: ComparisonMetric[] = [
   { id: "hydrophobicity", label: "Hydrophobicity", getValue: (p) => p.hydrophobicity },
   // PELEG-Q-FIX-022: |charge| loses sign — discussion pending.
@@ -63,12 +65,6 @@ const COMPARISON_METRICS: ComparisonMetric[] = [
   },
   { id: "length", label: "Length", unit: "aa", getValue: (p) => p.length },
   { id: "muH", label: "uH", getValue: (p) => p.muH },
-  {
-    id: "ffHelixPercent",
-    label: "FF-Helix %",
-    unit: "%",
-    getValue: (p) => p.ffHelixPercent,
-  },
 ];
 
 export function ResultsCharts({ peptides, providerStatus }: ResultsChartsProps) {
@@ -145,11 +141,12 @@ export function ResultsCharts({ peptides, providerStatus }: ResultsChartsProps) 
               metric={{
                 id: "hydrophobicity",
                 label: "Hydrophobicity",
-                axisX: "Hydrophobicity (Fauchere-Pliska)",
+                axisX: "Hydrophobicity",
                 axisY: "Count",
               }}
               threshold={hydroThreshold}
               summary="count-above"
+              mode="preview"
               onBinClick={(ids, label) =>
                 selectBin({ ids, binLabel: label, source: "Hydrophobicity Distribution" })
               }
@@ -172,6 +169,7 @@ export function ResultsCharts({ peptides, providerStatus }: ResultsChartsProps) 
               }}
               threshold={muHThreshold}
               summary="count-above"
+              mode="preview"
               onBinClick={(ids, label) =>
                 selectBin({
                   ids,
@@ -197,6 +195,7 @@ export function ResultsCharts({ peptides, providerStatus }: ResultsChartsProps) 
                 axisX: "Sequence length (amino acids)",
                 axisY: "Count",
               }}
+              mode="preview"
               onBinClick={(ids, label) =>
                 selectBin({ ids, binLabel: label, source: "Sequence Length Distribution" })
               }
@@ -268,6 +267,7 @@ export function ResultsCharts({ peptides, providerStatus }: ResultsChartsProps) 
                 axisY: "Count",
               }}
               style="lollipop"
+              mode="preview"
               onBinClick={(ids, label) =>
                 selectBin({
                   ids,

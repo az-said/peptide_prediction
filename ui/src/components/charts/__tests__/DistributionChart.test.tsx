@@ -44,19 +44,13 @@ describe("DistributionChart", () => {
   });
 
   it("renders with pre-binned data", () => {
-    const { container } = render(
-      <DistributionChart binnedData={BINNED_DATA} metric={METRIC} />
-    );
+    const { container } = render(<DistributionChart binnedData={BINNED_DATA} metric={METRIC} />);
     expect(container.querySelector(".recharts-responsive-container")).not.toBeNull();
   });
 
   it("renders lollipop style", () => {
     const { container } = render(
-      <DistributionChart
-        binnedData={BINNED_DATA}
-        metric={METRIC}
-        style="lollipop"
-      />
+      <DistributionChart binnedData={BINNED_DATA} metric={METRIC} style="lollipop" />
     );
     expect(container.querySelector(".recharts-responsive-container")).not.toBeNull();
   });
@@ -77,9 +71,7 @@ describe("DistributionChart", () => {
   });
 
   it("shows empty state when no data", () => {
-    const { container } = render(
-      <DistributionChart data={[]} metric={METRIC} />
-    );
+    const { container } = render(<DistributionChart data={[]} metric={METRIC} />);
     expect(container.textContent).toContain("No data available");
   });
 
@@ -95,5 +87,65 @@ describe("DistributionChart", () => {
     // The container should have the height style
     const chartContainer = container.querySelector("[style]");
     expect(chartContainer).not.toBeNull();
+  });
+
+  // PELEG-FIX-2-RESOLVED (2026-05-06)
+  describe("preview vs expanded modes", () => {
+    const THRESHOLD = { value: 0.5, label: "0.50" } as const;
+
+    it("preview mode hides the summary text", () => {
+      const { container } = render(
+        <DistributionChart
+          data={RAW_DATA}
+          peptideValues={PEPTIDE_VALUES}
+          metric={METRIC}
+          threshold={THRESHOLD}
+          summary="count-above"
+          mode="preview"
+        />
+      );
+      // Expanded mode would render "of N peptides (P%) above ...".
+      expect(container.textContent || "").not.toContain("peptides (");
+    });
+
+    it("expanded mode renders the summary text", () => {
+      const { container } = render(
+        <DistributionChart
+          data={RAW_DATA}
+          peptideValues={PEPTIDE_VALUES}
+          metric={METRIC}
+          threshold={THRESHOLD}
+          summary="count-above"
+          mode="expanded"
+        />
+      );
+      expect(container.textContent || "").toContain("peptides (");
+    });
+
+    it("preview mode uses smaller height than expanded mode by default", () => {
+      const { container: previewContainer } = render(
+        <DistributionChart
+          data={RAW_DATA}
+          peptideValues={PEPTIDE_VALUES}
+          metric={METRIC}
+          mode="preview"
+        />
+      );
+      const { container: expandedContainer } = render(
+        <DistributionChart
+          data={RAW_DATA}
+          peptideValues={PEPTIDE_VALUES}
+          metric={METRIC}
+          mode="expanded"
+        />
+      );
+
+      // Both modes should attach an inline style somewhere with a height token.
+      // We verify preview's HTML contains "180" and expanded contains "300".
+      const previewHtml = previewContainer.innerHTML;
+      const expandedHtml = expandedContainer.innerHTML;
+      expect(previewHtml).toMatch(/180/);
+      expect(expandedHtml).toMatch(/300/);
+    });
   });
 });
