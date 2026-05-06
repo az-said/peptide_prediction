@@ -220,7 +220,25 @@ Prominent option on the landing page: "Run PVL on your own machine — Docker, M
 | D1.11 | Inner pages redesign (Results, Upload, etc.) | 8h | DONE | All 9 data pages + sidebar redesigned |
 | D1.12 | Navigation guard (QuickAnalyze) | 2h | DONE | AlertDialog + global nav guard hook |
 
-## Phase D4: Universal Drill-Down + Hover Architecture (NEW — Wave H)
+## Phase D5: V4 Transformative Differentiators (NEW — Wave V4)
+
+The "first of its kind" round. Three additions no peptide tool has, that make PVL genuinely transformative.
+
+### D5.1 — Reproducibility Ribbon + Analysis Permalink (Cowork V4-1)
+**Effort**: 12-16h | **Status**: PROPOSED
+Persistent ribbon at top of Results + PeptideDetail showing: PVL version, build SHA, query summary, threshold values, "Copy permalink" button, "Citation" button (BibTeX/RIS/plain text). Permalinks encode all state needed to reproduce the analysis. Pasting a URL reproduces the exact view. Required for: peer reviewer reproducibility checks, paper citations, bio.tools/JOSS submissions.
+
+### D5.2 — Mol* 3D Structure Viewer with PVL Annotations (Cowork V4-2)
+**Effort**: 16-24h | **Status**: PROPOSED
+Render TANGO peaks + S4PRED helix segments + FF-Helix candidate regions + SSW switch zones directly on the AlphaFold 3D structure via Mol*. Toggle controls per overlay type. Hover-sync between 3D structure and 2D sequence track. Export to PDB, PNG snapshot, Mol* session URL. **No competing peptide tool offers this.** Killer differentiator.
+
+### D5.3 — Sliding-Window Profile Redesign (Cowork V4-3)
+**Effort**: 8-12h | **Status**: PROPOSED
+Multi-channel scientific visualization replacing the current monochromatic blue-line plots. Declarative `<WindowProfileChart channels={...}>` component supporting hydrophobicity + μH + TANGO lines, S4PRED helix / FF-Helix / SSW segment bands, aggregation peak markers. Each channel toggleable. Reference lines for thresholds. Designed for Phase I multi-predictor channels to plug in as new visual channels.
+
+---
+
+## Phase D4: Universal Drill-Down + Hover Architecture (Wave H)
 
 **Goal**: every numeric value, every chart element, every metric label reveals contextual scientific detail on hover; every chart can expand into a slide-over inspector with full drill-down. This is the single biggest UX transformation in the roadmap — the difference between "PVL has charts" and "PVL is a research instrument."
 
@@ -673,7 +691,8 @@ CEO terminal (T1) plans waves; sub-terminals (T2/T3/T-PEL/Cowork) execute. T1 co
 | **P3** | Tier 3 charts: FIX-019 to FIX-025 | Cowork-heavy + T3 wires | All distribution + correlation charts redone |
 | **P4** | Tier 4 help text: FIX-026 to FIX-030 | T3 (text-only) | Metric definitions, classification text, visualization guide |
 | **P5** | Tier 5 polish: FIX-031, FIX-032 | T3 | S4PRED warning citation, threshold values panel |
-| **C** | Email Alex+Peleg recap (queued from start, sent after P5) | T1 + Said | Recap + 6 Peleg-flagged Qs answered |
+| **V4** | Cowork V4 — Reproducibility ribbon + Mol\* 3D overlay + Window-profile redesign | Cowork + T3 | D5.1, D5.2, D5.3 — first-of-its-kind differentiators |
+| **C** | Email Alex+Peleg recap with 12 open scientific questions | T1 + Said | `docs/active/WAVE_C_EMAIL_DRAFT.md` ready; Said sends |
 | **F** | Phase I (multi-predictor consensus) research spike | T1 + Said | Go/no-go on Galagos-inspired strategy |
 | **G** | Cowork design pilot (one component end-to-end before D3.x) | Cowork + T3 | Pilot accepted by Said |
 | **H** | pvl-cli + pvl-py + Developers nav (B17, B18, B19) | T2 | Multi-surface ecosystem |
