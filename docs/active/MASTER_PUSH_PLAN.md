@@ -59,10 +59,11 @@ PVL is "the actual vision" when ALL of the following are true:
 
 Each wave is sized 1-3 months wall-clock (parallel agents make many items concurrent). The order is **results-prioritized**: each wave delivers a specific platform-level capability that makes the next wave more valuable.
 
-### Wave 1 — Foundation + UI Quality (CURRENT — DONE, not yet pushed)
+### Wave 1 — Foundation + UI Quality (✅ PUSHED 2026-05-07)
 
-**Status**: complete on `planning/wave-0-prep`, 25 commits ahead of main.
-**Result delivered**: PVL is a clean, scientifically correct, observable, reproducible web app with 887 tests.
+**Status**: ✅ **merged to `main` 2026-05-07 via PR #4 — merge commit `5d2ad3f`**. 28 commits delivered.
+**CI verification**: all 5 checks green — Detect Changes (7s) · CodeRabbit (review skipped, file-count limit hit on 192-file PR) · Backend Tests (2m34s) · Frontend Build (36s) · Docker Build (5m56s).
+**Result delivered**: PVL is a clean, scientifically correct, observable, reproducible web app with 887 tests, on GitHub `main`, ready for Wave 2 build-out.
 
 **What landed**:
 - 4-category classification (Peleg foundation)
