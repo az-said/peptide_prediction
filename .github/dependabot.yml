@@ -28,6 +28,12 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "react-dom"
         update-types: ["version-update:semver-major"]
+      # Hold lucide-react major bumps — v1.0 reorganized brand icons (Github
+      # icon was removed). Major bumps for icon libraries trigger import
+      # refactors across many components; do these manually in summer
+      # release windows, not as auto-PRs.
+      - dependency-name: "lucide-react"
+        update-types: ["version-update:semver-major"]
 
   # Backend Python packages
   - package-ecosystem: "pip"
