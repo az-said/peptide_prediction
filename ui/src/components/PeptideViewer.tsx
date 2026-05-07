@@ -1,10 +1,13 @@
 /**
  * Shared peptide display component.
  *
- * Renders KPI tiles, SequenceTrack, ConsensusCard, HelicalWheel,
- * S4PredChart, AggregationHeatmap, and AlphaFoldViewer for a single peptide.
+ * Renders KPI tiles, SequenceTrack, HelicalWheel, S4PredChart,
+ * AggregationHeatmap, and AlphaFoldViewer for a single peptide.
  *
  * Used by QuickAnalyze.tsx. PeptideDetail.tsx will adopt this after redesign.
+ *
+ * Peleg FIX-013: ConsensusCard tier system removed (certainty math
+ * unjustified). See lib/consensus.ts header.
  */
 import { AlertTriangle, Copy, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +21,7 @@ import { HelicalWheel } from "@/components/HelicalWheel";
 import { AggregationHeatmap } from "@/components/AggregationHeatmap";
 import { AlphaFoldViewer } from "@/components/AlphaFoldViewer";
 import { S4PredChart } from "@/components/S4PredChart";
-import { ConsensusCard } from "@/components/ConsensusCard";
+import { BiochemComparison, DEFAULT_PVL_METRICS } from "@/components/BiochemComparison";
 
 interface PeptideViewerProps {
   peptide: Peptide;
@@ -75,11 +78,7 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
                 showIcon
                 sswContext={{ sswHelixPercentage: p.sswHelixPct, sswDiff: p.sswDiff }}
               />
-              {typeof p.s4predHelixPercent === "number" && (
-                <Badge variant="outline" className="text-helix border-helix">
-                  S4PRED Helix: {p.s4predHelixPercent.toFixed(1)}%
-                </Badge>
-              )}
+              {/* S4PRED Helix value moved to BiochemComparison to avoid header duplication */}
               <Button variant="outline" size="sm" onClick={handleCopySequence}>
                 <Copy className="w-4 h-4 mr-1" />
                 Copy
@@ -117,49 +116,10 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
         </div>
       )}
 
-      {/* ── KPI tiles ── */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-primary">
-              {p.charge !== null ? `${p.charge > 0 ? "+" : ""}${p.charge.toFixed(1)}` : "N/A"}
-            </div>
-            <div className="text-sm text-muted-foreground">Charge</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-primary">
-              {p.hydrophobicity !== null ? p.hydrophobicity.toFixed(2) : "N/A"}
-            </div>
-            <div className="text-sm text-muted-foreground">Hydrophobicity</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-primary">
-              {p.muH != null ? p.muH.toFixed(2) : "N/A"}
-            </div>
-            <div className="text-sm text-muted-foreground">Hydrophobic moment</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <div className="text-2xl font-bold text-helix">
-              {typeof p.s4predHelixPercent === "number"
-                ? `${p.s4predHelixPercent.toFixed(0)}%`
-                : "N/A"}
-            </div>
-            <div className="text-sm text-muted-foreground">S4PRED Helix</div>
-            <div className="text-[10px] text-muted-foreground/60">
-              neural network prediction
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── Consensus Analysis ── */}
-      <ConsensusCard peptide={p} />
+      {/* Wave Q.1: KPI tile row replaced with the unified BiochemComparison.
+          Quick Analyze (single sequence, no database) auto-falls back to the
+          single-peptide empty-state via allPeptides.length < 2. */}
+      <BiochemComparison peptide={p} allPeptides={[p]} stats={null} metrics={DEFAULT_PVL_METRICS} />
 
       {/* ── Helical Wheel ── */}
       {p.length != null && p.length <= 40 && (
@@ -167,8 +127,7 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
           <CardHeader>
             <CardTitle>Helical Wheel Projection</CardTitle>
             <CardDescription>
-              Schiffer-Edmundson axial view. The red arrow shows the hydrophobic moment
-              direction.
+              Schiffer-Edmundson axial view. The red arrow shows the hydrophobic moment direction.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center">
@@ -186,8 +145,8 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
           <CardHeader>
             <CardTitle>TANGO Aggregation Profile</CardTitle>
             <CardDescription>
-              Per-residue aggregation propensity. High scores indicate amyloid-forming
-              regions.
+              Per-residue aggregation propensity. Higher scores indicate regions with higher
+              aggregation propensity.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -205,27 +164,19 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
       {/* ── AlphaFold Viewer ── */}
       <AlphaFoldViewer peptideId={p.id} />
 
-      {/* ── Interpretation guidance ── */}
+      {/* ── Interpretation guidance ──
+          PELEG-FIX-015 (2026-05-07): auto-generated interpretive bullets
+          replaced with a muted disclaimer. Peleg requested a live decision-
+          tree review (slide 24) before the tool ships any interpretive
+          claims. */}
       <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Interpretation Notes</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            <strong className="text-foreground">Charge</strong> and{" "}
-            <strong className="text-foreground">hydrophobicity</strong> help screen
-            antimicrobial and amyloid-prone candidates. Higher hydrophobicity with positive
-            charge can suggest membrane activity.
-          </p>
-          <p>
-            <strong className="text-foreground">Hydrophobic moment</strong> measures
-            amphipathicity — the asymmetry of hydrophobic residue distribution around a helix
-            axis.
-          </p>
-          <p>
-            TANGO and S4PRED predictions show "N/A" if those tools are not installed on the
-            server. Biochemical properties (charge, hydrophobicity, hydrophobic moment) are
-            always computed.
+        <CardContent className="pt-6">
+          <p className="text-xs text-muted-foreground">
+            Biological interpretation requires expert review. See the{" "}
+            <a href="/help" className="underline hover:text-foreground">
+              Help page
+            </a>{" "}
+            for metric definitions.
           </p>
         </CardContent>
       </Card>

@@ -172,7 +172,7 @@ export function FeatureShowcase({ className }: FeatureShowcaseProps) {
     {
       gradient: "bg-gradient-to-r from-red-500 to-orange-400",
       title: "Aggregation Propensity",
-      description: "Per-residue aggregation scoring identifies amyloid-prone hotspot regions in your peptide.",
+      description: "Per-residue aggregation scoring identifies aggregation-prone regions in your peptide.",
       link: "/quick",
       preview: <MiniSparkline />,
     },

@@ -6,15 +6,9 @@
  * counts change. All changes are client-side only.
  */
 import { useState, useMemo } from "react";
-import {
-  RotateCcw,
-  Info,
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  RefreshCw,
-  Loader2,
-} from "lucide-react";
+// PELEG-Q5-RESOLVED + PELEG-PEL-G-RESOLVED: collapsible Aggregation Flagging
+// section was removed; ChevronDown/ChevronRight no longer used here.
+import { RotateCcw, Info, AlertTriangle, RefreshCw, Loader2 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -41,7 +35,8 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
   const { preset, active, original, isModified, setPreset, setThreshold, resetToOriginal } =
     useThresholdStore();
 
-  const [aggExpanded, setAggExpanded] = useState(false);
+  // PELEG-Q5-RESOLVED + PELEG-PEL-G-RESOLVED: aggExpanded state removed
+  // (collapsible Aggregation Flagging section deleted).
   const [recalculating, setRecalculating] = useState(false);
   const recalculate = useDatasetStore((s) => s.recalculate);
   const hasSource = useDatasetStore(
@@ -144,15 +139,15 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
           <div>
             <div className="flex justify-between text-sm mb-1.5">
               <span>
-                <Abbr title="Hydrophobic moment">μH</Abbr> Cutoff
+                <Abbr title="Hydrophobic moment">uH</Abbr> threshold
               </span>
               <span className="tabular-nums text-muted-foreground">
                 {active.muHCutoff.toFixed(2)}
               </span>
             </div>
             <Slider
-              min={-1}
-              max={2}
+              min={0}
+              max={3.26}
               step={0.01}
               value={[active.muHCutoff]}
               onValueChange={([v]) => setThreshold("muHCutoff", v)}
@@ -160,99 +155,47 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
           </div>
           <div>
             <div className="flex justify-between text-sm mb-1.5">
-              <span>Hydrophobicity Cutoff</span>
+              <span>Hydrophobicity threshold</span>
               <span className="tabular-nums text-muted-foreground">
                 {active.hydroCutoff.toFixed(2)}
               </span>
             </div>
             <Slider
-              min={-2}
-              max={2}
+              min={-1.01}
+              max={2.25}
               step={0.01}
               value={[active.hydroCutoff]}
               onValueChange={([v]) => setThreshold("hydroCutoff", v)}
             />
           </div>
 
-          {/* Aggregation Flagging Section (collapsible) */}
-          <div className="border rounded-md">
-            <button
-              type="button"
-              className="flex items-center justify-between w-full px-3 py-2 text-sm font-medium hover:bg-muted/50 rounded-md"
-              onClick={() => setAggExpanded(!aggExpanded)}
-            >
-              <span>Aggregation Flagging</span>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground tabular-nums">
-                  Agg={active.aggThreshold.toFixed(1)}%
-                </span>
-                {aggExpanded ? (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                )}
-              </div>
-            </button>
-            {aggExpanded && (
-              <div className="px-3 pb-3 space-y-3">
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">Per-Residue Threshold</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {active.aggThreshold.toFixed(1)}%
-                    </span>
-                  </div>
-                  <Slider
-                    min={0}
-                    max={50}
-                    step={0.5}
-                    value={[active.aggThreshold]}
-                    onValueChange={([v]) => setThreshold("aggThreshold", v)}
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">% of Length Cutoff</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {active.percentOfLengthCutoff.toFixed(0)}%
-                    </span>
-                  </div>
-                  <Slider
-                    min={0}
-                    max={100}
-                    step={1}
-                    value={[active.percentOfLengthCutoff]}
-                    onValueChange={([v]) => setThreshold("percentOfLengthCutoff", v)}
-                  />
-                </div>
-                <div>
-                  <div className="flex justify-between text-sm mb-1.5">
-                    <span className="text-muted-foreground">Min SSW Residues</span>
-                    <span className="tabular-nums text-muted-foreground">
-                      {active.minSswResidues}
-                    </span>
-                  </div>
-                  <Slider
-                    min={0}
-                    max={20}
-                    step={1}
-                    value={[active.minSswResidues]}
-                    onValueChange={([v]) => setThreshold("minSswResidues", v)}
-                  />
-                </div>
-                <p className="text-[10px] text-muted-foreground">
-                  A peptide is flagged if any rule triggers: ≥5 contiguous hotspot residues, high %
-                  of aggregation-prone residues, or too few SSW residues.
-                </p>
-              </div>
-            )}
+          {/* PELEG-Q5-RESOLVED: "Aggregation per-residue %" removed per Said+Peleg 2026-05-06.
+              PELEG-PEL-G-RESOLVED: "% of length" removed; threshold lacked scientific source.
+              PELEG-Q-FIX-025: "Minimum SSW residues" hidden alongside; awaiting discussion. */}
+
+          {/* PELEG-Q6-PARTIAL: TANGO aggregation threshold (replacing the
+              hardcoded "5%" annotation on the TANGO chart). */}
+          <div>
+            <div className="flex justify-between text-sm mb-1.5">
+              <span>TANGO aggregation threshold</span>
+              <span className="tabular-nums text-muted-foreground">
+                {active.tangoAggregationThreshold.toFixed(1)}
+              </span>
+            </div>
+            <Slider
+              min={0}
+              max={50}
+              step={0.5}
+              value={[active.tangoAggregationThreshold]}
+              onValueChange={([v]) => setThreshold("tangoAggregationThreshold", v)}
+            />
           </div>
         </div>
 
         {/* Impact summary */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
           <div className="rounded-md border p-3">
-            <div className="text-xs text-muted-foreground">Helix Candidates (μH)</div>
+            <div className="text-xs text-muted-foreground">Helix Candidates (uH)</div>
             <div className="text-xl font-semibold">{summary.ffHelixCandidates}</div>
             {impactLabel(summary.ffHelixCandidates, originalSummary.ffHelixCandidates) && (
               <div className="text-[10px] text-amber-600 mt-0.5">
@@ -270,7 +213,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
             )}
           </div>
           <div className="rounded-md border p-3">
-            <div className="text-xs text-muted-foreground">Agg Flagged</div>
+            <div className="text-xs text-muted-foreground">Aggregation Flagged</div>
             <div className="text-xl font-semibold">{summary.aggFlagged}</div>
             {impactLabel(summary.aggFlagged, originalSummary.aggFlagged) && (
               <div className="text-[10px] text-amber-600 mt-0.5">
@@ -284,26 +227,31 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
           </div>
         </div>
 
-        {/* Threshold provenance note */}
+        {/* Peleg FIX-025: threshold provenance — show origin clearly. */}
         {isModified ? (
           <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2.5">
             <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600" />
             <span>
-              You have changed from the original thresholds. These are derived from the recommended
-              rigorously tested reference dataset. Changing may affect scientific accuracy. Server
-              values: μH={original.muHCutoff.toFixed(2)}, H={original.hydroCutoff.toFixed(2)}, Agg=
-              {original.aggThreshold.toFixed(1)}%
+              <strong>Source: User-set</strong> — you have changed from the original thresholds. The
+              originals are the recommended values (computed from the dataset). Changing may affect
+              scientific accuracy. Original values: uH={original.muHCutoff.toFixed(2)}, H=
+              {original.hydroCutoff.toFixed(2)}, TANGO aggregation=
+              {original.tangoAggregationThreshold.toFixed(1)}
             </span>
           </div>
         ) : (
           <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/30 rounded-md p-2.5">
             <Info className="w-3.5 h-3.5 mt-0.5 shrink-0" />
             <span>
-              Using recommended thresholds (dataset-average). These are rigorously validated
-              values.
+              <strong>Source: Computed from dataset median.</strong> These are the recommended
+              thresholds derived from your data and rigorously validated reference values.
             </span>
           </div>
         )}
+        {/* PELEG-Q5-RESOLVED + PELEG-PEL-G-RESOLVED + PELEG-Q-FIX-025:
+            "Aggregation per-residue %", "% of length", and "Min SSW residues"
+            controls were removed entirely per Said+Peleg 2026-05-06 — they
+            lacked scientific source and confused users. */}
       </CardContent>
     </Card>
   );

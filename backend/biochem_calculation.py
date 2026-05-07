@@ -1,5 +1,4 @@
 import math
-import statistics
 
 import numpy as np
 
@@ -91,6 +90,11 @@ def total_charge(sequence) -> float:
 
     :param sequence: peptide sequence
     :return: total charge (float to account for partial H charge)
+
+    # PELEG-Q-FIX-022: Charge handling (absolute vs signed) — biological signal lost
+    # in current |Charge| consumers. Backend returns signed; sign of charge is
+    # biologically meaningful and downstream consumers must NOT default to abs().
+    # Awaiting decision on whether |Charge| usage should be reverted.
     """
     codes = np.frombuffer(sequence.encode("ascii"), dtype=np.uint8)
     return float(np.sum(_CHARGE_LUT[codes]))

@@ -7,30 +7,80 @@
 import type { Peptide } from "@/types/peptide";
 import { computeAggFlag, type AggFlagConfig, DEFAULT_AGG_CONFIG } from "@/lib/aggregationFlags";
 
+/**
+ * Resolved thresholds — single source of truth for the UI.
+ * Defaults must match `backend/config.py` (Peleg's 9 canonical thresholds, FIX-002).
+ *
+ * Peleg's groups (FIX-002):
+ *   Group 1 — General secondary-structure thresholds
+ *   Group 2 — Helical thresholds
+ *   Group 3 — Secondary-structure switch thresholds
+ *   Group 4 — Fibril-formation thresholds
+ *
+ * Legacy aggregation-flagging fields (aggThreshold, percentOfLengthCutoff,
+ * minSswResidues, sswMaxDifference, minPredictionPercent) are kept for
+ * back-compat with the consensus / report / aggregation-flag pipeline.
+ * Peleg flagged these for discussion — surfaced in the UI under "Advanced".
+ */
 export type ResolvedThresholds = {
+  // Group 1: General secondary-structure thresholds
+  minSegmentLength: number;
+  maxGap: number;
+
+  // Group 2: Helical thresholds
+  minS4predHelixScore: number;
+  minHelixPercentContent: number;
+
+  // Group 3: Secondary-structure switch thresholds
+  s4predMaxHelixBetaDiff: number;
+  tangoMaxHelixBetaDiff: number;
+  minSsPercentContent: number;
+
+  // Group 4: Fibril-formation thresholds
   muHCutoff: number;
   hydroCutoff: number;
+  // PELEG-Q6-PARTIAL: TANGO aggregation threshold (default 5.0). Replaces
+  // the hardcoded "5%" annotation on the TANGO chart per Said+Peleg 2026-05-06.
+  tangoAggregationThreshold: number;
+
+  // PELEG-Q5-RESOLVED + PELEG-PEL-G-RESOLVED: aggThreshold +
+  //   percentOfLengthCutoff are no longer surfaced as user controls but
+  //   remain on the resolved-thresholds shape for back-compat with the
+  //   aggregation-flag pipeline.
   aggThreshold: number;
   percentOfLengthCutoff: number;
   minSswResidues: number;
   sswMaxDifference: number;
   minPredictionPercent: number;
-  minS4predHelixScore: number;
+  /** @deprecated superseded by tangoMaxHelixBetaDiff (Peleg FIX-002 Group 3) */
   maxTangoDifference: number;
 };
 
 /**
- * Default thresholds (fallback if meta.thresholds not available)
+ * Default thresholds — match backend/config.py constants (Peleg FIX-002).
+ * Fallback when meta.thresholds is unavailable.
  */
 export const DEFAULT_THRESHOLDS: ResolvedThresholds = {
-  muHCutoff: 0.0,
-  hydroCutoff: 0.0,
+  // Group 1
+  minSegmentLength: 5,
+  maxGap: 3,
+  // Group 2
+  minS4predHelixScore: 0.5,
+  minHelixPercentContent: 0,
+  // Group 3
+  s4predMaxHelixBetaDiff: 0.03,
+  tangoMaxHelixBetaDiff: 3,
+  minSsPercentContent: 0,
+  // Group 4
+  muHCutoff: 0.5,
+  hydroCutoff: 0.5,
+  tangoAggregationThreshold: 5.0,
+  // Legacy
   aggThreshold: 5.0,
   percentOfLengthCutoff: 20.0,
   minSswResidues: 3,
   sswMaxDifference: 0.0,
   minPredictionPercent: 50.0,
-  minS4predHelixScore: 0.0,
   maxTangoDifference: 0.0,
 };
 

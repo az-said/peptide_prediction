@@ -1,8 +1,8 @@
 # Known Issues — Prioritized Backlog
 
-**Last Updated**: 2026-03-28
+**Last Updated**: 2026-04-26
 
-> **Status**: 17 original issues FIXED. 5 new issues open (ISSUE-018 to ISSUE-022) from Alex's testing.
+> **Status**: 17 original issues FIXED. ISSUE-018 to ISSUE-024 historic. ISSUE-025 to ISSUE-029 open (Wave 0 + Wave A + Wave B from team feedback 2026-04-26).
 
 ## Priority Definitions
 
@@ -35,6 +35,14 @@
 | ISSUE-015 | **P1** | SSW self-referential threshold | `backend/tango.py`, `backend/s4pred.py` | MEDIUM | — | ✅ FIXED |
 | ISSUE-016 | **P1** | S4PRED availability check case sensitivity | `backend/server.py` | HIGH | — | ✅ FIXED |
 | ISSUE-017 | **P1** | Non-standard amino acid crashes | `backend/biochem_calculation.py` | MEDIUM | `test_nonstandard_aa.py` | ✅ FIXED |
+| ISSUE-024 | **P1** | No notification on non-standard AA substitutions | `backend/auxiliary.py`, UI | MEDIUM | — | 🟡 OPEN |
+| ISSUE-025 | **P0** | Backend test failures: `test_trace_id.py` (2 tests) | `backend/tests/test_trace_id.py` | LOW | already exists | 🔴 OPEN (Wave 0) |
+| ISSUE-026 | **P0** | Frontend type errors: 8 in stores (Zustand storage drift + Meta↔DatasetMetadata) | `ui/src/stores/datasetStore.ts`, `ui/src/stores/jobStore.ts` | LOW | tsc clean | 🔴 OPEN (Wave 0) |
+| ISSUE-027 | **P1** | `crypto.randomUUID is not a function` on Safari at `/quick` and `/database-search` (HTTP, older Safari) | `ui/src/components/UniProtQueryInput.tsx`, `ui/src/pages/Upload.tsx` | MEDIUM | jsdom test | 🟠 OPEN (Wave A) |
+| ISSUE-028 | **P2** | TANGO profile tooltip MISSING in Quick Analyze (present elsewhere). T3 to verify all TANGO charts | `ui/src/pages/QuickAnalyze.tsx` and TANGO chart components | LOW | manual | 🟠 OPEN (Wave B) |
+| ISSUE-029 | **P2** | Dark menu component shows in light mode (theme leak) | TBD via grep | LOW | manual | ✅ FIXED (2026-04-26) |
+| ISSUE-030 | **P1** | Sentry session-replay quota burn (sample rate at 1.0) | `ui/src/main.tsx` | LOW | — | ✅ FIXED (2026-04-26, replay rate → 0, error replay kept at 1.0) |
+| ISSUE-031 | **P2** | Stale Sentry errors: `HTTPException: No active job with this cancel token` (11/18 errors/month) | `backend/api/routes/jobs.py` | LOW | — | ✅ FIXED (commit 2ed386d 2026-04-03 — returns 200 ALREADY_COMPLETE; old VPS builds will stop firing after next deploy) |
 
 ---
 
@@ -592,6 +600,265 @@ When a user submits a sequence containing non-standard amino acids (X, Z, B, U, 
 
 ### Note from Peleg
 These substitutions are intentional — chosen to get results most likely to predict fibril formation correctly. The user should know they happened but should NOT be blocked from analysis.
+
+---
+
+## ISSUE-025: Backend test failures — `test_trace_id.py`
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Status** | Open (Wave 0) |
+| **Blast Radius** | LOW |
+| **Root Module** | `backend/tests/test_trace_id.py` |
+| **Owner** | T2 |
+
+### Symptom
+```
+FAILED tests/test_trace_id.py::test_trace_id_in_meta_upload_csv
+  - aff00e9e-f90f-401b-973d-b0958dbced41
+  + a34f52bd-44dc-48e0-8249-2dd9af7bcf87
+FAILED tests/test_trace_id.py::test_trace_id_in_meta_predict
+  - e3ff818a-272a-4283-9d0b-1d191fa27e48
+  + 5955f93e-0ebd-4bcd-84cc-105b464c6b27
+```
+Two UUIDs being compared for equality — but the response trace_id is independently generated, not predicted by the test.
+
+### Reproduction
+```bash
+make test 2>&1 | grep -A2 "test_trace_id"
+```
+
+### Analysis
+- **Expected**: `meta.trace_id` matches the trace_id propagated from the request (response header `x-trace-id` or request context)
+- **Actual**: Test generates one UUID and compares against an independently-generated server UUID → never equal
+- **Cause**: Either (a) the test should set `x-trace-id` request header and assert echo, OR (b) trace_id propagation through the meta object regressed, OR (c) the test is asserting a stale snapshot
+
+### Fix path (T2 to investigate)
+1. Read `backend/tests/test_trace_id.py` end-to-end
+2. Read `backend/api/main.py` (or middleware) to see how `trace_id` is generated and where it's stored on the response
+3. Read `backend/schemas/api_models.py` `Meta` model — confirm `trace_id` field
+4. Three possible fixes:
+   - If trace_id should be echoed from header: test must send `x-trace-id` header with a known UUID
+   - If trace_id should match between meta and response header: assert equality between the two, not against a hard-coded value
+   - If trace_id is purely server-generated: assert UUID format only (regex), drop equality check
+5. **DO NOT modify `api_models.py`** (protected file) — only touch the test or the middleware
+
+### Success Criteria
+- [ ] `make test` exits 0
+- [ ] All 409 tests pass (407 + the 2 fixed)
+- [ ] No new tests added unless trace_id propagation logic was actually broken
+- [ ] If middleware logic changed, add 1 test asserting trace_id is propagated correctly
+
+---
+
+## ISSUE-026: Frontend type errors — Zustand storage drift + Meta↔DatasetMetadata
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Status** | Open (Wave 0) |
+| **Blast Radius** | LOW (types only, runtime works) |
+| **Root Module** | `ui/src/stores/datasetStore.ts`, `ui/src/stores/jobStore.ts` |
+| **Owner** | T3 |
+
+### Symptom
+```
+src/stores/datasetStore.ts(263,58): error TS2367: comparison number vs string
+src/stores/datasetStore.ts(343,62): error TS2367: comparison number vs string
+src/stores/datasetStore.ts(397,61): error TS2367: comparison number vs string
+src/stores/datasetStore.ts(535,9):  error TS2322: storage adapter returns string, expected StorageValue<any>
+src/stores/datasetStore.ts(544,40): error TS2345: StorageValue<any> not assignable to string
+src/stores/datasetStore.ts(549,43): error TS2345: StorageValue<any> not assignable to string
+src/stores/jobStore.ts(191,60):     error TS2345: Meta thresholds (Record<string,any>) ↔ DatasetMetadata thresholds ({muHCutoff,hydroCutoff})
+```
+
+### Reproduction
+```bash
+cd ui && npx tsc --noEmit
+```
+
+### Analysis
+**Errors 263/343/397** — `number === string` comparisons. Likely an ID field changed type. Open lines and read context.
+
+**Errors 535/544/549** — Zustand `persist` middleware API change. Custom storage adapter is returning `string` but Zustand now expects `StorageValue<T>` (a structured object). Either:
+- Update adapter to return `{ state, version }` structure, OR
+- Use Zustand's `createJSONStorage` helper which handles serialization
+
+**Error 191** — Two `thresholds` types in different files. `Meta.thresholds: Record<string,any>` (loose, server-generic) vs `DatasetMetadata.thresholds: { muHCutoff, hydroCutoff }` (strict, frontend-specific). When converting `Meta → DatasetMetadata`, need explicit destructure with default fallbacks.
+
+### Fix path (T3)
+1. **263/343/397**: open each line, identify the variable types, fix at the source (don't `String()`-cast unless the underlying types are genuinely both valid forms)
+2. **535/544/549**: refactor the persist storage adapter — wrap with `createJSONStorage(() => localStorage)` or update return shapes. Reference: https://github.com/pmndrs/zustand/blob/main/docs/integrations/persisting-store-data.md
+3. **191**: in `jobStore.ts:191`, when building `DatasetMetadata` from `Meta`, do:
+   ```ts
+   const thresholds = {
+     muHCutoff: Number(meta.thresholds?.muHCutoff ?? DEFAULT_MUH),
+     hydroCutoff: Number(meta.thresholds?.hydroCutoff ?? DEFAULT_HYDRO),
+   };
+   ```
+
+### Success Criteria
+- [ ] `cd ui && npx tsc --noEmit` exits 0
+- [ ] No new `any` casts (use real types)
+- [ ] Persist storage still serializes/deserializes correctly (test by reloading the app)
+
+---
+
+## ISSUE-027: `crypto.randomUUID is not a function` on Safari (`/quick` + `/database-search`)
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P1 |
+| **Status** | Open (Wave A) |
+| **Blast Radius** | MEDIUM — Quick Analyze + DatabaseSearch crash on HTTP / older Safari (Said reproduced on Safari 2026-04-07 at `/quick`) |
+| **Root Module** | `ui/src/components/UniProtQueryInput.tsx:165` and `ui/src/pages/Upload.tsx:308` (the only call sites) |
+| **Owner** | T3 |
+| **Reported by** | Sentry + Said Safari repro (2026-04-07, 2026-04-26) |
+
+### Symptom
+```
+TypeError: crypto.randomUUID is not a function. (In 'crypto.randomUUID()', 'crypto.randomUUID' is undefined)
+  at None (/assets/DatabaseSearch-B4xKaaFo.js:21:3924)
+```
+
+### Root Cause
+`window.crypto.randomUUID()` requires a **secure context** (HTTPS or localhost). The VPS is served over `http://94.130.178.182:3000`. On non-secure contexts, `crypto.randomUUID` is `undefined`. Also unavailable in Safari < 15.4.
+
+### Fix
+Create `ui/src/lib/uuid.ts`:
+```ts
+export function uuid(): string {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  // RFC4122 v4 fallback
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+```
+
+Then:
+```bash
+grep -rn "crypto\.randomUUID" ui/src
+```
+Replace every call with `uuid()` from `@/lib/uuid`.
+
+### Success Criteria
+- [ ] No `crypto.randomUUID()` calls remain in `ui/src/`
+- [ ] DatabaseSearch loads on HTTP without console error
+- [ ] Add a vitest unit test that asserts `uuid()` returns a v4-shaped string when crypto is unavailable
+
+---
+
+## ISSUE-028: TANGO profile tooltip MISSING in Quick Analyze
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P2 |
+| **Status** | Open (Wave B) |
+| **Blast Radius** | LOW (UX) |
+| **Root Module** | `ui/src/pages/QuickAnalyze.tsx` + the TANGO chart component(s) it embeds |
+| **Owner** | T3 |
+| **Reported by** | User feedback (Gmail), 2026-04-26 — clarified by Said: "tango tooltip is missing in quick analyze / other ones please check" |
+
+### Symptom
+Quick Analyze TANGO profile chart does NOT show the rich tooltip (residue number + amino acid letter) that the other TANGO charts show (e.g., PeptideDetail). User feedback: when hovering over a peak, they want to know "Residue 5 — V" but only see the bar value.
+
+### Fix path (T3)
+1. Open Quick Analyze in browser, hover over the TANGO chart, confirm tooltip is missing/poor
+2. Find the TANGO chart in QuickAnalyze: `grep -n "TangoProfile\|Tango\|tango" ui/src/pages/QuickAnalyze.tsx`
+3. Find the rich tooltip used on other pages (PeptideDetail, Results) — it likely has a `customTooltip` formatter on the Recharts chart
+4. Port that formatter to the QuickAnalyze chart instance
+5. While there: verify ALL TANGO chart instances across the app have the same tooltip (Quick Analyze, PeptideDetail, Results, Compare). Standardize to one shared `<TangoTooltip>` component if there's drift
+
+### Success Criteria
+- [ ] Quick Analyze TANGO chart shows `Residue N — X` tooltip on hover
+- [ ] All TANGO charts app-wide use the same tooltip component
+- [ ] No regression in other charts
+
+---
+
+## ISSUE-029: Dark menu in light mode (theme leak)
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P2 |
+| **Status** | ✅ FIXED (2026-04-26 — Said confirmed already resolved) |
+| **Blast Radius** | LOW (visual) |
+| **Root Module** | TBD — T3 to identify |
+| **Owner** | T3 |
+| **Reported by** | Said, 2026-04-26 |
+
+### Symptom
+> "the dark menu which is still showing in a bright mode still"
+
+A menu component renders with dark colors regardless of the active theme.
+
+### Fix path (T3)
+1. Ask Said which menu (sidebar? top nav? dropdown? mobile menu?)
+2. Switch to light mode locally, find the offending element
+3. `grep -rn "bg-zinc-900\|bg-slate-900\|bg-gray-900\|bg-black\|bg-neutral-900" ui/src/components` to find hardcoded dark backgrounds
+4. Replace with theme tokens: `bg-card`, `bg-popover`, `bg-background`, etc.
+5. Test in both light and dark modes
+
+### Success Criteria
+- [x] Menu uses theme tokens, not hardcoded colors
+- [x] Visually correct in both light and dark mode
+- [x] No regression in dark mode appearance
+
+---
+
+## ISSUE-030: Sentry session-replay quota burn (sample rate at 1.0)
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P1 |
+| **Status** | ✅ FIXED (2026-04-26) |
+| **Blast Radius** | LOW (operational, no user impact) |
+| **Root Module** | `ui/src/main.tsx` |
+| **Owner** | T1 |
+| **Reported by** | Sentry alert, 2026-04-26 (relayed by Cowork) |
+
+### Symptom
+Sentry quota alert. Session replay was recording 100% of sessions (`replaysSessionSampleRate: 1.0`). With 3 active VPS users, the free-tier replay quota is hit fast.
+
+### Fix
+`ui/src/main.tsx`: change `replaysSessionSampleRate: 1.0` → `0`. Keep `replaysOnErrorSampleRate: 1.0` so we still get full replays of sessions that hit errors. Tracks/profile rates unchanged (they're cheaper).
+
+### Success Criteria
+- [x] Sentry replay quota stops growing during normal traffic
+- [x] Replays still captured when errors occur
+- [x] Performance/trace coverage unchanged
+
+---
+
+## ISSUE-031: Stale Sentry errors — "No active job with this cancel token"
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P2 |
+| **Status** | ✅ FIXED (commit 2ed386d, 2026-04-03) |
+| **Blast Radius** | LOW (operational noise only) |
+| **Root Module** | `backend/api/routes/jobs.py` |
+| **Reported by** | Sentry alert, 2026-04-26 |
+
+### Symptom
+11 of 18 monthly Sentry errors are `HTTPException: No active job with this cancel token`. This fires when `sendBeacon` triggers `/api/jobs/cancel-sync/{token}` after the job has already completed and the token was cleaned up.
+
+### Resolution
+**Already fixed in commit 2ed386d** (2026-04-03): the endpoint now returns `200 {"status": "ALREADY_COMPLETE"}` instead of raising `HTTPException`. Verified via `git show 2ed386d` — that commit changed `backend/api/routes/jobs.py` to return 200 silently.
+
+The 11 captured Sentry errors are stale — produced by old VPS builds before commit 2ed386d deployed. They will stop accumulating once VPS pulls the latest image (currently running 1cc07ed which post-dates the fix).
+
+No additional code change required. If errors continue accumulating after the next VPS deploy, investigate whether a stale build is somehow still serving traffic.
+
+### Success Criteria
+- [x] Code path returns 200, not raises
+- [ ] (Operational) Verify error count stops growing on Sentry after next VPS deploy
 
 ---
 

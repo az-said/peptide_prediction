@@ -141,6 +141,23 @@ def health():
     return {"ok": True}
 
 
+@router.get("/api/version")
+def version() -> Dict[str, Any]:
+    """
+    Build / version identity for the reproducibility ribbon (Cowork V4-1).
+
+    Returns the running application version plus optional build metadata so the
+    UI can render an "exact build" pill and link to the matching commit. The
+    ``build_sha`` / ``build_timestamp`` fields are ``None`` in local dev — they
+    are populated at deploy time from environment variables.
+    """
+    return {
+        "version": settings.VERSION,
+        "build_sha": settings.BUILD_SHA,
+        "build_timestamp": settings.BUILD_TIMESTAMP,
+    }
+
+
 @router.get("/api/live")
 def live():
     """Liveness probe — always 200 if process is running."""

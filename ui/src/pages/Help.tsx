@@ -6,45 +6,55 @@ import { HelpCircle, BarChart3, Zap, Waves, Target, Layers, BookOpen, Info } fro
 import { BgNotebook } from "@/components/BgNotebook";
 import AppFooter from "@/components/AppFooter";
 
+/**
+ * Peleg-verbatim metric definitions (FIX-026 / FIX-027).
+ * Ranges have been corrected to the actual Fauchere-Pliska + uH bounds.
+ */
 const metrics = [
   {
     icon: Zap,
     name: "Hydrophobicity",
-    description: "Measure of how water-repelling the peptide is",
-    interpretation: "Higher values indicate more hydrophobic peptides. Typical range: -2.0 to +2.0",
+    description: "Property quantifying the molecule or surface ability to repel water.",
+    interpretation:
+      "Range: −1.01 to 2.25. Higher values indicate more hydrophobic peptides. Here used as a feature to determine fibril-formation potential of secondary structure switch peptides.",
     color: "text-blue-600",
   },
   {
     icon: Waves,
-    name: "Hydrophobic Moment (μH)",
-    description: "Quantifies amphipathic character of the peptide",
+    name: "Hydrophobic Moment (uH)",
+    description:
+      "Quantitative measurement of the amphiphilicity (asymmetry of hydrophobicity) of a peptide structure, representing the vector sum of hydrophobicity for amino acids in a helical arrangement.",
     interpretation:
-      "Higher values suggest better membrane interaction potential. Range: 0.0 to 1.0",
+      "Range: 0 to 3.26. Here used as a feature to determine fibril-formation potential of alpha-helical peptides.",
     color: "text-cyan-600",
   },
   {
     icon: Target,
     name: "Charge",
-    description: "Net electrical charge of the peptide at physiological pH",
-    interpretation: "Positive values = cationic, negative = anionic, zero = neutral",
+    description: "Net electrical charge of the peptide at physiological pH (pH = 7.4).",
+    interpretation: "Positive values = cationic, negative = anionic, zero = neutral.",
+    // PELEG-Q-FIX-022: signed vs absolute charge — Peleg flagged that |charge| loses
+    // biological information. Discussion needed before changing presentation.
     color: "text-amber-600",
   },
   {
     icon: Layers,
-    name: "FF-Helix % (Fibril-Forming Helix Propensity)",
+    name: "FF-Helix (Fibril-Forming alpha helix)",
+    // Peleg FIX-027 verbatim: removes Fauchere-Pliska + CD spectroscopy framing.
     description:
-      "Percentage of residues in sliding windows (6 residues) with mean Fauchere-Pliska helix propensity above threshold (1.0). This is a sequence-based propensity score, NOT a prediction of actual helical content.",
+      "Determined by the uH threshold. If a peptide is predicted to be helical and its uH is higher than the threshold, it is predicted as a potential alpha-helical fibril-forming peptide.",
     interpretation:
-      "0% = no 6-residue window exceeds the propensity threshold. 100% = all residues participate in qualifying windows. Do NOT compare to CD spectroscopy values (which measure environment-dependent helicity of 15-50% in membranes). FF-Helix measures intrinsic amino acid tendency only.",
+      "Classification is binary: candidate or not. Adjust the uH threshold to make the classification more or less strict.",
     color: "text-purple-600",
   },
   {
     icon: BarChart3,
     name: "SSW Prediction",
     description:
-      "Secondary Structure Switch prediction from TANGO aggregation analysis and/or S4PRED neural network. Indicates whether the peptide may undergo a conformational switch between helix and beta-sheet.",
+      "Secondary Structure Switch prediction from TANGO and/or S4PRED analysis. Indicates whether the peptide may undergo a conformational switch between helix and beta-sheet.",
+    // Peleg FIX-027 verbatim: positive/negative/N/A on separate lines, no amyloid framing.
     interpretation:
-      "Positive = predicted to undergo structural switch (potential amyloid/fibril former). Negative = predicted stable (no switch). N/A = provider not available or sequence too short.",
+      "Positive — predicted to undergo a structural switch.\nNegative — predicted stable (no switch).\nN/A — provider not available or sequence too short.\n\nThere is no connection between the SSW prediction and the fibril-forming potential. Only after taking hydrophobicity into account.",
     color: "text-chameleon-positive",
   },
 ];
@@ -53,7 +63,8 @@ const chartTypes = [
   {
     name: "Scatter Plot",
     description: "Hydrophobicity vs Hydrophobic Moment correlation",
-    insights: "Identify peptides with optimal amphipathic properties",
+    // Peleg FIX-029 verbatim
+    insights: "Identifies correlation between hydrophobicity and amphipathic nature of the peptide",
   },
   {
     name: "Distribution Histograms",
@@ -68,7 +79,8 @@ const chartTypes = [
   {
     name: "Radar Charts",
     description: "Multi-dimensional comparison profiles",
-    insights: "Compare SSW vs No SSW cohorts",
+    // Peleg FIX-029 verbatim
+    insights: "Compare No SSW vs SSW vs FF-SSW and No Helix vs Helix vs FF-Helix",
   },
 ];
 
@@ -127,7 +139,10 @@ export default function Help() {
                         <p className="text-muted-foreground text-sm mb-2">{metric.description}</p>
                         <div className="bg-muted/50 rounded-lg p-3">
                           <p className="text-sm font-medium text-foreground">Interpretation:</p>
-                          <p className="text-sm text-muted-foreground">{metric.interpretation}</p>
+                          {/* Peleg FIX-027 SSW interpretation uses newline-separated lines */}
+                          <p className="text-sm text-muted-foreground whitespace-pre-line">
+                            {metric.interpretation}
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -241,36 +256,39 @@ export default function Help() {
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 gap-6">
+                {/* Peleg FIX-030: FF-Helix classification consolidated into Peptide Metrics
+                    Explained (above). FF-SSW uses TANGO OR S4PRED (FIX-001 OR-logic). */}
                 {[
-                  {
-                    name: "FF-Helix Classification",
-                    description:
-                      "A peptide is classified as an FF-Helix candidate when S4PRED predicts helical structure AND the hydrophobic moment (μH) is above the cohort average. This identifies amphipathic helices that could form fibril-like assemblies. It is NOT a CD spectroscopy measurement.",
-                  },
                   {
                     name: "FF-SSW Classification",
                     description:
-                      "A peptide is classified as FF-SSW when TANGO predicts a Secondary Structure Switch (SSW) AND the mean hydrophobicity is above the cohort average. This identifies peptides with structural switching potential and a hydrophobic core — key features of amyloid fibril formation.",
+                      "A peptide is classified as FF-SSW when TANGO or S4PRED predicts a Secondary Structure Switch (SSW) AND the mean hydrophobicity is above the database hydrophobicity threshold. This identifies peptides with structural switching potential and hydrophobic character.",
                   },
                   {
                     name: "Aggregation Propensity Interpretation",
                     description:
-                      "The lollipop chart shows peak TANGO aggregation per peptide. Green (<5%) = low propensity, Yellow (5-20%) = moderate — potential aggregation hotspot, Red (>20%) = high — strong amyloid-forming propensity. Hotspot regions are where per-residue aggregation exceeds the threshold.",
+                      "The lollipop chart shows peak TANGO aggregation per peptide. Higher peaks indicate regions with higher aggregation propensity. Aggregation-prone regions are where per-residue aggregation exceeds the configured threshold (see Threshold Presets).",
                   },
                   {
                     name: "Correlation Matrix Guide",
                     description:
-                      "The matrix shows Spearman rank correlation (ρ) between all metric pairs. Blue = positive correlation, Red = negative. Bold values indicate |ρ| > 0.5 (strong). Click any cell to view the underlying scatter plot with trend line and consensus tier coloring.",
+                      "The matrix shows Spearman rank correlation (ρ) between all metric pairs. Blue = positive correlation, Red = negative. Bold values indicate |ρ| > 0.5 (strong). Click any cell to view the underlying scatter plot with trend line.",
                   },
                   {
                     name: "Candidate Ranking System",
+                    // Peleg FIX-030 verbatim: drop TANGO aggregation and SSW score from default
+                    // ranking description. "We shouldn't look on the SSW score at all. It does
+                    // not mean anything." (Peleg)
                     description:
-                      "Ranking uses percentile normalization (0-100) across 6 metrics: hydrophobicity, |charge|, μH, FF-Helix %, SSW score, and TANGO Agg Max. Weight sliders (0-1) control each metric's influence. Presets: Equal (all 1.0), Physicochemical (emphasize biochem), Aggregation (emphasize TANGO).",
+                      "Ranking uses percentile normalization (0-100) across the active metrics: hydrophobicity, μH, FF-Helix, S4PRED helix %, and (optionally) |charge|. Weight sliders control each metric's influence. Presets: Equal, Fibril-formation Focus, Helix Focus, and Switch Focus.",
                   },
                   {
                     name: "Threshold Presets",
+                    // Peleg FIX-030 + PELEG-Q5/Q6/PEL-G-RESOLVED (2026-05-06):
+                    // legacy aggregation-flagging parameters were removed; only
+                    // the configurable TANGO aggregation threshold remains under Group 4.
                     description:
-                      "Recommended (default): thresholds computed from your data using cohort median. Custom: manually set μH cutoff, hydrophobicity cutoff, and aggregation thresholds. Custom values override the recommended reference values — use with care for publication-quality analysis.",
+                      "Recommended (default): thresholds computed from your data using database median. Custom: manually set the thresholds across the 4 groups (general SS, helical, SS-switch, fibril-formation). The TANGO aggregation threshold (default 5) is configurable under fibril-formation thresholds; pending citation.",
                   },
                 ].map((topic, index) => (
                   <motion.div
@@ -301,38 +319,37 @@ export default function Help() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-2">
-                <h4 className="font-medium">FF-Helix % vs S4PRED Helix %</h4>
+                <h4 className="font-medium">Helix %</h4>
                 <p className="text-sm text-muted-foreground">
-                  PVL reports two helix-related metrics that measure different things:
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">S4PRED Helix %</strong> is the primary helix
-                  prediction. A modern neural network (5-model ensemble) predicts per-residue helix,
-                  beta-sheet, and coil probabilities considering the full sequence context. Helix
-                  segments require &ge;5 consecutive residues with P(Helix) &ge; 0.5.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <strong className="text-foreground">FF-Helix %</strong> (Fibril-Forming Helix
-                  Propensity) is a context-free scoring method using the Fauchere-Pliska helix
-                  propensity scale with a 6-residue sliding window. It measures the intrinsic amino
-                  acid tendency to form helices, ignoring sequence context and environment. A value
-                  of 0% means no window exceeds the threshold; 100% means all residues participate
-                  in qualifying windows. These values should{" "}
-                  <strong className="text-foreground">not</strong> be compared to experimental CD
-                  spectroscopy measurements (which report environment-dependent helicity, typically
-                  15-50% in membrane environments).
+                  {/* PELEG-Q1-RESOLVED: Chou-Fasman / Fauchere-Pliska helix-propensity
+                      framing dropped per Said+Peleg 2026-05-06. Helix % is now a single
+                      canonical metric (segment-based S4PRED). */}
+                  <strong className="text-foreground">Helix %</strong> is the segment-based S4PRED
+                  helix percentage: the fraction of residues that fall inside helix segments meeting
+                  the minimal-continuous-residues threshold (default &ge;5) and the minimal helix
+                  score threshold (default P(Helix) &ge; 0.5).
                 </p>
               </div>
               <Separator />
               <div className="space-y-2">
-                <h4 className="font-medium">S4PRED Neural Network</h4>
+                <h4 className="font-medium">SSW helix percentage (TANGO-side)</h4>
                 <p className="text-sm text-muted-foreground">
-                  S4PRED (Single Sequence Secondary Structure PREDiction) is an ensemble of 5 neural
-                  networks that predicts per-residue secondary structure from amino acid sequence
-                  alone (no multiple sequence alignment required). It outputs probabilities for
-                  three classes: Helix (H), Beta-strand (E), and Coil (C). The per-residue
-                  prediction shown in the Sequence Track uses the highest-probability class at each
-                  position.
+                  The API field <code>sswHelixPercentage</code> is the percentage of residues with a
+                  TANGO helix-track score &gt; 0. It is used internally for SSW negative-result
+                  classification (helix track empty vs. helix-beta overlap absent vs. genuine
+                  negative) and is not the canonical Helix %. Do not compare it against the Helix
+                  column.
+                </p>
+              </div>
+              <Separator />
+              <div className="space-y-2">
+                <h4 className="font-medium">S4PRED</h4>
+                <p className="text-sm text-muted-foreground">
+                  S4PRED (Single Sequence Secondary Structure Prediction) predicts per-residue
+                  secondary structure from amino acid sequence alone (no multiple sequence alignment
+                  required). It outputs probabilities for three classes: Helix (H), Beta-strand (E),
+                  and Coil (C). The per-residue prediction shown in the Sequence Track uses the
+                  highest-probability class at each position.
                 </p>
               </div>
               <Separator />
@@ -342,10 +359,31 @@ export default function Help() {
                   SSW prediction identifies peptides that may switch between alpha-helix and
                   beta-sheet conformations. This is relevant for amyloid formation and
                   fibril-forming behavior. The prediction uses either TANGO (aggregation
-                  thermodynamics) or S4PRED (neural network helix/beta balance), comparing helix and
-                  beta propensities against dataset-level averages. A "Positive" prediction suggests
-                  the peptide has significant propensity for both helix and beta structures,
-                  indicating potential for structural switching.
+                  thermodynamics) or S4PRED (helix/beta balance), comparing helix and beta
+                  propensities against dataset-level averages. A "Positive" prediction suggests the
+                  peptide has significant propensity for both helix and beta structures, indicating
+                  potential for structural switching.
+                </p>
+              </div>
+              <Separator />
+              {/* T11 / Q-FIX-031 (2026-05-07): citation block — reference values
+                  pending Peleg sign-off. The placeholders unblock the v0.1 push
+                  without overstating provenance; the Wave-C email asks Peleg to
+                  confirm the exact source publications. */}
+              <div className="space-y-2">
+                <h4 className="font-medium">References &amp; thresholds</h4>
+                <p className="text-sm text-muted-foreground">
+                  Default threshold values (FF-Helix μH cutoff, FF-SSW hydrophobicity cutoff, TANGO
+                  per-residue 5% aggregation cutoff) are taken from{" "}
+                  <strong className="text-foreground">
+                    Ragonis-Bachar et al., in preparation (2026)
+                  </strong>
+                  . The minimum continuous-residue threshold for an S4PRED helix segment
+                  (default &ge;15&nbsp;aa) follows{" "}
+                  <em className="text-foreground">[citation pending — Peleg]</em>. Both references
+                  will be replaced with full bibliographic entries once the source publications are
+                  finalized; the values themselves are stable and documented here for
+                  reproducibility.
                 </p>
               </div>
             </CardContent>

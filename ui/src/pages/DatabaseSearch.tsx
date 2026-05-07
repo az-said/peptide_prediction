@@ -167,6 +167,40 @@ export default function DatabaseSearch() {
         </CardContent>
       </Card>
 
+      {/* PELEG-FIX-3-RESOLVED (2026-05-06): when results came back with both
+          TANGO and S4PRED toggled OFF, show a yellow info banner pointing the
+          user to flip the toggles + re-run. "Enable now" emits a custom event
+          consumed by UniProtQueryInput to flip both toggles in one click. */}
+      {hasSearched &&
+        browseRows.length > 0 &&
+        searchMeta?.run_tango === false &&
+        searchMeta?.run_s4pred === false && (
+          <div
+            className="flex items-start gap-3 p-3 rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-900/20 dark:border-amber-800"
+            data-testid="uniprot-predictions-off-banner"
+          >
+            <AlertTriangle className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+            <div className="flex-1 text-sm">
+              <p className="font-medium text-amber-900 dark:text-amber-200">Predictions OFF</p>
+              <p className="text-amber-800 dark:text-amber-200/90 text-xs mt-0.5">
+                Toggle TANGO/S4PRED above to run predictions on selected peptides, then re-run the
+                search.
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="shrink-0 text-xs h-7 border-amber-400 text-amber-900 dark:text-amber-200"
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent("pvl:uniprot-enable-predictions"));
+                window.scrollTo({ top: 0, behavior: "smooth" });
+              }}
+            >
+              Enable now
+            </Button>
+          </div>
+        )}
+
       {/* Browse Results Table */}
       {hasSearched && browseRows.length > 0 && (
         <Card className="shadow-soft border-[hsl(var(--border))] rounded-xl overflow-hidden">
@@ -222,7 +256,9 @@ export default function DatabaseSearch() {
               <div>Gene</div>
               <div>Organism</div>
               <div className="text-right">Length</div>
-              <div className="text-center" title="UniProt annotation evidence score (1-5)">Evidence</div>
+              <div className="text-center" title="UniProt annotation evidence score (1-5)">
+                Evidence
+              </div>
             </div>
 
             {/* Rows */}
@@ -298,14 +334,22 @@ export default function DatabaseSearch() {
                       {/* Annotation Score (UniProt evidence level 1-5) */}
                       <div
                         className="text-center"
-                        title={row.annotationScore ? `UniProt evidence score: ${row.annotationScore}/5` : "No score"}
+                        title={
+                          row.annotationScore
+                            ? `UniProt evidence score: ${row.annotationScore}/5`
+                            : "No score"
+                        }
                       >
                         {typeof row.annotationScore === "number" ? (
-                          <span className={`text-[10px] font-medium tabular-nums ${
-                            row.annotationScore >= 5 ? "text-primary" :
-                            row.annotationScore >= 4 ? "text-amber-500" :
-                            "text-red-400 dark:text-red-300"
-                          }`}>
+                          <span
+                            className={`text-[10px] font-medium tabular-nums ${
+                              row.annotationScore >= 5
+                                ? "text-primary"
+                                : row.annotationScore >= 4
+                                  ? "text-amber-500"
+                                  : "text-red-400 dark:text-red-300"
+                            }`}
+                          >
                             {row.annotationScore}/5
                           </span>
                         ) : (

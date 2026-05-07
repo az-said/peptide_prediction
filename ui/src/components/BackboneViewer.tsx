@@ -126,9 +126,10 @@ const SCALE = 10;
 interface BackboneViewerProps {
   peptideId: string;
   pdbUrl?: string;
+  onView3D?: () => void;
 }
 
-export function BackboneViewer({ peptideId, pdbUrl }: BackboneViewerProps) {
+export function BackboneViewer({ peptideId, pdbUrl, onView3D }: BackboneViewerProps) {
   const [pdbText, setPdbText] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -245,24 +246,49 @@ export function BackboneViewer({ peptideId, pdbUrl }: BackboneViewerProps) {
               AlphaFold-predicted backbone with color-coded residues
             </CardDescription>
           </div>
-          {!visible && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="btn-press"
-              onClick={fetchPdb}
-              disabled={loading}
-            >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
-              {loading ? "Loading..." : "Show 2D Backbone"}
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {onView3D && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="btn-press text-xs text-muted-foreground hover:text-foreground"
+                onClick={onView3D}
+              >
+                View in 3D →
+              </Button>
+            )}
+            {!visible &&
+              !(
+                error &&
+                (error.toLowerCase().includes("no alphafold") ||
+                  error.toLowerCase().includes("not found"))
+              ) && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="btn-press"
+                  onClick={fetchPdb}
+                  disabled={loading}
+                >
+                  {loading ? <Loader2 className="w-4 h-4 animate-spin mr-1.5" /> : null}
+                  {loading ? "Loading..." : "Show 2D Backbone"}
+                </Button>
+              )}
+          </div>
         </div>
       </CardHeader>
 
       {error && (
         <CardContent className="pt-0">
-          <p className="text-sm text-destructive">{error}</p>
+          {error.toLowerCase().includes("no alphafold") ||
+          error.toLowerCase().includes("not found") ? (
+            <p className="text-sm text-muted-foreground">
+              No AlphaFold structure available for this entry — this is expected for short or
+              non-canonical peptides.
+            </p>
+          ) : (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
         </CardContent>
       )}
 

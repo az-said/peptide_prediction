@@ -11,8 +11,8 @@ import {
 } from "@/components/ui/dialog";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useChartSelection } from "@/stores/chartSelectionStore";
-import { CHART_COLORS } from "@/lib/chartConfig";
-import { getConsensusSS } from "@/lib/consensus";
+// PELEG-Q7-RESOLVED: tier dot column + getConsensusSS sort key removed
+// per Said+Peleg 2026-05-06 (FIX-013). The detail-table tier column is gone.
 import type { Peptide } from "@/types/peptide";
 
 // ── Context ──
@@ -32,7 +32,7 @@ export function useChartFrame() {
 
 // ── Types ──
 
-type SortCol = "id" | "length" | "hydrophobicity" | "charge" | "muH" | "tangoAggMax" | "tier";
+type SortCol = "id" | "length" | "hydrophobicity" | "charge" | "muH" | "tangoAggMax";
 
 export interface ChartFrameProps {
   title: string;
@@ -53,19 +53,11 @@ export interface ChartFrameProps {
 
 // ── Table helpers ──
 
-const TIER_DOT: Record<number, string> = {
-  1: CHART_COLORS.tier1,
-  2: CHART_COLORS.tier2,
-  3: CHART_COLORS.tier3,
-  4: CHART_COLORS.tier4,
-  5: CHART_COLORS.tier5,
-};
-
 const COL_DEFS: {
   key: SortCol;
   label: string;
   align: "left" | "right" | "center";
-  fmt: (p: Peptide, tier: number) => React.ReactNode;
+  fmt: (p: Peptide) => React.ReactNode;
 }[] = [
   {
     key: "id",
@@ -98,21 +90,9 @@ const COL_DEFS: {
     align: "right",
     fmt: (p) => (p.tangoAggMax != null ? p.tangoAggMax.toFixed(1) : "–"),
   },
-  {
-    key: "tier",
-    label: "Tier",
-    align: "center",
-    fmt: (_p, tier) => (
-      <span
-        className="inline-block w-2.5 h-2.5 rounded-full"
-        style={{ backgroundColor: TIER_DOT[tier] }}
-        title={`Tier ${tier}`}
-      />
-    ),
-  },
 ];
 
-function getSortValue(p: Peptide, col: SortCol, tier: number): number | string {
+function getSortValue(p: Peptide, col: SortCol): number | string {
   switch (col) {
     case "id":
       return p.id;
@@ -126,8 +106,6 @@ function getSortValue(p: Peptide, col: SortCol, tier: number): number | string {
       return p.muH ?? -Infinity;
     case "tangoAggMax":
       return p.tangoAggMax ?? -Infinity;
-    case "tier":
-      return tier;
   }
 }
 
@@ -176,23 +154,20 @@ export function ChartFrame({
 
   const sortedPeptides = useMemo(() => {
     if (!peptides) return [];
-    const withTier = peptides.map((p) => ({
-      p,
-      tier: getConsensusSS(p).tier,
-    }));
-    withTier.sort((a, b) => {
+    const wrapped = peptides.map((p) => ({ p }));
+    wrapped.sort((a, b) => {
       const aZ = zoomedIds?.has(a.p.id) ? 0 : 1;
       const bZ = zoomedIds?.has(b.p.id) ? 0 : 1;
       if (aZ !== bZ) return aZ - bZ;
-      const aV = getSortValue(a.p, sortCol, a.tier);
-      const bV = getSortValue(b.p, sortCol, b.tier);
+      const aV = getSortValue(a.p, sortCol);
+      const bV = getSortValue(b.p, sortCol);
       if (typeof aV === "string" && typeof bV === "string") {
         return sortDir === "asc" ? aV.localeCompare(bV) : bV.localeCompare(aV);
       }
       const diff = (aV as number) - (bV as number);
       return sortDir === "asc" ? diff : -diff;
     });
-    return withTier;
+    return wrapped;
   }, [peptides, zoomedIds, sortCol, sortDir]);
 
   const hasTable = peptides && peptides.length > 0;
@@ -221,7 +196,10 @@ export function ChartFrame({
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        {/* Peleg bug-fix: clip chart contents to the card boundary so Recharts
+            axis labels / lollipop dots / bar edges cannot bleed outside the
+            card at narrow viewports. */}
+        <CardContent className="overflow-hidden">
           <ChartFrameContext.Provider value={COLLAPSED_CTX}>{children}</ChartFrameContext.Provider>
           {footer}
         </CardContent>
@@ -279,7 +257,7 @@ export function ChartFrame({
                           </tr>
                         </thead>
                         <tbody>
-                          {sortedPeptides.map(({ p, tier }) => {
+                          {sortedPeptides.map(({ p }) => {
                             const isZoomed = zoomedIds?.has(p.id);
                             const isSelected = p.id === selectedId;
                             return (
@@ -299,7 +277,7 @@ export function ChartFrame({
                                     className={`py-1 px-2
                                       ${col.align === "right" ? "text-right" : col.align === "center" ? "text-center" : ""}`}
                                   >
-                                    {col.fmt(p, tier)}
+                                    {col.fmt(p)}
                                   </td>
                                 ))}
                               </tr>

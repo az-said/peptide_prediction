@@ -13,26 +13,26 @@ export type ThresholdPreset = "original" | "strict" | "exploratory" | "custom";
 
 const PRESETS: Record<Exclude<ThresholdPreset, "original" | "custom">, ResolvedThresholds> = {
   strict: {
-    muHCutoff: 0.35,
-    hydroCutoff: 0.4,
+    ...DEFAULT_THRESHOLDS,
+    muHCutoff: 0.7,
+    hydroCutoff: 0.7,
+    minS4predHelixScore: 0.7,
+    minHelixPercentContent: 30,
+    minSsPercentContent: 30,
     aggThreshold: 10.0,
     percentOfLengthCutoff: 15.0,
     minSswResidues: 5,
-    sswMaxDifference: 0.0,
     minPredictionPercent: 60.0,
-    minS4predHelixScore: 0.0,
-    maxTangoDifference: 0.0,
   },
   exploratory: {
-    muHCutoff: 0.0,
-    hydroCutoff: 0.0,
+    ...DEFAULT_THRESHOLDS,
+    muHCutoff: 0.3,
+    hydroCutoff: 0.3,
+    minS4predHelixScore: 0.3,
     aggThreshold: 2.0,
     percentOfLengthCutoff: 30.0,
     minSswResidues: 2,
-    sswMaxDifference: 0.0,
     minPredictionPercent: 40.0,
-    minS4predHelixScore: 0.0,
-    maxTangoDifference: 0.0,
   },
 };
 

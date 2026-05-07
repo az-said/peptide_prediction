@@ -58,6 +58,12 @@ export interface Meta {
   thresholdConfigResolved: Record<string, any>;
   thresholds: Record<string, any>;
   
+  // Per-response telemetry (sync upload path) — snake_case, mirrors
+  // backend/services/upload_service.py:1194-1195. Not part of the core
+  // API contract; absent on async/job paths.
+  cache_hits?: number;
+  cache_misses?: number;
+
   // UniProt-specific fields (only present in /api/uniprot/execute responses)
   source?: "uniprot_api" | null;
   query?: string | null;

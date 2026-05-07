@@ -10,7 +10,7 @@ import {
   type RankingMetric,
   type MetricDirections,
 } from "@/lib/ranking";
-import { getConsensusSS } from "@/lib/consensus";
+// PELEG-Q7-RESOLVED: tier system removed; Consensus column dropped from PDF export.
 
 // ---- PDF report constants ----
 const MARGIN = 40;
@@ -226,7 +226,7 @@ export function exportShortlistPDF(
     { header: "Len", width: 28 },
     { header: "Score", width: 36 },
     ...metricCols.map((mc) => ({ header: mc.header, width: mc.width })),
-    { header: "Tier", width: 36 },
+    // PELEG-Q7-RESOLVED: Tier column removed.
     { header: "SSW", width: 40 },
   ];
 
@@ -261,7 +261,6 @@ export function exportShortlistPDF(
 
     const seqTrunc = p.sequence.length > 25 ? p.sequence.slice(0, 22) + "..." : p.sequence;
     const fmtScore = (v: number | null) => (v != null ? Math.round(v).toString() : "-");
-    const consensus = getConsensusSS(p);
 
     const row = [
       String(i + 1),
@@ -270,7 +269,7 @@ export function exportShortlistPDF(
       p.length !== null ? String(p.length) : "-",
       fmtScore(ranking.compositeScore),
       ...metricCols.map((mc) => fmtScore(ranking.metricPercentiles[mc.metric])),
-      `T${consensus.tier}`,
+      // PELEG-Q7-RESOLVED: Tier column removed.
       sswLabel(p.sswPrediction),
     ];
 
@@ -298,15 +297,14 @@ export function exportShortlistPDF(
   pdf.setFontSize(7);
   pdf.setFont("helvetica", "normal");
   pdf.setTextColor(80);
+  // PELEG-Q1-RESOLVED: dropped Fauchere-Pliska/Chou-Fasman framing of helix metrics.
+  // PELEG-Q7-RESOLVED: dropped Consensus Tier explanation.
+  // PELEG-SSW-SCORE-RESOLVED: dropped SSW Score line (no real meaning per Peleg).
   const notes = [
-    "Hydrophobicity: Fauchere-Pliska scale, mean per-residue value.",
+    "Hydrophobicity: mean per-residue value.",
     "μH (Hydrophobic Moment): Eisenberg consensus, α-helix angle (100°).",
-    "FF-Helix %: Chou-Fasman (1978) context-free helix propensity.",
-    "S4PRED Helix %: Deep-learning secondary structure prediction (helix content).",
-    "SSW Score: Secondary Structure Switch score from TANGO aggregation analysis.",
+    "S4PRED Helix %: Single-sequence secondary structure prediction (helix content).",
     "TANGO Agg Max: Maximum aggregation propensity from TANGO per-residue analysis.",
-    "Consensus Tier: Multi-evidence classification (T1=Switch Zone, T2=Disordered,",
-    "  T3=Native Beta, T4=Low Propensity, T5=No Data).",
     "Ranking: Percentile-based (0-100), proportional weights summing to 100%.",
     "  Direction toggles invert percentiles (low=100-pct) for relevant metrics.",
     "",

@@ -9,6 +9,8 @@ import { DataPreview } from "@/components/DataPreview";
 import { useDatasetStore } from "@/stores/datasetStore";
 import { uploadCSV } from "@/lib/api";
 import { submitUploadJob, cancelSyncJob } from "@/lib/jobApi";
+import { toDatasetMetadata } from "@/lib/metaAdapter";
+import { uuid } from "@/lib/uuid";
 import { useJobStore } from "@/stores/jobStore";
 import { useNavigate } from "react-router-dom";
 import Papa from "papaparse";
@@ -70,15 +72,28 @@ export default function Upload() {
     "recommended"
   );
   const [customThresholds, setCustomThresholds] = useState({
-    muHCutoff: 0.0,
-    hydroCutoff: 0.0,
+    // Group 1: General secondary structure (Peleg FIX-002)
+    minSegmentLength: 5,
+    maxGap: 3,
+    // Group 2: Helical
+    minS4predHelixScore: 0.5,
+    minHelixPercentContent: 0,
+    // Group 3: Secondary structure switch
+    s4predMaxHelixBetaDiff: 0.03,
+    tangoMaxHelixBetaDiff: 3,
+    minSsPercentContent: 0,
+    // Group 4: Fibril-formation
+    muHCutoff: 0.5,
+    hydroCutoff: 0.5,
+    // PELEG-Q6-PARTIAL: configurable TANGO aggregation threshold (default 5.0).
+    tangoAggregationThreshold: 5.0,
+    // PELEG-Q5-RESOLVED + PELEG-PEL-G-RESOLVED: legacy fields kept on payload
+    // for back-compat but no longer surfaced as user controls.
     aggThreshold: 5.0,
     percentOfLengthCutoff: 20,
     minSswResidues: 3,
     sswMaxDifference: 0.0,
     minPredictionPercent: 50.0,
-    minS4predHelixScore: 0.0,
-    maxTangoDifference: 0.0,
   });
 
   // preview QC banner
@@ -305,7 +320,7 @@ export default function Upload() {
 
       // Try async job submission first, fall back to sync
       try {
-        const token = crypto.randomUUID();
+        const token = uuid();
         cancelTokenRef.current = token;
         const jobResponse = await submitUploadJob(
           localFile,
@@ -326,13 +341,13 @@ export default function Upload() {
         } else if (jobResponse.mode === "sync" && jobResponse.result) {
           // Sync fallback: result returned directly
           const { rows, meta } = jobResponse.result;
-          ingestBackendRows(rows, meta);
-          if (meta?.cache_hits > 0) {
-            toast.success(`${meta.cache_hits} of ${rows.length} sequences loaded from cache`, {
+          ingestBackendRows(rows, toDatasetMetadata(meta));
+          const hits = meta?.cache_hits ?? 0;
+          const misses = meta?.cache_misses ?? 0;
+          if (hits > 0) {
+            toast.success(`${hits} of ${rows.length} sequences loaded from cache`, {
               description:
-                meta.cache_misses > 0
-                  ? `${meta.cache_misses} newly computed`
-                  : "All results cached — instant analysis",
+                misses > 0 ? `${misses} newly computed` : "All results cached — instant analysis",
             });
           }
           navigate("/results");
@@ -349,11 +364,13 @@ export default function Upload() {
         controller.signal
       )) as any;
       ingestBackendRows(rows, meta);
-      if (meta?.cache_hits > 0) {
-        toast.success(`${meta.cache_hits} of ${rows.length} sequences loaded from cache`, {
+      const legacyHits = meta?.cache_hits ?? 0;
+      const legacyMisses = meta?.cache_misses ?? 0;
+      if (legacyHits > 0) {
+        toast.success(`${legacyHits} of ${rows.length} sequences loaded from cache`, {
           description:
-            meta.cache_misses > 0
-              ? `${meta.cache_misses} newly computed`
+            legacyMisses > 0
+              ? `${legacyMisses} newly computed`
               : "All results cached — instant analysis",
         });
       }
@@ -626,7 +643,10 @@ export default function Upload() {
                         return null;
                       })()}
 
-                      {/* Sequence length summary */}
+                      {/* Peleg FIX-031: simplify length warning to single ratio line.
+                          PELEG-Q-FIX-031: 15aa cutoff citation needed or soften wording — the
+                          15-residue lower bound is an empirical default; no S4PRED paper or
+                          repo statement found documenting it as a hard threshold. */}
                       {rawData.rows &&
                         rawData.rows.length > 0 &&
                         (() => {
@@ -636,8 +656,8 @@ export default function Upload() {
                             .map((r) => String(pickSeq(r)).length)
                             .filter((l) => l > 0);
                           const short = lengths.filter((l) => l < 15).length;
-                          const optimal = lengths.filter((l) => l >= 15 && l <= 100).length;
                           const long = lengths.filter((l) => l > 100).length;
+                          const total = lengths.length;
                           const hasWarnings = short > 0 || long > 0;
                           if (!hasWarnings) return null;
                           return (
@@ -647,15 +667,14 @@ export default function Upload() {
                                 <div className="text-sm space-y-1">
                                   {short > 0 && (
                                     <p>
-                                      {short} sequences too short (&lt;15 aa) — S4PRED may be
-                                      unreliable
+                                      {short}/{total} sequences are short (&lt;15 aa) — short
+                                      sequences are excluded from S4PRED by default.
                                     </p>
                                   )}
-                                  <p>{optimal} sequences in optimal range (15–100 aa)</p>
                                   {long > 0 && (
                                     <p>
-                                      {long} sequences too long (&gt;100 aa) — reduced TANGO
-                                      accuracy
+                                      {long}/{total} sequences are long (&gt;100 aa) — TANGO
+                                      accuracy is reduced.
                                     </p>
                                   )}
                                 </div>

@@ -7,7 +7,7 @@
  *
  * Color scale: teal (0-10%) → amber (10-30%) → red (30%+)
  */
-import { useMemo, useState } from 'react';
+import { useMemo, useState } from "react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -21,15 +21,17 @@ import {
   Legend,
   ReferenceLine,
   Cell,
-} from 'recharts';
+} from "recharts";
 
 /** Map a TANGO aggregation score to a proportional color. */
 function aggBarColor(score: number): string {
-  if (score < 10) return '#14b8a6';   // teal-500 — low
-  if (score < 30) return '#f59e0b';   // amber-500 — moderate
-  return '#ef4444';                    // red-500 — high
+  if (score < 10) return "#14b8a6"; // teal-500 — low
+  if (score < 30) return "#f59e0b"; // amber-500 — moderate
+  return "#ef4444"; // red-500 — high
 }
-import { ChartExportButtons } from '@/components/ChartExportButtons';
+import { ChartExportButtons } from "@/components/ChartExportButtons";
+import { TangoTooltip } from "@/components/charts/TangoTooltip";
+import { useThresholdStore } from "@/stores/thresholdStore";
 
 interface AggregationHeatmapProps {
   sequence: string;
@@ -51,10 +53,13 @@ export function AggregationHeatmap({
   const [showAll, setShowAll] = useState(false);
   const [showOverlay, setShowOverlay] = useState(false);
 
+  // PELEG-Q6-PARTIAL: hardcoded "5%" replaced with the live store value.
+  const tangoAggThreshold = useThresholdStore((s) => s.active.tangoAggregationThreshold);
+
   const data = useMemo(() => {
     return aggCurve.map((agg, i) => ({
       pos: i + 1,
-      aa: sequence[i] || '?',
+      aa: sequence[i] || "?",
       Aggregation: agg,
       Beta: betaCurve?.[i] ?? 0,
       Helix: helixCurve?.[i] ?? 0,
@@ -63,21 +68,36 @@ export function AggregationHeatmap({
 
   // Summary: max agg score and region (safe for empty/large arrays)
   const maxAgg = useMemo(() => aggCurve.reduce((max, v) => (v > max ? v : max), 0), [aggCurve]);
-  const hotspotCount = useMemo(() => aggCurve.filter(v => v > 5).length, [aggCurve]);
+  const hotspotCount = useMemo(
+    () => aggCurve.filter((v) => v > tangoAggThreshold).length,
+    [aggCurve, tangoAggThreshold]
+  );
 
   return (
     <div className="space-y-4">
-      {/* Summary stats */}
+      {/* Summary stats — PELEG-Q6-PARTIAL: configurable threshold from store */}
       <div className="flex gap-4 text-sm">
         <div className="px-3 py-1.5 rounded bg-muted/50">
           <span className="text-muted-foreground">Peak aggregation: </span>
-          <span className={`font-semibold ${maxAgg > 50 ? 'text-destructive' : maxAgg > 5 ? 'text-orange-500' : 'text-green-600'}`}>
+          <span
+            className={`font-semibold ${
+              maxAgg > 50
+                ? "text-destructive"
+                : maxAgg > tangoAggThreshold
+                  ? "text-orange-500"
+                  : "text-green-600"
+            }`}
+          >
             {maxAgg.toFixed(1)}%
           </span>
         </div>
         <div className="px-3 py-1.5 rounded bg-muted/50">
-          <span className="text-muted-foreground">Residues &gt;5%: </span>
-          <span className={`font-semibold ${hotspotCount > 5 ? 'text-orange-500' : 'text-muted-foreground'}`}>
+          <span className="text-muted-foreground">
+            Residues &gt; {tangoAggThreshold.toFixed(1)}:{" "}
+          </span>
+          <span
+            className={`font-semibold ${hotspotCount > 5 ? "text-orange-500" : "text-muted-foreground"}`}
+          >
             {hotspotCount}/{aggCurve.length}
           </span>
         </div>
@@ -94,28 +114,23 @@ export function AggregationHeatmap({
                 dataKey="pos"
                 tickCount={Math.min(data.length, 20)}
                 tick={{ fontSize: 10 }}
-                label={{ value: 'Residue position', position: 'insideBottom', offset: -2, fontSize: 11 }}
-              />
-              <YAxis
-                label={{ value: 'TANGO score (%)', angle: -90, position: 'insideLeft', fontSize: 11 }}
-                tick={{ fontSize: 10 }}
-              />
-              <Tooltip
-                content={({ payload, label }) => {
-                  if (!payload?.length) return null;
-                  const d = payload[0]?.payload;
-                  return (
-                    <div className="bg-background border border-border rounded p-2 text-xs space-y-1">
-                      <p className="font-medium">Residue {label}: {d?.aa}</p>
-                      {payload.map((entry: any) => (
-                        <p key={entry.dataKey} style={{ color: entry.color }}>
-                          {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}%
-                        </p>
-                      ))}
-                    </div>
-                  );
+                label={{
+                  value: "Residue position",
+                  position: "insideBottom",
+                  offset: -2,
+                  fontSize: 11,
                 }}
               />
+              <YAxis
+                label={{
+                  value: "TANGO score (%)",
+                  angle: -90,
+                  position: "insideLeft",
+                  fontSize: 11,
+                }}
+                tick={{ fontSize: 10 }}
+              />
+              <Tooltip content={<TangoTooltip />} />
               <Bar dataKey="Aggregation" opacity={0.85}>
                 {data.map((entry, idx) => (
                   <Cell key={idx} fill={aggBarColor(entry.Aggregation)} />
@@ -141,22 +156,7 @@ export function AggregationHeatmap({
                   tick={{ fontSize: 10 }}
                 />
                 <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip
-                  content={({ payload, label }) => {
-                    if (!payload?.length) return null;
-                    const d = payload[0]?.payload;
-                    return (
-                      <div className="bg-background border border-border rounded p-2 text-xs space-y-1">
-                        <p className="font-medium">Residue {label}: {d?.aa}</p>
-                        {payload.map((entry: any) => (
-                          <p key={entry.dataKey} style={{ color: entry.color }}>
-                            {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}%
-                          </p>
-                        ))}
-                      </div>
-                    );
-                  }}
-                />
+                <Tooltip content={<TangoTooltip />} />
                 <Legend />
                 <Bar dataKey="Beta" fill="hsl(var(--beta, 210 80% 50%))" opacity={0.7} />
                 <Bar dataKey="Helix" fill="hsl(var(--helix, 0 80% 50%))" opacity={0.7} />
@@ -169,20 +169,22 @@ export function AggregationHeatmap({
 
       {/* Toggle links */}
       <div className="flex flex-wrap gap-x-4 gap-y-1">
-        {(betaCurve?.length || helixCurve?.length) ? (
+        {betaCurve?.length || helixCurve?.length ? (
           <button
             onClick={() => setShowAll(!showAll)}
             className="text-xs text-muted-foreground hover:text-foreground underline"
           >
-            {showAll ? 'Hide Beta & Helix curves' : 'Show Beta & Helix curves'}
+            {showAll ? "Hide Beta & Helix curves" : "Show Beta & Helix curves"}
           </button>
         ) : null}
-        {(betaCurve?.length || s4predBetaCurve?.length) ? (
+        {betaCurve?.length || s4predBetaCurve?.length ? (
           <button
             onClick={() => setShowOverlay(!showOverlay)}
             className="text-xs text-muted-foreground hover:text-foreground underline"
           >
-            {showOverlay ? 'Hide Aggregation–Structure Overlay' : 'Show Aggregation–Structure Overlay'}
+            {showOverlay
+              ? "Hide Aggregation–Structure Overlay"
+              : "Show Aggregation–Structure Overlay"}
           </button>
         ) : null}
       </div>
@@ -192,17 +194,18 @@ export function AggregationHeatmap({
         <div className="space-y-2" data-chart-export>
           <h3 className="text-sm font-semibold">Aggregation–Structure Overlay</h3>
           <p className="text-xs text-muted-foreground">
-            Regions where aggregation (amber) and beta propensity (blue/cyan) overlap suggest amyloid-forming stretches.
+            Regions where aggregation (amber) and beta propensity (blue/cyan) overlap suggest
+            aggregation-prone regions.
           </p>
           <div className="h-52">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={aggCurve.map((agg, i) => ({
                   pos: i + 1,
-                  aa: sequence[i] || '?',
+                  aa: sequence[i] || "?",
                   Aggregation: agg,
-                  'TANGO Beta': betaCurve?.[i] ?? null,
-                  'S4PRED P(β)': s4predBetaCurve?.[i] != null ? (s4predBetaCurve[i] * 100) : null,
+                  "TANGO Beta": betaCurve?.[i] ?? null,
+                  "S4PRED P(β)": s4predBetaCurve?.[i] != null ? s4predBetaCurve[i] * 100 : null,
                 }))}
                 margin={{ top: 10, right: 20, bottom: 20, left: 20 }}
               >
@@ -211,32 +214,57 @@ export function AggregationHeatmap({
                   dataKey="pos"
                   tickCount={Math.min(aggCurve.length, 20)}
                   tick={{ fontSize: 10 }}
-                  label={{ value: 'Residue position', position: 'insideBottom', offset: -2, fontSize: 11 }}
-                />
-                <YAxis tick={{ fontSize: 10 }} label={{ value: 'Score (%)', angle: -90, position: 'insideLeft', fontSize: 11 }} />
-                <ReferenceLine y={5} stroke="#eab308" strokeDasharray="6 3" label={{ value: '5%', position: 'right', fontSize: 9, fill: '#eab308' }} />
-                <Tooltip
-                  content={({ payload, label }) => {
-                    if (!payload?.length) return null;
-                    const d = payload[0]?.payload;
-                    return (
-                      <div className="bg-background border border-border rounded p-2 text-xs space-y-1">
-                        <p className="font-medium">Residue {label}: {d?.aa}</p>
-                        {payload.map((entry: any) => (
-                          entry.value != null && (
-                            <p key={entry.dataKey} style={{ color: entry.color }}>
-                              {entry.name}: {typeof entry.value === 'number' ? entry.value.toFixed(1) : entry.value}%
-                            </p>
-                          )
-                        ))}
-                      </div>
-                    );
+                  label={{
+                    value: "Residue position",
+                    position: "insideBottom",
+                    offset: -2,
+                    fontSize: 11,
                   }}
                 />
+                <YAxis
+                  tick={{ fontSize: 10 }}
+                  label={{ value: "Score (%)", angle: -90, position: "insideLeft", fontSize: 11 }}
+                />
+                <ReferenceLine
+                  y={tangoAggThreshold}
+                  stroke="#eab308"
+                  strokeDasharray="6 3"
+                  label={{
+                    value: `${tangoAggThreshold.toFixed(1)}`,
+                    position: "right",
+                    fontSize: 9,
+                    fill: "#eab308",
+                  }}
+                />
+                <Tooltip content={<TangoTooltip />} />
                 <Legend />
-                <Line type="monotone" dataKey="Aggregation" stroke="#f59e0b" strokeWidth={2} dot={false} />
-                {betaCurve?.length && <Line type="monotone" dataKey="TANGO Beta" stroke="#3b82f6" strokeWidth={1.5} strokeDasharray="4 2" dot={false} />}
-                {s4predBetaCurve?.length && <Line type="monotone" dataKey="S4PRED P(β)" stroke="#06b6d4" strokeWidth={1.5} strokeDasharray="4 2" dot={false} />}
+                <Line
+                  type="monotone"
+                  dataKey="Aggregation"
+                  stroke="#f59e0b"
+                  strokeWidth={2}
+                  dot={false}
+                />
+                {betaCurve?.length && (
+                  <Line
+                    type="monotone"
+                    dataKey="TANGO Beta"
+                    stroke="#3b82f6"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 2"
+                    dot={false}
+                  />
+                )}
+                {s4predBetaCurve?.length && (
+                  <Line
+                    type="monotone"
+                    dataKey="S4PRED P(β)"
+                    stroke="#06b6d4"
+                    strokeWidth={1.5}
+                    strokeDasharray="4 2"
+                    dot={false}
+                  />
+                )}
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -245,7 +273,8 @@ export function AggregationHeatmap({
       )}
 
       <div className="text-xs text-muted-foreground">
-        TANGO predicts aggregation propensity per residue. Scores &gt;5% indicate aggregation-prone regions. High peaks suggest amyloid-forming stretches.
+        TANGO predicts aggregation propensity per residue. Higher scores indicate regions with
+        higher aggregation propensity.
       </div>
     </div>
   );

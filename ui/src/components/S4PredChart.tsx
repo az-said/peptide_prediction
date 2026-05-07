@@ -1,10 +1,4 @@
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { ChartExportButtons } from "@/components/ChartExportButtons";
 import {
   ResponsiveContainer,
@@ -47,38 +41,14 @@ export function S4PredChart({ peptide, children, className }: S4PredChartProps) 
     "P(Coil)": pC[i] ?? null,
   }));
 
-  // Dominant structure summary
-  const meanH = n > 0 ? pH.reduce((a, b) => a + b, 0) / n : 0;
-  const meanE = n > 0 ? pE.reduce((a, b) => a + b, 0) / n : 0;
-  const meanC = n > 0 ? pC.reduce((a, b) => a + b, 0) / n : 0;
-  const parts = [
-    { label: "Coil", pct: meanC * 100, cls: "text-muted-foreground" },
-    { label: "Beta", pct: meanE * 100, cls: "text-beta" },
-    { label: "Helix", pct: meanH * 100, cls: "text-helix" },
-  ].sort((a, b) => b.pct - a.pct);
-
   return (
     <Card className={className}>
       <CardHeader>
         <CardTitle>S4PRED Secondary Structure Probabilities</CardTitle>
         <CardDescription>
-          Per-residue helix (H), beta (E), and coil (C) probabilities from S4PRED neural network prediction.
+          Per-residue helix (H), beta (E), and coil (C) probabilities from S4PRED secondary
+          structure prediction.
         </CardDescription>
-        {n > 0 && (
-          <div className="flex items-center gap-2 mt-2 text-sm">
-            <span className="text-muted-foreground">Avg composition:</span>
-            {parts.map((pt, i) => (
-              <span key={pt.label}>
-                <span className={`font-medium ${pt.cls}`}>
-                  {pt.label} {pt.pct.toFixed(0)}%
-                </span>
-                {i < parts.length - 1 && (
-                  <span className="text-muted-foreground/40 mx-1">/</span>
-                )}
-              </span>
-            ))}
-          </div>
-        )}
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2" data-chart-export>
@@ -100,9 +70,7 @@ export function S4PredChart({ peptide, children, className }: S4PredChartProps) 
                         {payload.map((entry: any) => (
                           <p key={entry.dataKey} style={{ color: entry.color }}>
                             {entry.name}:{" "}
-                            {typeof entry.value === "number"
-                              ? entry.value.toFixed(3)
-                              : entry.value}
+                            {typeof entry.value === "number" ? entry.value.toFixed(3) : entry.value}
                           </p>
                         ))}
                       </div>
@@ -141,15 +109,13 @@ export function S4PredChart({ peptide, children, className }: S4PredChartProps) 
         {children}
 
         {/* Context note for short peptides with no helix */}
-        {typeof s4predHelixPercent === "number" &&
-          s4predHelixPercent < 5 &&
-          length <= 25 && (
-            <p className="text-xs text-muted-foreground px-1 leading-relaxed">
-              S4PRED finds no stable helix segments. Short peptides often lack
-              the context for the neural network to predict stable helices
-              (requires &ge;5 consecutive residues with P(Helix) &ge; 0.5).
-            </p>
-          )}
+        {typeof s4predHelixPercent === "number" && s4predHelixPercent < 5 && length <= 25 && (
+          <p className="text-xs text-muted-foreground px-1 leading-relaxed">
+            S4PRED finds no stable helix segments. Short peptides often lack the sequence context
+            required to predict stable helices (requires &ge;5 consecutive residues with P(Helix)
+            &ge; 0.5).
+          </p>
+        )}
       </CardContent>
     </Card>
   );

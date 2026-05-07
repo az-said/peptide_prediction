@@ -335,6 +335,102 @@ def find_secondary_structure_switch_segments(beta_segments: list, helix_segments
     return merged_segments
 
 
+def compute_ssw_combined_flag(
+    tango_ssw: Optional[int], s4pred_ssw: Optional[int]
+) -> Optional[int]:
+    """
+    Combine TANGO and S4PRED SSW flags into the unified SSW classification (Peleg FIX-001 cat 3).
+
+    Peleg's definition: a peptide is SSW if TANGO **OR** S4PRED predicts a structural
+    switch — not AND. Either provider's positive call is sufficient.
+
+    Inputs are per-row provider flags using PVL's convention:
+        1    = provider classified the peptide as SSW
+        -1   = provider has data but did not classify as SSW
+        None = provider did not produce data for this row
+
+    Returns:
+        1    if either provider says positive
+        -1   if at least one provider has data and neither says positive
+        None if no provider produced data for this row
+    """
+    if tango_ssw == 1 or s4pred_ssw == 1:
+        return 1
+    if tango_ssw is None and s4pred_ssw is None:
+        return None
+    return -1
+
+
+def compute_4category_flags(
+    helix_pred: Optional[int],
+    helix_uH: Optional[float],
+    helix_uH_threshold: float,
+    tango_ssw: Optional[int],
+    s4pred_ssw: Optional[int],
+    hydrophobicity: Optional[float],
+    hydro_threshold: float,
+) -> Dict[str, Optional[int]]:
+    """
+    Compute Peleg's 4 canonical classification flags for a single peptide.
+
+    Peleg FIX-001 categories:
+      1. Helix    — S4PRED predicts helix segments meeting the thresholds.
+      2. FF-Helix — Helix AND uH > uH-threshold (uses uH, NOT hydrophobicity).
+      3. SSW      — TANGO OR S4PRED predicts a secondary-structure switch.
+      4. FF-SSW   — SSW AND hydrophobicity > hydrophobicity-threshold (uses
+                    hydrophobicity, NOT uH).
+
+    Each flag is 1 (positive), -1 (data available, not classified), or None
+    (provider did not produce data).
+
+    This is the per-peptide reference implementation. The DataFrame-level
+    application in `services.dataframe_utils.apply_ff_flags` is the vectorised
+    equivalent and must produce identical results for a single row.
+    """
+    helix_flag: Optional[int]
+    if helix_pred is None:
+        helix_flag = None
+    elif helix_pred == 1:
+        helix_flag = 1
+    else:
+        helix_flag = -1
+
+    ff_helix_flag: Optional[int]
+    if helix_flag is None:
+        ff_helix_flag = None
+    elif (
+        helix_flag == 1
+        and helix_uH is not None
+        and not (isinstance(helix_uH, float) and pd.isna(helix_uH))
+        and helix_uH >= helix_uH_threshold
+    ):
+        ff_helix_flag = 1
+    else:
+        ff_helix_flag = -1
+
+    ssw_flag = compute_ssw_combined_flag(tango_ssw, s4pred_ssw)
+
+    ff_ssw_flag: Optional[int]
+    if ssw_flag is None:
+        ff_ssw_flag = None
+    elif (
+        ssw_flag == 1
+        and hydrophobicity is not None
+        and not (isinstance(hydrophobicity, float) and pd.isna(hydrophobicity))
+        and hydrophobicity >= hydro_threshold
+    ):
+        ff_ssw_flag = 1
+    else:
+        ff_ssw_flag = -1
+
+    return {
+        "helix": helix_flag,
+        "ffHelix": ff_helix_flag,
+        "ssw": ssw_flag,
+        "ffSsw": ff_ssw_flag,
+    }
+
+
 def get_avg_uH_by_segments(sequence: str, segments: list) -> Optional[float]:
     """
     Calculate average hydrophobic moment for given segments.

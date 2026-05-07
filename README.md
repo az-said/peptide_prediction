@@ -1,257 +1,330 @@
-# Peptide Visual Lab (PVL)
+<div align="center">
 
-**Comprehensive peptide analysis combining aggregation propensity, secondary structure prediction, and fibril-forming helix detection — with interactive visualizations.**
+# 🧬 Peptide Visual Lab
 
-Built at [DESY](https://www.desy.de/) / [CSSB](https://www.cssb-hamburg.de/) (Landau Lab).
+**The all-in-one peptide aggregation + structure prediction dashboard.**
+Multi-tool consensus · Live 3D overlay · Reproducibility-as-permalink · AI-platform-ready.
 
 [![CI](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Tests: 235 passing](https://img.shields.io/badge/tests-235%20passing-brightgreen)](#running-tests)
+[![Tests: 887 passing](https://img.shields.io/badge/tests-887%20passing-brightgreen)](#running-tests)
+[![Sentry monitored](https://img.shields.io/badge/Sentry-monitored-blueviolet)](https://sentry.io)
+[![CodeRabbit reviewed](https://img.shields.io/badge/CodeRabbit-AI%20reviewed-orange)](.coderabbit.yaml)
+[![Built with Claude Code](https://img.shields.io/badge/Built%20with-Claude%20Code-7C3AED)](https://www.anthropic.com/claude)
+
+[**Live demo**](https://pvl.example) · [**Self-host**](#self-host-in-3-minutes) · [**API docs**](#api) · [**Contribute**](CONTRIBUTING.md) · [**Cite**](#citing-pvl)
+
+</div>
 
 ---
 
-## What It Does
+## Why PVL is different
 
-PVL is a web-based research tool for studying peptide aggregation, structural switching, and fibril formation. Upload a dataset of peptide sequences and get:
+PVL is the only peptide-prediction tool that puts every analysis in one dashboard, overlays predictions on the AlphaFold structure, and turns each analysis into a citable URL. The competition is single-algorithm CLI tools that emit static PNGs.
 
-- **Aggregation propensity** via [TANGO](https://tango.switchlab.org/) — per-residue aggregation, beta-aggregation, and helix curves
-- **Secondary structure prediction** via [S4PRED](https://github.com/psipred/s4pred) — helix/beta/coil probabilities for each residue
-- **Fibril-forming helix detection** (FF-Helix) — intrinsic helical propensity scoring (always available, no external tools)
-- **Secondary Structure Switch (SSW)** prediction — identifies chameleon sequences from both TANGO and S4PRED
-- **Biochemical properties** — charge, hydrophobicity, hydrophobic moment (muH)
-- **Smart candidate ranking** — adjustable metric weights with top-N shortlist export
-
-> **Deployed at DESY.** PVL runs on a DESY VM with Docker Compose + Caddy auto-HTTPS. Kubernetes deployment planned as long-term scaling target. You can also run it locally with Docker.
+| What you get | How others handle it |
+|---|---|
+| 🧬 **Multi-tool consensus** — TANGO + S4PRED + FF-Helix + biochem + AlphaFold + UniProt in one place | Switch tabs across 5 sites; merge CSVs in Excel |
+| 🔬 **Live 3D structure overlay** — TANGO peaks + S4PRED helix segments + FF-Helix candidates + SSW zones rendered ON the AlphaFold structure via Mol\* | Read coords from a flat file; manually paint residues in PyMOL |
+| 🔗 **Reproducibility-as-permalink** — every analysis becomes a URL with version + SHA + thresholds. Paste it in a paper; reviewers see the same view | Screenshot for the supplement; pray it stays accurate |
+| 🤖 **AI-platform-ready** — designed for MCP, Python package, CLI, and embeddable widget | Web-only, no API, no integration story |
+| 🆓 **Open source · MIT · runs on your laptop** — `docker compose up` and your data never leaves your machine | Closed-source, paid, or hosted-only |
 
 ---
 
-## Quick Start
+## Screenshots
 
-PVL runs as two Docker containers (backend + frontend). This is the supported deployment method.
+<table>
+  <tr>
+    <td width="50%">
+      <strong>Quick Analyze</strong> — paste a single sequence, see results in seconds.
+      <br/>
+      <img src="docs/images/01-quick-analyze.png" alt="Quick Analyze single peptide flow" />
+    </td>
+    <td width="50%">
+      <strong>Results Overview</strong> — classification landscape, click any region to filter.
+      <br/>
+      <img src="docs/images/02-results-overview.png" alt="Set diagram drill-down" />
+    </td>
+  </tr>
+  <tr>
+    <td width="50%">
+      <strong>Smart Candidate Ranking</strong> — adjustable metric weights + presets.
+      <br/>
+      <img src="docs/images/03-smart-ranking.png" alt="Smart candidate ranking with weight bars" />
+    </td>
+    <td width="50%">
+      <strong>2D Backbone</strong> — color-coded residues from AlphaFold PDB.
+      <br/>
+      <img src="docs/images/04-2d-backbone.png" alt="2D backbone visualization" />
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" width="100%">
+      <strong>Correlation Matrix</strong> — pairwise Pearson correlations with rotated headers + diverging palette.
+      <br/>
+      <img src="docs/images/05-correlation-matrix.png" alt="Correlation matrix with rotated headers" />
+    </td>
+  </tr>
+</table>
 
-### Prerequisites
+---
 
-- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
-- (Optional) TANGO binary — placed in `tools/tango/bin/tango`
-- (Optional) S4PRED model weights — placed in `tools/s4pred/models/` (5 files, ~86 MB each)
+## Architecture
 
-### Run
+```mermaid
+flowchart TB
+    A["👤 Researcher<br/>(Browser · Claude Desktop · Cursor · Jupyter)"] --> B
+    M["🤖 LLM Agent<br/>(MCP-aware client)"] -. "Phase G1<br/>(planned v0.2)" .-> Mcp
+    Mcp["🛰️ MCP Server<br/>(Python SDK)"] --> B
+    B["⚛️ React + Vite + Mol*<br/>(hover-everywhere drill-down)"] -- "REST<br/>(Pydantic v2 strict)" --> C
+    C["🐍 FastAPI Backend"] --> D["📦 Predictor Pipeline"]
+    D --> E1["TANGO<br/>(subprocess)"]
+    D --> E2["S4PRED<br/>(BiLSTM)"]
+    D --> E3["FF-Helix<br/>(pure Python)"]
+    D --> E4["Biochem<br/>(vectorized)"]
+    C --> F1["UniProt API"]
+    C --> F2["AlphaFold DB"]
+    C --> G["📊 Sentry<br/>(release-tagged + rich context)"]
+
+    classDef planned stroke-dasharray: 5 5,opacity:0.7
+    class M,Mcp planned
+```
+
+The whole architecture is documented in [`docs/active/TECH_PLATFORM_VISION.md`](docs/active/TECH_PLATFORM_VISION.md). Architectural decisions logged in [`docs/active/DECISIONS.md`](docs/active/DECISIONS.md) (12 ADRs).
+
+---
+
+## Self-host in 3 minutes
 
 ```bash
 git clone https://github.com/saidaz24-meet/peptide_prediction.git
 cd peptide_prediction
-
-# Copy and edit environment config
 cp backend/.env.example backend/.env
-
-# Start services
-make docker-build
 make docker-up
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+Open <http://localhost:3000>. Done. Your data never leaves your machine.
 
-**Try Quick Analyze** — paste a single peptide sequence on the home page to see results instantly, no file upload needed.
+### Optional prediction tools
 
-### Prediction Tools
-
-PVL uses external prediction tools that are **volume-mounted** (not baked into the Docker image):
-
-| Tool | Purpose | Required? | Path |
-|------|---------|-----------|------|
-| **S4PRED** | Secondary structure (helix/beta/coil) | Optional | `tools/s4pred/models/` |
+| Tool | Purpose | Required? | Where |
+|------|---------|-----------|-------|
+| **S4PRED** | Secondary structure (helix / beta / coil) | Optional | `tools/s4pred/models/` (5 model files) |
 | **TANGO** | Aggregation propensity | Optional | `tools/tango/bin/tango` |
 | **FF-Helix** | Fibril-forming helix detection | Always available | Built-in (pure Python) |
 
-Without S4PRED or TANGO, PVL still computes FF-Helix%, charge, hydrophobicity, muH, and all biochemical properties.
+Without S4PRED or TANGO, PVL still computes FF-Helix %, charge, hydrophobicity, μH, biochem properties, and the full classification pipeline.
 
 ---
 
-## Features
+## Tech stack
 
-### Analysis
-
-- Upload peptide datasets (CSV/TSV/XLSX) or paste a single sequence (Quick Analyze)
-- UniProt search integration — query by protein name, organism, or accession
-- Per-residue sliding-window profiles (hydrophobicity, muH) with helix overlays
-- S4PRED per-residue probability curves with colored sequence track
-- TANGO per-residue aggregation heatmap with beta and helix overlays
-- Helical wheel projection (HeliQuest color scheme, Eisenberg muH arrow)
-- AlphaFold DB integration with pLDDT metrics and Mol* 3D viewer
-- Cohort comparison dashboard (overlay two datasets side-by-side)
-
-### Visualization & Export
-
-- Interactive charts (distribution, scatter, radar, bar)
-- Publication-ready SVG and PNG export for all charts
-- CSV export with full computed properties
-- FASTA export (single or bulk)
-- PDF report with ranked shortlist and methodology summary
-
-### Data Management
-
-- Smart candidate ranking with adjustable metric weights
-- Column visibility toggle and data table filters
-- Progressive disclosure (Data Table | Ranking | Charts tabs)
-- Result persistence across page refreshes
-- Example datasets (antimicrobial peptides, amyloid peptides) for quick exploration
+<table>
+  <tr>
+    <td><strong>Frontend</strong></td>
+    <td>React 18 · TypeScript 5 · Vite · Tailwind · shadcn/ui · Zustand · Recharts · <a href="https://molstar.org/">Mol*</a></td>
+  </tr>
+  <tr>
+    <td><strong>Backend</strong></td>
+    <td>Python 3.11 · FastAPI · Pydantic v2 · pandas · PyTorch (CPU)</td>
+  </tr>
+  <tr>
+    <td><strong>Predictors</strong></td>
+    <td>TANGO (Linux 64-bit subprocess) · S4PRED (5-model BiLSTM ensemble) · FF-Helix (pure Python) · biochem (vectorized)</td>
+  </tr>
+  <tr>
+    <td><strong>Observability</strong></td>
+    <td>Sentry (release-tagged + rich context + source maps + Slack alerts + Seer AI triage)</td>
+  </tr>
+  <tr>
+    <td><strong>CI/CD</strong></td>
+    <td>GitHub Actions · CodeRabbit (AI PR review) · Dependabot (weekly batched)</td>
+  </tr>
+  <tr>
+    <td><strong>Deployment</strong></td>
+    <td>Docker Compose + Caddy (auto-TLS) · DESY Kubernetes (planned)</td>
+  </tr>
+  <tr>
+    <td><strong>Reproducibility</strong></td>
+    <td>Permalink-encoded analysis state · Zenodo DOI per release · CITATION.cff</td>
+  </tr>
+</table>
 
 ---
 
-## For Developers
+## How it works
 
-### Local Development Setup
-
-#### Backend
-
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-
-# Copy environment config
-cp .env.example .env
-
-# Start the server
-uvicorn api.main:app --host 0.0.0.0 --port 8000 --reload
+```mermaid
+flowchart LR
+    A["📝 Paste a sequence<br/>or upload CSV/FASTA"] --> B["🔍 PVL runs<br/>TANGO · S4PRED · FF-Helix · biochem"]
+    B --> C["📊 Interactive dashboard<br/>(classifications · distributions · drill-down)"]
+    C --> D["🔗 Copy permalink<br/>or export figure pack"]
+    D --> E["📄 Cite in your paper<br/>(Zenodo DOI · paste URL)"]
 ```
 
-#### Frontend
+---
 
-```bash
-cd ui
-npm install
-echo "VITE_API_BASE_URL=http://127.0.0.1:8000" > .env.local
-npm run dev
-```
+## Use cases
 
-Open [http://localhost:5173](http://localhost:5173).
+- **Identify amyloid candidates** in a UniProt query (e.g., S. aureus reference proteome length 10-50)
+- **Compare wild-type vs mutant** peptide cohorts side-by-side with overlay distributions
+- **Generate a paper figure pack** — multi-panel SVG ready for a Nature supplement
+- **Automate analysis from Claude Desktop** (Phase G1, MCP server in v0.2)
+- **Find peptides similar to a reference** via vector embedding search (Phase 2 v0.2)
 
-### Environment Variables
+---
 
-Key backend settings (see `backend/.env.example` for the full list):
+## API
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `USE_TANGO` | `0` | Enable TANGO aggregation prediction |
-| `USE_S4PRED` | `1` | Enable S4PRED secondary structure prediction |
-| `TANGO_BINARY_PATH` | — | Path to TANGO binary |
-| `S4PRED_MODEL_PATH` | — | Path to S4PRED model weights directory |
-| `CORS_ORIGINS` | `localhost:3000,5173` | Allowed CORS origins |
-| `SENTRY_DSN` | — | Sentry error tracking (optional) |
+FastAPI auto-generates OpenAPI documentation at runtime. Once the backend is running:
 
-### Running Tests
+- Interactive docs: <http://localhost:8000/api/docs>
+- OpenAPI JSON: <http://localhost:8000/api/openapi.json>
+- ReDoc view: <http://localhost:8000/api/redoc>
 
-```bash
-make test          # All tests (fast, deterministic, no network)
-make test-unit     # Fast unit tests only
-make lint          # Linters (Python + TypeScript)
-make typecheck     # Type checkers (Python + TypeScript)
-make fmt           # Format code
-make ci            # Full pipeline (lint + typecheck + test)
-```
+Selected endpoints (full list in [`docs/active/CONTRACTS.md`](docs/active/CONTRACTS.md)):
 
-### Project Structure
+| Endpoint | Method | Description |
+|---|---|---|
+| `/api/predict` | POST | Single sequence prediction |
+| `/api/upload` | POST | Batch CSV / FASTA / XLSX upload |
+| `/api/uniprot/execute` | POST | UniProt query → analysis pipeline |
+| `/api/jobs/{id}` | GET | Poll async job status |
+| `/api/version` | GET | Build version + SHA + timestamp |
+| `/api/health` | GET | Health check (Sentry cron monitor) |
 
-```
-backend/
-  api/routes/        # FastAPI endpoint definitions
-  services/          # Business logic (normalize, predict, etc.)
-  schemas/           # API models (single source of truth)
-  server.py          # Compatibility shim (15 LOC, deprecated)
-  tango.py           # TANGO runner and parser
-  s4pred.py          # S4PRED runner and analyzer
-  auxiliary.py       # FF-Helix and SSW helpers
-  biochem_calculation.py  # Charge, hydrophobicity, muH
-  config.py          # Settings (loaded from env vars)
-  tests/             # pytest test suite
-
-ui/
-  src/pages/         # React pages (Results, PeptideDetail, Upload, etc.)
-  src/components/    # Reusable components (HelicalWheel, SequenceTrack, etc.)
-  src/stores/        # Zustand state management
-  src/types/         # TypeScript type definitions
-  src/lib/           # Utilities (export, AlphaFold client, etc.)
-
-docker/
-  Dockerfile.backend    # Backend image (CPU-only PyTorch)
-  Dockerfile.frontend   # Frontend image (nginx)
-  docker-compose.yml    # Development
-  docker-compose.prod.yml   # Production (nginx)
-  docker-compose.caddy.yml  # Production (Caddy auto-HTTPS)
-
-tools/               # External tools (gitignored, volume-mounted into Docker)
-  tango/bin/tango     # TANGO binary
-  s4pred/models/      # S4PRED model weights
-```
-
-### Tech Stack
-
-| Layer | Technology |
-|-------|-----------|
-| Backend | Python 3.11, FastAPI, pandas, PyTorch (CPU) |
-| Frontend | React 18, TypeScript, Vite, Tailwind CSS, shadcn/ui, Recharts |
-| State | Zustand (with persistence) |
-| Testing | pytest, Vitest |
-| CI/CD | GitHub Actions |
-| Deployment | Docker Compose + Caddy (VM), DESY K8s (long-term) |
+All request schemas use Pydantic v2 with `extra="forbid"` — unknown fields fail loudly with 422 (per [ADR-002](docs/active/DECISIONS.md#adr-002--pydantic-v2-extraforbid-on-request-schemas)).
 
 ---
 
 ## Documentation
 
-| Document | Audience | What It Covers |
-|----------|----------|----------------|
-| [README_EXPLAINER.md](README_EXPLAINER.md) | Biologists, collaborators | Non-technical A-to-Z guide: every chart explained, full user flow, glossary |
-| [docs/active/ACTIVE_CONTEXT.md](docs/active/ACTIVE_CONTEXT.md) | Developers | Architecture overview, entry points, data flow, key modules |
-| [docs/active/CONTRACTS.md](docs/active/CONTRACTS.md) | Developers | API endpoints, request/response shapes, SSW semantics |
-| [docs/active/TESTING_GUIDE.md](docs/active/TESTING_GUIDE.md) | Developers | Test commands, golden tests, debugging strategies |
-| [docs/active/DEPLOYMENT.md](docs/active/DEPLOYMENT.md) | DevOps | Step-by-step VM deployment with Docker + Caddy |
-| [docs/active/MASTER_DEV_DOC.md](docs/active/MASTER_DEV_DOC.md) | Tech leads | Strategic decisions, roadmap priorities, infrastructure checklist |
+| Document | What it covers |
+|---|---|
+| [`docs/active/MASTER_PUSH_PLAN.md`](docs/active/MASTER_PUSH_PLAN.md) | The 7-wave path from current state to full-platform vision |
+| [`docs/active/TECH_PLATFORM_VISION.md`](docs/active/TECH_PLATFORM_VISION.md) | Platform thesis · technology radar · AI-platform vision |
+| [`docs/active/DECISIONS.md`](docs/active/DECISIONS.md) | 12 architectural decision records (ADR-001 through ADR-012) |
+| [`docs/active/ROADMAP.md`](docs/active/ROADMAP.md) | Phases A–L plus O / S — every planned feature with effort estimates |
+| [`docs/active/TOP_CEO_RECOMMENDATIONS.md`](docs/active/TOP_CEO_RECOMMENDATIONS.md) | Solo OSS sustainability · funding paths · burnout protocol |
+| [`docs/active/COVERAGE_AUDIT.md`](docs/active/COVERAGE_AUDIT.md) | Every Peleg + Alex feedback item with status |
+| [`docs/active/SENTRY_RUNBOOK.md`](docs/active/SENTRY_RUNBOOK.md) | Observability ops · alert rules · error fingerprints |
+| [`docs/active/ACTIVE_CONTEXT.md`](docs/active/ACTIVE_CONTEXT.md) | Architecture overview · entry points · data flow |
+| [`docs/active/CONTRACTS.md`](docs/active/CONTRACTS.md) | API endpoints · request/response shapes |
+| [`docs/active/TESTING_GUIDE.md`](docs/active/TESTING_GUIDE.md) | Test patterns · golden fixtures · debugging |
+| [`docs/active/DEPLOYMENT.md`](docs/active/DEPLOYMENT.md) | VM + Docker + Caddy step-by-step |
+| [`README_EXPLAINER.md`](README_EXPLAINER.md) | Non-technical biologist-facing A-to-Z guide |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | How to contribute · what to expect from a part-time-maintained project |
 
 ---
 
-## Contributing
+## Running tests
 
-Contributions are welcome. Please:
+```bash
+make test          # Backend (pytest) — 463 deterministic, no-network tests
+cd ui && npx vitest run   # Frontend (vitest) — 424 component tests
+make lint          # Linters (ruff + ESLint)
+make typecheck     # Type checks (mypy + tsc)
+make ci            # Full pipeline
+```
 
-1. Fork the repository
-2. Create a feature branch from `main`
-3. Run `make ci` before submitting a pull request
-4. Keep changes focused — one feature or fix per PR
-
-For bug reports and feature requests, open an issue on GitHub.
+**Total: 887 tests, all green.** Tests are deterministic and run without network access.
 
 ---
 
-## Citation
+## Project structure
 
-If you use PVL in your research, please cite:
+```
+peptide_prediction/
+├── backend/                  # FastAPI Python backend
+│   ├── api/routes/           # Route definitions
+│   ├── services/             # Business logic
+│   ├── schemas/              # Pydantic v2 models (extra="forbid")
+│   ├── auxiliary.py          # FF-Helix + 4-category classification
+│   ├── tango.py · s4pred.py  # External predictor wrappers
+│   └── tests/                # 463 pytest tests
+├── ui/                       # React + TypeScript frontend
+│   ├── src/components/       # ~120 components incl. Mol3DViewer, SetDiagram
+│   ├── src/components/drilldown/  # Universal drill-down system
+│   ├── src/components/hover/      # Universal hover system
+│   ├── src/lib/              # metricRegistry, permalink, sentryContext
+│   ├── src/stores/           # Zustand: dataset, threshold, hover, drilldown
+│   └── src/pages/            # Index, Results, PeptideDetail, QuickAnalyze
+├── pvl-cli/                  # `pvl analyze` CLI (scaffolded — Wave 2)
+├── pvl-py/                   # `import pvl` Python package (scaffolded — Wave 2)
+├── docker/                   # Multi-stage Dockerfiles + 4 compose files
+├── docs/active/              # Living documentation (24 docs)
+└── docs/images/              # README screenshots
+```
+
+---
+
+## Citing PVL
 
 ```bibtex
-@software{pvl2026,
-  author    = {Azaizah, Said},
+@software{pvl_2026,
+  author    = {Azaizah, Said and Ragonis-Bachar, Peleg and Golubev, Aleksandr},
   title     = {Peptide Visual Lab (PVL)},
-  version   = {1.0.0},
+  version   = {0.1.0},
   year      = {2026},
   url       = {https://github.com/saidaz24-meet/peptide_prediction},
+  doi       = {10.5281/zenodo.PENDING},
   license   = {MIT}
 }
 ```
 
-See [CITATION.cff](CITATION.cff) for machine-readable citation metadata.
+The Zenodo DOI is auto-assigned on each GitHub release. The DOI badge will appear here once v0.1.0 ships.
+
+PVL also exposes a per-analysis citation hook: every analysis URL is copyable + citable via the in-app **Reproducibility Ribbon**. Paste a permalink in your paper to give readers the exact same view you analyzed.
+
+See [`CITATION.cff`](CITATION.cff) for machine-readable citation metadata.
+
+---
+
+## Authors
+
+<table>
+  <tr>
+    <td><strong>Platform + UI</strong></td>
+    <td>
+      <a href="https://orcid.org/0009-0002-3596-5358">Said Azaizah</a>
+      · Technion + DESY (→ MIT)
+      <br/>
+      <em>Builder, designer, AI-platform vision.</em>
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Algorithms + scientific design</strong></td>
+    <td>
+      <strong>Dr. Peleg Ragonis-Bachar</strong> · Technion
+      <br/>
+      <em>4-category classification, threshold definitions, scientific review.</em>
+    </td>
+  </tr>
+  <tr>
+    <td><strong>Scientific advisor</strong></td>
+    <td>
+      <strong>Dr. Aleksandr Golubev</strong> · DESY + Technion
+      <br/>
+      <em>Research direction, lab adoption, infrastructure.</em>
+    </td>
+  </tr>
+</table>
 
 ---
 
 ## Acknowledgements
 
-- **[TANGO](https://tango.switchlab.org/)** — Fernandez-Escamilla et al., *Nat Biotechnol* 22, 1302-1306 (2004)
-- **[S4PRED](https://github.com/psipred/s4pred)** — Moffat et al., *Bioinformatics* 38, 4647-4653 (2022)
-- **DESY / CSSB (Landau Lab)** — Prof. Meytal Landau, Dr. Aleksandr Golubev
+PVL stands on the shoulders of these tools and groups. Cite them where appropriate.
+
+- **[TANGO](https://tango.switchlab.org/)** — Fernandez-Escamilla et al., *Nat Biotechnol* 22, 1302–1306 (2004)
+- **[S4PRED](https://github.com/psipred/s4pred)** — Moffat et al., *Bioinformatics* 38, 4647–4653 (2022)
+- **[Mol\*](https://molstar.org/)** — RCSB PDB + EBI + ETH consortium
+- **[AlphaFold DB](https://alphafold.ebi.ac.uk/)** — Jumper et al. (2021); Varadi et al. (2024)
+- **DESY / CSSB** — Prof. Meytal Landau lab; Dr. Aleksandr Golubev
 
 ---
 
 ## License
 
-[MIT](https://opensource.org/licenses/MIT)
+[MIT](LICENSE). Maintained part-time by Said with support from Peleg and Alex. See [`CONTRIBUTING.md`](CONTRIBUTING.md) for what part-time means in practice (TL;DR: 1–4 week response times during academic terms; bigger releases batched in summer breaks).

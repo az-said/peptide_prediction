@@ -2,6 +2,10 @@ import * as Sentry from "@sentry/react";
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { buildSentryRelease } from "@/lib/sentryContext";
+
+declare const __APP_VERSION__: string;
+declare const __BUILD_SHA__: string;
 
 // Initialize Sentry as early as possible in the application lifecycle
 // DSN must be provided via VITE_SENTRY_DSN environment variable
@@ -17,7 +21,7 @@ const feedbackIntegration = Sentry.feedbackIntegration({
 });
 
 // Store globally for access in components
-if (typeof window !== 'undefined') {
+if (typeof window !== "undefined") {
   (window as any).__sentryFeedbackIntegration = feedbackIntegration;
 }
 
@@ -25,14 +29,16 @@ if (SENTRY_DSN) {
   try {
     Sentry.init({
       dsn: SENTRY_DSN,
+      release: buildSentryRelease(__APP_VERSION__, __BUILD_SHA__),
       // Setting this option to true will send default PII data to Sentry
       // For example, automatic IP address collection on events
       sendDefaultPii: true,
       // Free tier: 100% sampling OK for low-traffic research tool
       tracesSampleRate: 1.0,
       profilesSampleRate: 1.0,
-      // Session Replay: capture 100% of sessions, always capture on error
-      replaysSessionSampleRate: 1.0,
+      // Session Replay: rely on error-triggered replays only.
+      // Recording 100% of sessions burns quota with active users on VPS.
+      replaysSessionSampleRate: 0,
       replaysOnErrorSampleRate: 1.0,
       environment: import.meta.env.MODE || "development",
       // Enable debug mode to see Sentry activity in console (disable in production)
@@ -47,7 +53,7 @@ if (SENTRY_DSN) {
         feedbackIntegration,
       ],
     });
-    
+
     SENTRY_INITIALIZED = true;
     console.log("[SENTRY] Initialized successfully");
   } catch (error) {
@@ -64,32 +70,32 @@ if (SENTRY_DSN) {
     console.error("[SENTRY] Not initialized");
     return;
   }
-  
+
   console.log("[SENTRY] Sending test events...");
-  
+
   // Test 1: Message
   const msgId = Sentry.captureMessage("Test message from frontend", "info");
   console.log("[SENTRY] Test message sent:", msgId);
-  
+
   // Test 2: Exception
   const excId = Sentry.captureException(new Error("Test exception from frontend"));
   console.log("[SENTRY] Test exception sent:", excId);
-  
+
   // Test 3: Manual throw (will be caught by ErrorBoundary)
   setTimeout(() => {
     throw new Error("Test async error from frontend");
   }, 100);
-  
+
   alert("Test events sent! Check Sentry dashboard and browser console.");
 };
 
 // Capture unhandled promise rejections
-window.addEventListener('unhandledrejection', (event) => {
+window.addEventListener("unhandledrejection", (event) => {
   Sentry.captureException(event.reason);
 });
 
 // Capture uncaught errors
-window.addEventListener('error', (event) => {
+window.addEventListener("error", (event) => {
   Sentry.captureException(event.error);
 });
 
@@ -98,11 +104,11 @@ const root = createRoot(container);
 
 // Wrap app in ErrorBoundary to catch React render errors
 root.render(
-  <Sentry.ErrorBoundary 
+  <Sentry.ErrorBoundary
     fallback={({ error, resetError }) => (
       <div style={{ padding: "2rem", textAlign: "center" }}>
         <h1>Something went wrong</h1>
-        <p>{error.message}</p>
+        <p>{error instanceof Error ? error.message : String(error)}</p>
         <button onClick={resetError}>Try again</button>
       </div>
     )}

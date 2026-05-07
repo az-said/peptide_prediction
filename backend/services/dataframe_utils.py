@@ -132,22 +132,44 @@ def apply_ff_flags(
     if "Beta full length uH" not in df.columns and "Sequence" in df.columns:
         _compute_beta_uh(df)
 
-    # --- FF-SSW flag and score ---
-    # Reference: avg hydrophobicity of rows WITH valid SSW prediction (not -1)
-    ssw_col = "SSW prediction"
+    # --- FF-SSW flag and score (Peleg FIX-001 categories 3 + 4) ---
+    # Category 3 (SSW)    = TANGO OR S4PRED says ssw=1 (Peleg: must be OR, not AND).
+    # Category 4 (FF-SSW) = SSW AND hydrophobicity >= hydrophobicity-threshold.
+    tango_ssw_col = "SSW prediction"
+    s4pred_ssw_col = "SSW prediction (S4PRED)"
+    has_tango_ssw_col = tango_ssw_col in df.columns
+    has_s4pred_ssw_col = s4pred_ssw_col in df.columns
     ssw_hydro_threshold = float("nan")
 
-    if ssw_col in df.columns:
-        # Compute data-average hydrophobicity (always, for reference)
-        valid_ssw_mask = df[ssw_col].notna() & (df[ssw_col] != -1)
-        if valid_ssw_mask.any() and "Hydrophobicity" in df.columns:
+    import numpy as np
+
+    if has_tango_ssw_col or has_s4pred_ssw_col:
+        tango_series = (
+            pd.to_numeric(df[tango_ssw_col], errors="coerce")
+            if has_tango_ssw_col
+            else pd.Series(np.nan, index=df.index)
+        )
+        s4pred_ssw_series = (
+            pd.to_numeric(df[s4pred_ssw_col], errors="coerce")
+            if has_s4pred_ssw_col
+            else pd.Series(np.nan, index=df.index)
+        )
+
+        # Unified SSW classification: positive if either provider says yes;
+        # negative if at least one provider has data but neither is positive;
+        # None when no provider produced data for the row.
+        ssw_pos_mask = (tango_series == 1) | (s4pred_ssw_series == 1)
+        ssw_data_mask = tango_series.notna() | s4pred_ssw_series.notna()
+
+        # Data-average hydrophobicity over rows the unified SSW called positive.
+        if ssw_pos_mask.any() and "Hydrophobicity" in df.columns:
             data_avg_H = pd.to_numeric(
-                df.loc[valid_ssw_mask, "Hydrophobicity"], errors="coerce"
+                df.loc[ssw_pos_mask, "Hydrophobicity"], errors="coerce"
             ).mean()
         else:
             data_avg_H = float("nan")
 
-        # Choose threshold: custom overrides data-average, reference fallback for NaN
+        # Choose threshold: custom overrides data-average, Peleg constant on NaN
         if use_custom and "hydroCutoff" in resolved_thresholds:
             ssw_hydro_threshold = float(resolved_thresholds["hydroCutoff"])
         elif pd.notna(data_avg_H):
@@ -155,30 +177,48 @@ def apply_ff_flags(
         else:
             ssw_hydro_threshold = settings.PELEG_DEFAULT_HYDRO_THRESHOLD
 
-        ssw_series = pd.to_numeric(df[ssw_col], errors="coerce")
-        has_data = ssw_series.notna()
-
-        # Flag: SSW != -1 AND hydrophobicity >= threshold
         hydro_col = "Hydrophobicity"
-        hydro_series = pd.to_numeric(df[hydro_col], errors="coerce") if hydro_col in df.columns else pd.Series(float("nan"), index=df.index)
+        hydro_series = (
+            pd.to_numeric(df[hydro_col], errors="coerce")
+            if hydro_col in df.columns
+            else pd.Series(float("nan"), index=df.index)
+        )
+
         is_candidate = (
-            has_data
-            & (ssw_series != -1)
+            ssw_pos_mask
             & pd.notna(ssw_hydro_threshold)
+            & hydro_series.notna()
             & (hydro_series >= ssw_hydro_threshold)
         )
-        # Build flags: None (no data), -1 (not candidate), 1 (candidate)
-        # Use numpy for fast vectorized logic, then convert to Python types
-        import numpy as np
-        flags_arr = np.where(is_candidate, 1, np.where(has_data, -1, None))
+        flags_arr = np.where(is_candidate, 1, np.where(ssw_data_mask, -1, None))
         ff_ssw_flags = [int(v) if v is not None else None for v in flags_arr]
 
-        # Score: Hydrophobicity + Beta_uH + Full_length_uH + SSW_prediction
-        beta_uh = pd.to_numeric(df["Beta full length uH"], errors="coerce") if "Beta full length uH" in df.columns else pd.Series(float("nan"), index=df.index)
-        full_uh = pd.to_numeric(df["Full length uH"], errors="coerce") if "Full length uH" in df.columns else pd.Series(float("nan"), index=df.index)
-        all_valid = has_data & hydro_series.notna() & beta_uh.notna() & full_uh.notna()
-        raw_scores = hydro_series + beta_uh + full_uh + ssw_series
-        ff_ssw_scores = [float(raw_scores.iloc[i]) if all_valid.iloc[i] else None for i in range(len(df))]
+        # PELEG-Q-FIX-013: SSW score retained from TANGO formula
+        # (Hydrophobicity + Beta_uH + Full_length_uH + TANGO SSW flag).
+        # Peleg flagged the SSW score itself as questionable in FIX-013;
+        # awaiting decision before changing the score basis.
+        beta_uh = (
+            pd.to_numeric(df["Beta full length uH"], errors="coerce")
+            if "Beta full length uH" in df.columns
+            else pd.Series(float("nan"), index=df.index)
+        )
+        full_uh = (
+            pd.to_numeric(df["Full length uH"], errors="coerce")
+            if "Full length uH" in df.columns
+            else pd.Series(float("nan"), index=df.index)
+        )
+        score_basis = tango_series  # TANGO ssw flag drives the score formula
+        all_valid = (
+            score_basis.notna()
+            & hydro_series.notna()
+            & beta_uh.notna()
+            & full_uh.notna()
+        )
+        raw_scores = hydro_series + beta_uh + full_uh + score_basis
+        ff_ssw_scores = [
+            float(raw_scores.iloc[i]) if all_valid.iloc[i] else None
+            for i in range(len(df))
+        ]
 
         df["FF-Secondary structure switch"] = ff_ssw_flags
         df["FF-SSW score"] = ff_ssw_scores
@@ -320,6 +360,12 @@ def fill_percent_from_tango_if_missing(df: pd.DataFrame) -> None:
     If S4PRED is off, ensure percent content fields exist using Tango merges.
     (Your tango.process_tango_output already sets these for each row.)
     We just guarantee presence + numeric dtype so the UI cards can compute means.
+
+    # PELEG-Q-FIX-023: Correlation matrix missing-value treatment — must NOT
+    # default to 0. The fillna(0) here is for UI display percentages (means
+    # 0% structural content), NOT for correlation inputs. The correlation
+    # matrix builder (UI-side) must drop NaN, not coerce to 0. Documented
+    # here so the contract is explicit.
     """
     for col in ["SSW helix percentage", "SSW beta percentage"]:
         if col not in df.columns:

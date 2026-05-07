@@ -1,8 +1,9 @@
 # Peptide Visual Lab (PVL) — Development Roadmap
 
-**Last Updated**: 2026-04-02
-**Status**: Active Development (pre-paper, deployment-ready)
-**Branch**: `main` (merged from `ref-impl-replacement`)
+**Last Updated**: 2026-04-26
+**Status**: Active Development (pre-paper, deployment-ready, deployed at http://94.130.178.182:3000)
+**Branch**: `main` (working off `planning/wave-0-prep` for Wave 0 prep)
+**Canonical pair**: this file + `KNOWN_ISSUES.md` are the only roadmap+debug sources of truth.
 
 ---
 
@@ -49,6 +50,8 @@ PVL occupies a unique niche: the **only web tool** combining aggregation propens
 | A3 | Example datasets | 3h | DONE | 3 curated sets with "Try example data" |
 | A4 | bio.tools registration | 1h | TODO | Needs live URL |
 | A5 | Zenodo DOI | 1h | TODO | Needs GitHub release |
+| A6 | One-click paper figure pack | 8-12h | TODO | Select N peptides → multi-panel SVG with consistent styling, ready for Nature/Science supplement. Includes radar overlay, sequence comparison, classification matrix, helical wheels. Embeds permalink to reproduce. |
+| A7 | JOSS paper draft + submission | 16-20h | TODO | paper.md + bibliography + author affiliations. Submission triggered by clean GitHub release + Zenodo DOI. |
 
 ---
 
@@ -76,6 +79,28 @@ pLDDT metrics, Mol* iframe viewer, PDB download for valid UniProt accessions.
 **Status**: PARTIAL (1293 → 15 LOC) | **Effort**: 16h
 **Done**: Extracted to `services/`, broke circular imports, fixed duplicate S4PRED bug.
 **Remaining**: `execute_uniprot_query` monolith (814 lines) needs dedicated plan.
+
+### B-CONTRACT — API contract hardening (Wave B)
+**Status**: PROPOSED | **Effort**: 4-6h | **Owner**: T2
+Critical reliability fix surfaced 2026-05-02:
+- `UniProtQueryExecuteRequest` (and likely siblings) use Pydantic v2 `extra="ignore"` → silently drops unknown fields. Frontend sending `max_results: 5` was coerced to `size=500` defaults silently, causing 615s timeouts on protein-length sequences.
+- Fix: set `model_config = ConfigDict(extra="forbid")` on every request schema; add `AliasChoices` so legacy field names (`max_results`) route to canonical (`size`); audit ALL request schemas in `backend/schemas/api_models.py`.
+- Add contract regression tests: `pytest backend/tests/test_api_contract_strictness.py` — assert 422 on unknown fields, assert aliases work.
+
+### B-COMPLEX-SEQ — Complex sequence notation handling (research item, raised 2026-05-06)
+**Status**: PROPOSED | **Effort**: 8-12h | **Priority**: v0.2 (post-launch)
+Researchers sometimes write peptide sequences with internal dashes/modifiers in conventions PVL doesn't currently parse robustly:
+- Chemical modifications: `Ac-PEPTIDE-NH2` ✅ already supported (B10).
+- Multi-chain disulfide notation: `Chain1-Chain2` (currently treated as single sequence with dashes stripped — may be wrong for some labs).
+- Single-letter with readability dashes: `M-V-G-L-K`.
+- Linker/spacer notation varying by lab convention.
+**Next step**: Wave C email asks Alex which conventions his collaborators use. Implementation = parser refactor with explicit detection + popup explaining what was parsed and how. Show the user "We detected X chains separated by Y, treating them as Z. Click to override." Block off as a research item for v0.2.
+
+### B-S4PRED-CAP — S4PRED length cap (Wave B)
+**Status**: PROPOSED | **Effort**: 2-3h | **Owner**: T2
+- S4PRED runs a 5-model BiLSTM ensemble per residue. On 770aa proteins (e.g., APP) this is ~120s/sequence × 5 sequences = 600+s.
+- PVL is a peptide tool. Add length cap: reject S4PRED on sequences > 100 aa (configurable via settings) with clear error: "S4PRED is restricted to peptides ≤ 100 aa. For full proteins, use [link to alternative]".
+- Frontend respects cap: skips S4PRED for long sequences, runs only TANGO + biochem, surfaces a banner "S4PRED skipped — sequence too long for peptide pipeline."
 
 ### B6. DuckDB Result Cache
 **Status**: NOT STARTED | **Effort**: 12h
@@ -149,6 +174,23 @@ Simulate concurrent load: 50, 100, 1000 simultaneous analyses. Tools: `locust` o
 
 **Phase B summary**: 9/16 done. B11 (FASTA), B13 (atom2svg), B14 (dual compare) completed. B6 (cache), B15-B16 planned.
 
+### B17. `pvl-cli` — Pip-installable CLI
+**Status**: NOT STARTED | **Effort**: 1-2 days | **When**: After DESY deployment
+Thin wrapper around the REST API: `pip install pvl-cli && pvl analyze seqs.fasta`. Targets researchers in a terminal who don't want a browser. Same predictions, FASTA in / CSV out.
+**Why**: PVL becomes infrastructure, not just a website. The JOSS paper can cite all surfaces.
+
+### B18. `pvl-py` — Importable Python Package
+**Status**: NOT STARTED | **Effort**: 1-2 days | **When**: Alongside B17
+`import pvl; results = pvl.analyze(df)` — Jupyter-native. Returns a pandas DataFrame matching the API contract. Uses the same REST backend (or local mode for offline use).
+
+### B19. "Developers" Navigation Section
+**Status**: NOT STARTED | **Effort**: 2-3h | **When**: Alongside B17/B18
+Add a top-level nav entry exposing: API docs (auto-generated at `/api/docs`), CLI install, Python package, MCP server, self-host instructions. Even items marked "coming soon" — establishes the multi-surface positioning before the packages ship.
+
+### B20. "Run Locally / Self-Host" Landing CTA
+**Status**: NOT STARTED | **Effort**: 2-4h | **When**: Phase D2 redesign
+Prominent option on the landing page: "Run PVL on your own machine — Docker, MIT licensed, no data leaves your device." Pairs with D3.1 (everything-runs-locally laptop visualization).
+
 ---
 
 ## Peleg Holistic Review
@@ -187,12 +229,244 @@ Simulate concurrent load: 50, 100, 1000 simultaneous analyses. Tools: `locust` o
 | D1.11 | Inner pages redesign (Results, Upload, etc.) | 8h | DONE | All 9 data pages + sidebar redesigned |
 | D1.12 | Navigation guard (QuickAnalyze) | 2h | DONE | AlertDialog + global nav guard hook |
 
+## Phase S: Sentry Upgrade — Production-Grade Observability (NEW)
+
+**Goal**: Sentry currently runs at minimum config (DSN + sample rates). Upgrade to a production observability stack so PVL self-monitors during MIT semesters when Said has minimum bandwidth. Target: zero unknown unknowns; every error reaches Said as a triaged, actionable Sentry issue with full context.
+
+### S1 — Source maps uploaded in CI
+**Effort**: 2-3h | **Status**: TODO
+- Install `@sentry/vite-plugin` in `ui/`. Add to `vite.config.ts` `sentryVitePlugin({ org, project, authToken })`.
+- Set `SENTRY_AUTH_TOKEN` as a GitHub Actions secret. CI uploads source maps automatically on every release-tag build.
+- Verify: trigger a frontend error, confirm Sentry shows readable function names + line numbers (not minified `Tk` / `Ik`).
+- Reference: https://docs.sentry.io/platforms/javascript/guides/react/sourcemaps/uploading/vite/
+
+### S2 — Release tagging + version correlation
+**Effort**: 1-2h | **Status**: TODO
+- Frontend: `Sentry.init({ release: __APP_VERSION__ + '-' + __BUILD_SHA__ })` (already have version + SHA from V4-1).
+- Backend: `sentry_sdk.init(release=settings.VERSION + '-' + settings.BUILD_SHA)`.
+- Tag every Sentry issue with the release that emitted it. When Said cuts v0.1.1 hotfix, errors from v0.1.0 vs v0.1.1 are visible side-by-side.
+- Auto-resolve issues that haven't appeared in 3+ releases (Sentry built-in setting).
+
+### S3 — Rich context per event
+**Effort**: 3-4h | **Status**: TODO
+Every Sentry event captures:
+- **User context** (anonymous): session UUID stored in localStorage. `Sentry.setUser({ id: sessionId })`. Allows grouping "same user hitting 3 errors in a row" without PII.
+- **Custom tags** for error grouping:
+  - `peptide_count`: small (<10) / medium (10-100) / large (>100)
+  - `predictors`: `tango,s4pred` / `s4pred-only` / `none`
+  - `data_source`: `quick` / `csv` / `uniprot` / `fasta`
+  - `route`: from React Router location
+  - `theme`: light / dark
+  - `viewport`: mobile / tablet / desktop
+- **Custom contexts**: threshold preset name, dataset hash (truncated), browser language, time zone.
+- Wrap key user actions with `Sentry.startTransaction({ name: 'peptide.analyze.batch' })` so slow ones show up in performance dashboards.
+
+### S4 — Backend FastAPI integration
+**Effort**: 2-3h | **Status**: PARTIAL
+- Verify `sentry_sdk[fastapi]` is installed and `SentryAsgiMiddleware` is wired (search `sentry_sdk` in `backend/`).
+- Add the FastAPI integration: `sentry_sdk.init(integrations=[FastApiIntegration()])`.
+- Capture `trace_id` from request middleware → set as Sentry tag → so frontend trace_id and backend trace_id correlate (already 50% done; verify).
+- Add `before_send` filter to drop expected non-error 4xx responses (404 on missing peptides, 422 contract errors that are actually user input issues).
+
+### S5 — Custom alerts + Slack webhook
+**Effort**: 2h | **Status**: TODO
+In Sentry dashboard (manual setup, document in `docs/active/SENTRY_RUNBOOK.md`):
+- **Alert 1**: New issue (severity: error or fatal) → email Said + Slack #pvl-alerts.
+- **Alert 2**: Issue spike (10+ events of same fingerprint in 1 hour) → email + Slack.
+- **Alert 3**: Performance degradation (p95 >2× baseline for `/api/predict`) → email.
+- Suppress: 4xx contract validation errors, expected `cancelToken` errors.
+- Quiet hours: no Slack alerts 23:00-07:00 Israel time.
+
+### S6 — Performance dashboards
+**Effort**: 2h | **Status**: TODO
+- Configure Sentry performance views: p50/p95/p99 latency for `/api/predict`, `/api/upload`, `/api/uniprot/execute`.
+- Set web-vitals targets: LCP < 2.5s, FID < 100ms, CLS < 0.1.
+- Auto-flag any 7-day regression > 20%.
+
+### S7 — Replay sampling tuning
+**Effort**: 1h | **Status**: PARTIAL
+- Currently: `replaysSessionSampleRate: 0`, `replaysOnErrorSampleRate: 1.0`.
+- Add explicit ignore patterns for routine actions (button hovers, form typing).
+- Mask all PII fields: `maskAllText: false` (already), but mask any input field that might contain a sequence (privacy guard for proprietary peptides).
+- Replays only on actual errors, not on user-cancellations.
+
+### S8 — Cron / health monitoring
+**Effort**: 1-2h | **Status**: TODO
+- Sentry Cron Monitoring on the backend `/api/health` endpoint — pings every 5 min, alerts if missed for 15 min (VPS down).
+- Add Sentry Cron monitor for the daily VPS backup job (set up in Phase O).
+
+### S9 — Issue ownership rules
+**Effort**: 30min | **Status**: TODO
+- Assign all `backend/api/routes/uniprot.py` errors to Said.
+- Assign frontend `ui/src/components/charts/*` errors to Said with secondary @cowork tag.
+- Future: when contributors arrive, route their owned files to them.
+
+### S10 — Sentry version + SDK upgrade
+**Effort**: 2h | **Status**: TODO
+- Audit current `@sentry/react` and `sentry-sdk` versions.
+- Upgrade to latest stable. Test with one intentional throw + capture.
+- Pin in `requirements.txt` and `package.json` to known-good versions.
+- Re-run after Dependabot proposes a major version bump.
+
+**Phase S Definition of Done**: a fresh production error from any user produces a Sentry issue with: readable stack trace + source line + user session ID + route + viewport + active threshold preset + dataset size + browser version + 5-minute replay starting at the moment the error occurred. Said sees it in his email + Slack within 5 minutes. Time to triage: < 2 minutes.
+
+---
+
+## Phase O: Operational Sustainability (NEW — long-term)
+
+**Goal**: PVL keeps working with ~30 min/month of Said's time during MIT semesters.
+
+### O1 — Dependabot + Renovate setup
+**Effort**: 1h | **Status**: TODO
+- Add `.github/dependabot.yml` with:
+  - npm + pip ecosystems
+  - Daily security updates auto-PR
+  - Weekly minor-version updates (group all together to reduce PR noise)
+  - Major-version updates: weekly, individual PRs (Said reviews case-by-case)
+- Add Renovate alongside for finer-grained config (e.g., automerge dev deps).
+
+### O2 — Daily VPS backup automation
+**Effort**: 2-3h | **Status**: TODO
+- Cron job on the VPS: nightly backup of `/data/cache/`, `/data/uploads/`, redis snapshot, env files (encrypted).
+- Push to a second location: Backblaze B2 (cheap, S3-compatible) or Cloudflare R2 (free tier 10GB).
+- Sentry Cron monitor on the backup script (S8) — Said gets paged if backups stop.
+- Quarterly restore drill (script tested by Said in summer).
+
+### O3 — Multi-region resilience (future)
+**Effort**: 8-12h | **Status**: PROPOSED
+- Cloudflare Pages or Render as a fallback frontend host (currently DESY VPS is single point of failure).
+- DNS-level health check that fails over.
+- Phase O3 only matters if PVL gets traction — defer until usage warrants it.
+
+### O4 — CONTRIBUTING.md community polish
+**Effort**: 2h | **Status**: TODO
+- Clear "good first issue" label scheme on GitHub.
+- Issue templates for: bug report, feature request, scientific question.
+- A v0.2 roadmap pointer ("These are the features Phase I onwards — community contributions welcome.").
+- Code-of-conduct (use Contributor Covenant).
+- Said does NOT actively recruit — just makes it open. Community management is itself a job.
+
+### O5 — Self-host README + Docker quickstart
+**Effort**: 1-2h | **Status**: TODO
+- Front-page README section: "Run PVL on your own machine in 3 minutes."
+- `docker-compose up` instructions, env file template, one-command demo.
+- This is also a backup story: if DESY VPS dies, anyone can self-host.
+
+### O6 — Monthly maintenance protocol
+**Effort**: 30min documentation | **Status**: TODO
+- `docs/active/MAINTENANCE_PROTOCOL.md` — Said's checklist:
+  - Sentry dashboard review
+  - Dependabot PRs review/merge
+  - VPS uptime check
+  - bio.tools listing still active
+  - Quick smoke test (one peptide, one CSV upload)
+- 30 minutes per month, calendar-blocked.
+
+### O7 — Status page (future)
+**Effort**: 3-4h | **Status**: PROPOSED
+- Public uptime page using Cloudflare's free status-page service or Better Stack free tier.
+- Communicates trust to potential paper citers and bio.tools registrants.
+
+---
+
+## Phase L: Landing Page + Demo Mode (NEW)
+
+**Goal**: First-time visitor lands → understands what PVL does in 5 seconds → sees results in 15 seconds → wants to upload their own data in 30 seconds.
+
+### L1 — Demo mode (auto-loaded example dataset)
+**Effort**: 4h | **Status**: TODO
+- On first visit (no localStorage flag), the homepage auto-loads the Staphylococcus 2023 example dataset (already in repo) into datasetStore.
+- A non-intrusive "Demo data — click here to upload yours" chip in the corner.
+- All Results / PeptideDetail routes work immediately without uploading.
+- Tracked via Sentry custom tag `data_source: demo` for analytics.
+
+### L2 — Hero section polish
+**Effort**: 4h | **Status**: TODO
+- Replace existing hero with a clear value-prop block:
+  - **H1**: "Peptide Visual Lab — the all-in-one peptide aggregation + structure prediction dashboard."
+  - **3-4 differentiator bullets**:
+    - Multi-tool consensus (TANGO + S4PRED + biochem + AlphaFold) in one place
+    - Live 3D structure overlay of TANGO peaks + S4PRED segments
+    - Reproducible permalinks for every analysis (cite + share)
+    - Open source · MIT · runs locally
+  - **2 CTAs**: "Try it now" (scrolls to demo) + "Self-host" (links to Docker section)
+  - **Logo strip**: DESY, Technion, partner labs — credibility.
+- Hero image: an animated screenshot (loop) showing the SetDiagram + classification pills + 3D viewer rotating.
+
+### L3 — "How it works" section
+**Effort**: 3h | **Status**: TODO
+- 4-step walkthrough cards:
+  1. Paste a sequence OR upload a CSV / FASTA
+  2. PVL runs TANGO + S4PRED + FF-Helix + biochem
+  3. Interactive dashboard with classifications, distributions, drill-down
+  4. Export figure pack OR copy permalink for your paper
+- Each card has a tiny screenshot.
+
+### L4 — Trust + citations section
+**Effort**: 2h | **Status**: TODO
+- "Citing PVL": pre-filled BibTeX block (uses Zenodo DOI once live).
+- "Used by": logos of DESY + Technion + any other labs that adopt.
+- Link to JOSS paper once published.
+
+### L5 — Footer overhaul
+**Effort**: 1h | **Status**: TODO
+- Documentation, GitHub, Sentry status, MIT license, security policy.
+- Contact / feedback links.
+- ORCID iDs for Said, Peleg, Alex.
+
+---
+
+## Phase D5: V4 Transformative Differentiators (Wave V4)
+
+The "first of its kind" round. Three additions no peptide tool has, that make PVL genuinely transformative.
+
+### D5.1 — Reproducibility Ribbon + Analysis Permalink (Cowork V4-1)
+**Effort**: 12-16h | **Status**: PROPOSED
+Persistent ribbon at top of Results + PeptideDetail showing: PVL version, build SHA, query summary, threshold values, "Copy permalink" button, "Citation" button (BibTeX/RIS/plain text). Permalinks encode all state needed to reproduce the analysis. Pasting a URL reproduces the exact view. Required for: peer reviewer reproducibility checks, paper citations, bio.tools/JOSS submissions.
+
+### D5.2 — Mol* 3D Structure Viewer with PVL Annotations (Cowork V4-2)
+**Effort**: 16-24h | **Status**: PROPOSED
+Render TANGO peaks + S4PRED helix segments + FF-Helix candidate regions + SSW switch zones directly on the AlphaFold 3D structure via Mol*. Toggle controls per overlay type. Hover-sync between 3D structure and 2D sequence track. Export to PDB, PNG snapshot, Mol* session URL. **No competing peptide tool offers this.** Killer differentiator.
+
+### D5.3 — Sliding-Window Profile Redesign (Cowork V4-3)
+**Effort**: 8-12h | **Status**: PROPOSED
+Multi-channel scientific visualization replacing the current monochromatic blue-line plots. Declarative `<WindowProfileChart channels={...}>` component supporting hydrophobicity + μH + TANGO lines, S4PRED helix / FF-Helix / SSW segment bands, aggregation peak markers. Each channel toggleable. Reference lines for thresholds. Designed for Phase I multi-predictor channels to plug in as new visual channels.
+
+---
+
+## Phase D4: Universal Drill-Down + Hover Architecture (Wave H)
+
+**Goal**: every numeric value, every chart element, every metric label reveals contextual scientific detail on hover; every chart can expand into a slide-over inspector with full drill-down. This is the single biggest UX transformation in the roadmap — the difference between "PVL has charts" and "PVL is a research instrument."
+
+### D4.1 — RichHoverCard universal pattern
+**Effort**: 8-10h | **Status**: PROPOSED (Cowork V3-1)
+A single `<MetricHover metric={id} peptide={p}>` wrapper any number/element opts into. Reveals: scientific definition, current value, percentile in dataset, comparison to mean, 2-3 related peptides, "Drill in →" button.
+
+### D4.2 — DrillDown slide-over inspector
+**Effort**: 12-16h | **Status**: PROPOSED (Cowork V3-2)
+Right-side slide-over (Stripe Dashboard pattern, NOT modal — context preserved). Triggered by any chart's `↗` icon or any `MetricHover`'s "Drill in" button. Contains: 2× chart, scientific definition pane, interpretation pane, underlying peptides table, export buttons (SVG/PNG/CSV), "Send to Compare" action, keyboard shortcuts (cmd+K metric switch, arrows for peptide nav, esc close).
+
+### D4.3 — URL-routable analysis permalinks
+**Effort**: 6-8h | **Status**: PROPOSED
+Drill-down state captured in URL (`/results?drill=ff-helix&peptide=P12345`). Same for full analysis state — query, thresholds, ranking presets — encoded into a shareable hash. Researcher pastes link in paper / Slack / email; recipient sees the exact same view. This is reproducibility-as-feature.
+
+### D4.4 — Cross-chart linking
+**Effort**: 6-8h | **Status**: PROPOSED
+Hovering a percentile bar simultaneously highlights the corresponding bin in the matching distribution histogram + the matching vertex on the radar chart. This is what cellxgene does for single-cell data and it's why their tool feels alive.
+
+### D4.5 — Per-residue rich hover on sequence tracks
+**Effort**: 4-6h | **Status**: PROPOSED
+Hovering any residue on the sequence display reveals: position, AA letter + 3-letter code, S4PRED P(H/E/C), TANGO score, biochem class (hydrophobic/charged/etc.), is-in-segment? booleans for helix/SSW/FF-Helix.
+
+---
+
 ## Phase D2: Mobile Responsive + Polish (IN PROGRESS)
 
 | ID | Task | Effort | Status | Details |
 |----|------|--------|--------|---------|
 | D2.6 | Mobile responsive polish | 8h | IN PROGRESS | Typography scaling, grid stacking, table column visibility |
 | D2.7 | Code-splitting / lazy routes | 4h | DONE | React.lazy + manualChunks in vite.config |
+| D-NAV | Stripe-style top nav (or 3-dots expand menu) replacing fixed sidebar on landing | 6-8h | NOT STARTED | Said: "the dark menu which is still showing in a bright mode" + "top bar like stripe instead of a side bar...or three dots that expand into a menu but not a fixed componenet" |
 
 ## Phase D2.8: Visualization Upgrade Cycle (Cowork)
 
@@ -249,6 +523,10 @@ Each graph goes through the cycle above. Charts to redesign:
 | D3.4 | Per-residue unified profile viewer | 12h | PARKED | Multi-track synchronized viewer: sequence + S4PRED probabilities + TANGO curve + hydrophobicity + FF-Helix windows on same X axis. |
 | D3.5 | Three.js globe upgrade | 16-20h | PARKED | Replace COBE with custom Three.js globe: colorful continent dots, glowing arcs, atmospheric haze, particle effects. Exact Stripe aesthetics. ~600KB bundle cost, needs lazy loading. |
 | D3.6 | Updated screenshots for mockups | 4h | PARKED | Fresh screenshots of all redesigned pages (light + dark) for ShowcaseGallery and UseCaseSection floating browser frames. |
+| D3.7 | Stacked sliding cards (image #31 reference) | 8-12h | PARKED | Cards stacked, slide up one after another, writing on left + visualization/screenshot/dashboard on right. Use for hero or use-case section. Same vibe, generous spacing, cards not too small. |
+| D3.8 | Clickable proof cards w/ logos (image #32 reference) | 6-8h | PARKED | Click between items (e.g., DESY lab, Technion lab, TANGO, S4PRED), shows description + bright photo with logo center on right. Showcases credibility / partnerships. |
+| D3.9 | Big-bg-color hero w/ multiple top screenshots (image #36 reference) | 8h | PARKED | Orange/purple gradient bg, multiple screenshot mockups arranged at top, description bottom. |
+| D3.10 | Embedding-viz tech aesthetic (image #34 reference) | 8h | PARKED | Right-side panel with embedding visualization (lines, dots, calculation feel) on a clean white bg. Conveys proof-of-tech. Pairs with D3.5 globe aesthetic. |
 
 ---
 
@@ -517,6 +795,41 @@ Alex's vision: a scientific version of OpenClaw where researchers can connect th
 
 ---
 
+## Phase I: Multi-Predictor Consensus (Strategic — Galagos-inspired)
+
+**Source**: Galagos.ai demo (2026-04-25). Their AI agent ran 8 amyloid predictors on a single sequence and produced a per-predictor verdict table with consensus ("7/8 flag amyloid propensity — HIGH"). Reference screenshot in `New_Feedback/`.
+**Why this matters**: PVL today runs 1 aggregation predictor (TANGO) + 1 secondary structure predictor (S4PRED). Consensus across 5-8 amyloid predictors is the gold standard for credibility — and no web tool offers it visually. This is the biggest strategic differentiator after MCP integration.
+
+**Open question for Said**: confirm this is a real future direction (vs. inspiration only). Scope is large.
+
+### I1. Multi-Predictor Integration Layer
+**Status**: PROPOSED | **Effort**: 60-100h (across many predictors)
+Wrap each external predictor as a PVL provider with the same interface as TANGO. Candidates from Galagos output:
+- AGGRESCAN — already has a public REST API
+- FoldAmyloid — server, parseable HTML output
+- CamSol Intrinsic — server, parseable
+- Zyggregator — server-based
+- Pafig — local binary (like TANGO)
+- AmyloDeep — neural network, weights downloadable
+- Beta-contiguity — algorithmic, can implement directly
+- Packing density — algorithmic, can implement directly
+
+**Architecture**: Plugin interface (`backend/predictors/base.py` defines `BasePredictor`), each provider implements `predict(sequence) -> PredictionResult`. PVL pipeline runs all enabled predictors in parallel (Celery tasks), aggregates verdicts.
+
+### I2. Consensus Output UI
+**Status**: PROPOSED | **Effort**: 16-24h | **After**: I1
+Per-peptide and per-cohort consensus view:
+- Per-predictor verdict table (predictor name | verdict | key finding)
+- Consensus headline ("7/8 flag amyloid propensity — HIGH")
+- Filter table by consensus level
+- Export consensus report (extends G5 PDF report)
+
+### I3. Predictor Performance Benchmarking
+**Status**: PROPOSED | **Effort**: 40h | **After**: I2
+Run all predictors on a labeled dataset (e.g., AmyloGraph, WALTZ-DB) and report per-predictor accuracy/sensitivity/specificity. PVL becomes the only tool that lets you choose predictors based on benchmarked performance.
+
+---
+
 ## Phase H: Marketing, Content & Branding
 
 **Goal**: Professional public presence. PVL should look like a real product, not a student project.
@@ -531,8 +844,89 @@ Alex's vision: a scientific version of OpenClaw where researchers can connect th
 | H5 | Website content: landing page copy, use case pages, FAQ | 4-6h | TODO | Part of Phase D redesign |
 | H6 | Wallpapers, social media assets, shareable cards | 2-4h | TODO | From brand kit |
 | H7 | Tamarind Bio research: MCP positioning, partnership potential | 2h | TODO | Informs G1 MCP server story |
+| H8 | Email Alex+Peleg: full recap (fixes done, pending, next steps, AI integration vision, paper timeline) | 2-3h | TODO | Said-drafted, T1 polishes. Big thank you for feedback. |
+| H9 | LinkedIn animated post (mac-screenrecording style) | 6-8h | TODO | Said has a saved like-design to replicate. Post about PVL features. |
+| H10 | Manual-test sweep across all backlog items | 4-6h | TODO | Before Phase D2.8 / D3 final design lock-in |
+| H11 | Apple Notes + Slack comment review pass | 2-3h | TODO | One last comb through user feedback before next phase |
+| **G5** | Galagos-style auto-PDF scientific report | 16-24h | NOT STARTED | 12-page format with per-peptide interpretation + methods + parameters. Uses LLM (G2 RAG) for description sections. Reference: `New_Feedback/tango_viral_peptides_report.pdf`. |
 
 **Key principle**: Every LinkedIn post should showcase a real feature with a screenshot or screen recording. No fluff.
+
+---
+
+## Wave Execution (replaces former PLAN.md)
+
+CEO terminal (T1) plans waves; sub-terminals (T2/T3/T-PEL/Cowork) execute. T1 commits at end of each wave. No pushes until full sequence is green.
+
+### Completed waves (Apr 2-3, deployed to VPS)
+| Wave | Focus | Status |
+|------|-------|--------|
+| 1 | Bug fixes ISSUE-019/020/022/023 | DONE |
+| 3 | UniProt search F1-F3 + F6 + 10K pagination | DONE+ |
+| 4 | Docker prod hardening + Caddy + GHCR (E1 partial, E2/E5 remain) | MOSTLY DONE |
+| 5 | UI threshold controls T1-T10, columns C1-C5, upload UX | DONE |
+| 6 | UI charts/PeptideDetail (P1-P6, CH2, CH6 done; CH1/3/4/5/7, P7/8 remain) | PARTIAL |
+| 7 | Async B1 (Celery+Redis) + Cache B6 (DuckDB) | DONE |
+
+### Current wave plan (revised 2026-04-26 — Peleg PDF extracted, replaces D+E with P-series)
+
+**Source of truth for Peleg work**: `docs/active/PELEG_FEEDBACK_INSTRUCTIONS.md` (32 FIXes, 5 tiers).
+
+| Wave | Focus | Terminals | Output |
+|------|-------|-----------|--------|
+| **0** | Red CI: ISSUE-025 backend trace_id failures | T2 | ✅ DONE — real production bug (asyncio.to_thread + cache traceId refresh) |
+| **0.1** | Red CI: ISSUE-026 store type errors (8) | T3 | ✅ DONE in stores |
+| **0.2** | All remaining 13 tsc errors across 8 files (Compare, Upload, EvidencePanel, PeptideTable, TrustSection, WeightBar, peptideMapper, main.tsx) | T3 | tsc clean overall |
+| **A** | Sentry crypto crash (ISSUE-027) — UUID polyfill at 2 sites | T3 | crypto.randomUUID safe in HTTP/Safari |
+| **B** | TANGO tooltip in Quick Analyze (ISSUE-028) | T3 | tooltip parity |
+| **B-skip** | ISSUE-029 dark menu in light mode | — | ✅ already fixed |
+| **PEL-CRIT-001** | Helix % calculation audit (Peleg flagged 2026-04-26 in Hebrew as urgent) | T4 | `HELIX_PERCENTAGE_AUDIT.md` + canonical definition + fixes |
+| **P0** | Foundation: FIX-001 (4-category classification) + FIX-002 (threshold restructure) + FIX-003 (terminology sweep) | T2 backend + T3 UI | Classification logic, threshold defaults, Cohort→Database, Aggregation→Fibril framing, no acronyms |
+| **P1** | Tier 1 dashboard: FIX-004 KPI cards, FIX-005 badges, FIX-006 columns, FIX-007 Venn bug, FIX-008 Pipeline→Results | T3 + Cowork (icons) | Results dashboard fixed |
+| **P2** | Tier 2 PeptideDetail: FIX-009 to FIX-018 | T3 + Cowork (heavy visuals on FIX-014, 016, 017) | PeptideDetail page complete |
+| **P3** | Tier 3 charts: FIX-019 to FIX-025 | Cowork-heavy + T3 wires | All distribution + correlation charts redone |
+| **P4** | Tier 4 help text: FIX-026 to FIX-030 | T3 (text-only) | Metric definitions, classification text, visualization guide |
+| **P5** | Tier 5 polish: FIX-031, FIX-032 | T3 | S4PRED warning citation, threshold values panel |
+| **V4** | Cowork V4 — Reproducibility ribbon + Mol\* 3D overlay + Window-profile redesign | Cowork + T3 | D5.1, D5.2, D5.3 — first-of-its-kind differentiators |
+| **C** | Email Alex+Peleg recap with 12 open scientific questions | T1 + Said | `docs/active/WAVE_C_EMAIL_DRAFT.md` ready; Said sends |
+| **F** | Phase I (multi-predictor consensus) research spike | T1 + Said | Go/no-go on Galagos-inspired strategy |
+| **G** | Cowork design pilot (one component end-to-end before D3.x) | Cowork + T3 | Pilot accepted by Said |
+| **H** | pvl-cli + pvl-py + Developers nav (B17, B18, B19) | T2 | Multi-surface ecosystem |
+| **I** | D3.x landing redesign (D3.7-D3.10, D-NAV) | Cowork + T3 | New landing live |
+| **J** | MCP server (G1) | T2 | Natural-language queries |
+| **T-PEL** | Peleg scientific REVIEWER role (not implementer) — reviews diffs from P0-P5 against PELEG_FEEDBACK_INSTRUCTIONS.md | T-PEL | All Peleg items verified before T1 commits |
+
+**Absorbed waves**:
+- ~~Wave D (chart leftovers CH1, CH3, CH4, CH5, CH7, P7, P8)~~ → absorbed into P1+P2+P3 (most overlap with Peleg's fixes)
+- ~~Wave E (ISSUE-024 non-standard AA notification)~~ → absorbed into P0 (terminology + classification touch the same files)
+
+**Items deferred to Wave C email** (Peleg-flagged for discussion):
+- FIX-002: "Agg Per-Residue %" threshold — keep or remove?
+- FIX-012: TANGO 5% threshold justification
+- FIX-013: Consensus tier system — remove or document?
+- FIX-015: Interpretation notes decision tree
+- FIX-022: Charge handling (absolute vs signed)
+- FIX-023: Correlation matrix missing-value treatment
+
+T2/T3 leave `# PELEG-Q-FIX-XXX` TODO comments in code where these block; they don't halt P0-P5.
+
+### Concurrency rules (big-chunk mode)
+- **T2 + T3** work continuously through their assigned big batch — only ping T1 when the entire batch is done OR a true blocker
+- **T-PEL** spins up only when first Peleg P-wave is ready for review (not during early waves)
+- **T1** never edits code in this plan; only orchestrates, reviews diffs, commits, writes TX-INSTRUCTIONS
+- **No pushes** until the full sequence Wave 0 → P5 is green
+
+### Blocked / Parked
+| Item | Blocked by |
+|------|-----------|
+| E6: Multi-arch build | DESY VM arch info |
+| C1-C6: K8s deployment | DESY K8s namespace |
+| G3: Generalized AI platform | Separate project |
+| P7: Hamodrakas 2007 research | Domain research needed |
+| AF1-AF2: AlphaFold signal peptide | Domain research needed |
+| T11: Peleg/Bader paper thresholds | Paper lookup needed |
+| A4: bio.tools registration | Live URL |
+| A5: Zenodo DOI | GitHub release |
 
 ---
 

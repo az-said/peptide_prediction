@@ -68,6 +68,19 @@ class Settings:
     """Logging level: DEBUG, INFO, WARNING, ERROR, CRITICAL (default: INFO)"""
 
     # ============================================================================
+    # Build / Version Identity (Cowork V4-1 reproducibility ribbon)
+    # ============================================================================
+
+    VERSION: str = os.getenv("VERSION", "0.1.0")
+    """Application version string. Override via VERSION env var (default: 0.1.0)."""
+
+    BUILD_SHA: Optional[str] = os.getenv("BUILD_SHA") or None
+    """Build commit SHA — populated from BUILD_SHA env var at deploy time. None in dev."""
+
+    BUILD_TIMESTAMP: Optional[str] = os.getenv("BUILD_TIMESTAMP") or None
+    """Build timestamp (ISO-8601) — populated from BUILD_TIMESTAMP env var at deploy time. None in dev."""
+
+    # ============================================================================
     # CORS Configuration
     # ============================================================================
 
@@ -174,15 +187,43 @@ class Settings:
     )
     """Reference dataset-average helix uH (fallback for single-sequence FF-Helix)"""
 
-    # S4PRED thresholds (from reference config.py)
+    # ============================================================================
+    # Peleg's 9 canonical thresholds (PELEG_FEEDBACK FIX-002)
+    # Source: docs/active/PELEG_FEEDBACK_INSTRUCTIONS.md (Tier 0, slides 2-8)
+    # ============================================================================
+
+    # Group 1: General secondary-structure thresholds
+    # MIN_SEGMENT_LENGTH = "Minimal continuous residues"
+    # MAX_GAP            = "Maximum gap"
     MIN_S4PRED_SCORE: float = float(os.getenv("MIN_S4PRED_SCORE", "0.5"))
-    """Minimum S4PRED probability score for segment detection (default: 0.5)"""
+    """Minimum S4PRED helix score (Peleg default: 0.5 — "for now", flagged for testing)"""
 
     MIN_SEGMENT_LENGTH: int = int(os.getenv("MIN_SEGMENT_LENGTH", "5"))
-    """Minimum segment length for secondary structure detection (default: 5)"""
+    """Minimum continuous residues for secondary-structure segment detection (Peleg default: 5)"""
 
     MAX_GAP: int = int(os.getenv("MAX_GAP", "3"))
-    """Maximum gap to merge across in segment detection (default: 3)"""
+    """Maximum gap to merge across in segment detection (Peleg default: 3)"""
+
+    # Wave B (B.4): per-sequence S4PRED length cap.
+    # Source: docs/active/UNIPROT_TIMEOUT_INVESTIGATION.md — APP (770 aa) on the
+    # 5-model BiLSTM ensemble takes ~2 minutes alone; PVL is a peptide tool, so
+    # any sequence longer than this is skipped with a warning surfaced via meta.
+    S4PRED_MAX_LENGTH: int = int(os.getenv("S4PRED_MAX_LENGTH", "100"))
+    """Maximum sequence length S4PRED will run on (Wave B default: 100 aa). Sequences exceeding this are skipped with a `s4pred_skipped_long_seq` warning and the row's S4PRED fields stay null."""
+
+    # Group 2: Helical thresholds
+    MIN_HELIX_PERCENT_CONTENT: float = float(os.getenv("MIN_HELIX_PERCENT_CONTENT", "0"))
+    """Minimum % helix content (residues predicted helical) for helix classification (Peleg default: 0, range 0-100)"""
+
+    # Group 3: Secondary-structure switch thresholds
+    S4PRED_MAX_HELIX_BETA_DIFF: float = float(os.getenv("S4PRED_MAX_HELIX_BETA_DIFF", "0.03"))
+    """S4PRED maximum helix-beta difference for SSW classification (Peleg default: 0.03 — "needs to be tested")"""
+
+    TANGO_MAX_HELIX_BETA_DIFF: float = float(os.getenv("TANGO_MAX_HELIX_BETA_DIFF", "3"))
+    """TANGO maximum helix-beta difference for SSW classification (Peleg default: 3 — "needs to be tested")"""
+
+    MIN_SS_PERCENT_CONTENT: float = float(os.getenv("MIN_SS_PERCENT_CONTENT", "0"))
+    """Minimum % secondary-structure content for SSW classification (Peleg default: 0, range 0-100)"""
 
     # ============================================================================
     # Sequence Length Guidance (from TANGO/S4PRED literature)
@@ -228,17 +269,20 @@ class Settings:
     # Default Threshold Values (for threshold resolution service)
     # ============================================================================
 
-    DEFAULT_MU_H_CUTOFF: float = float(os.getenv("DEFAULT_MU_H_CUTOFF", "0.0"))
-    """Default μH cutoff threshold (default: 0.0)"""
+    # Group 4: Fibril-formation thresholds (Peleg FIX-002)
+    DEFAULT_MU_H_CUTOFF: float = float(os.getenv("DEFAULT_MU_H_CUTOFF", "0.5"))
+    """Default uH (hydrophobic moment) threshold for FF-Helix classification (Peleg default: 0.5, range 0 to 3.26)"""
 
-    DEFAULT_HYDRO_CUTOFF: float = float(os.getenv("DEFAULT_HYDRO_CUTOFF", "0.0"))
-    """Default hydrophobicity cutoff threshold (default: 0.0)"""
+    DEFAULT_HYDRO_CUTOFF: float = float(os.getenv("DEFAULT_HYDRO_CUTOFF", "0.5"))
+    """Default hydrophobicity threshold for FF-SSW classification (Peleg default: 0.5, range -1.01 to 2.25)"""
 
     DEFAULT_FF_HELIX_PERCENT_THRESHOLD: float = float(
         os.getenv("DEFAULT_FF_HELIX_PERCENT_THRESHOLD", "50.0")
     )
     """Default FF-Helix % threshold (default: 50.0)"""
 
+    # PELEG-Q-FIX-002: "Agg Per-Residue %" threshold — keep or remove? Awaiting decision.
+    # PELEG-Q-FIX-012: TANGO 5% threshold justification — citation needed or remove characterization.
     DEFAULT_AGG_THRESHOLD: float = float(os.getenv("DEFAULT_AGG_THRESHOLD", "5.0"))
     """Default TANGO aggregation hotspot threshold (default: 5.0%)"""
 

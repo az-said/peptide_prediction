@@ -104,15 +104,27 @@ export default function QuickAnalyze() {
     "recommended"
   );
   const [customThresholds, setCustomThresholds] = useState({
-    muHCutoff: 0.0,
-    hydroCutoff: 0.0,
+    // Group 1: General secondary structure (Peleg FIX-002)
+    minSegmentLength: 5,
+    maxGap: 3,
+    // Group 2: Helical
+    minS4predHelixScore: 0.5,
+    minHelixPercentContent: 0,
+    // Group 3: Secondary structure switch
+    s4predMaxHelixBetaDiff: 0.03,
+    tangoMaxHelixBetaDiff: 3,
+    minSsPercentContent: 0,
+    // Group 4: Fibril-formation
+    muHCutoff: 0.5,
+    hydroCutoff: 0.5,
+    // PELEG-Q6-PARTIAL: configurable TANGO aggregation threshold (default 5.0).
+    tangoAggregationThreshold: 5.0,
+    // PELEG-Q5-RESOLVED + PELEG-PEL-G-RESOLVED: legacy fields retained on payload.
     aggThreshold: 5.0,
     percentOfLengthCutoff: 20,
     minSswResidues: 3,
     sswMaxDifference: 0.0,
     minPredictionPercent: 50.0,
-    minS4predHelixScore: 0.0,
-    maxTangoDifference: 0.0,
   });
 
   const [phase, setPhase] = useState<Phase>("idle");

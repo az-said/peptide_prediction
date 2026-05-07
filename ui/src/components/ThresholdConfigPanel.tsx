@@ -4,8 +4,19 @@
  * Used by Upload.tsx and QuickAnalyze.tsx for pre-submission threshold
  * selection. Supports collapsible (details) and inline variants.
  *
- * Redesigned: grouped into SSW / FF-Helix / General sections with
- * collapsible cards, info tooltips, and Recommended read-only mode.
+ * Restructured per Peleg FIX-002 into her 4 canonical groups:
+ *   1. General secondary structure thresholds
+ *   2. Helical thresholds
+ *   3. Secondary structure switch thresholds
+ *   4. Fibril-formation thresholds
+ *
+ * Tooltip text is taken VERBATIM from PELEG_FEEDBACK_INSTRUCTIONS.md FIX-002.
+ * Defaults must match `backend/config.py` and `ui/src/lib/thresholds.ts`.
+ *
+ * Legacy aggregation-flagging thresholds (Aggregation Per-Residue %, % of
+ * Length Cutoff, Minimum SSW Residues, Minimum Prediction %) are surfaced
+ * under "Advanced (TANGO aggregation)" — Peleg flagged these for discussion,
+ * not deletion.
  */
 import { useState } from "react";
 import { AlertTriangle, ChevronDown, ChevronRight, Info } from "lucide-react";
@@ -32,15 +43,28 @@ import {
 } from "@/components/ui/collapsible";
 
 export interface CustomThresholds {
+  // Group 1: General secondary structure
+  minSegmentLength: number;
+  maxGap: number;
+  // Group 2: Helical
+  minS4predHelixScore: number;
+  minHelixPercentContent: number;
+  // Group 3: Secondary structure switch
+  s4predMaxHelixBetaDiff: number;
+  tangoMaxHelixBetaDiff: number;
+  minSsPercentContent: number;
+  // Group 4: Fibril-formation
   muHCutoff: number;
   hydroCutoff: number;
+  // PELEG-Q6-PARTIAL: TANGO 5%-style aggregation threshold (configurable, awaiting citation).
+  tangoAggregationThreshold: number;
+  // Legacy back-compat fields — not surfaced in the panel anymore but kept
+  // so existing CustomThresholds payloads keep round-tripping.
   aggThreshold: number;
   percentOfLengthCutoff: number;
   minSswResidues: number;
   sswMaxDifference: number;
   minPredictionPercent: number;
-  minS4predHelixScore: number;
-  maxTangoDifference: number;
 }
 
 interface ThresholdConfigPanelProps {
@@ -51,37 +75,47 @@ interface ThresholdConfigPanelProps {
   variant?: "details" | "inline";
 }
 
-/* ── Defaults for recommended mode display ── */
+/* Defaults match backend/config.py + ui/src/lib/thresholds.ts (Peleg FIX-002) */
 const RECOMMENDED_DEFAULTS: Required<CustomThresholds> = {
-  muHCutoff: 0.0,
-  hydroCutoff: 0.0,
+  // Group 1
+  minSegmentLength: 5,
+  maxGap: 3,
+  // Group 2
+  minS4predHelixScore: 0.5,
+  minHelixPercentContent: 0,
+  // Group 3
+  s4predMaxHelixBetaDiff: 0.03,
+  tangoMaxHelixBetaDiff: 3,
+  minSsPercentContent: 0,
+  // Group 4
+  muHCutoff: 0.5,
+  hydroCutoff: 0.5,
+  tangoAggregationThreshold: 5.0,
+  // Legacy
   aggThreshold: 5.0,
   percentOfLengthCutoff: 20,
   minSswResidues: 3,
   sswMaxDifference: 0.0,
   minPredictionPercent: 50.0,
-  minS4predHelixScore: 0.0,
-  maxTangoDifference: 0.0,
 };
 
-/* ── Info tooltip for each threshold ── */
-function ThresholdInfo({ description, impact }: { description: string; impact: string }) {
+/** Single info tooltip — uses Peleg's verbatim text. */
+function ThresholdInfo({ description }: { description: string }) {
   return (
     <TooltipProvider delayDuration={200}>
       <UITooltip>
         <TooltipTrigger asChild>
           <Info className="ml-1.5 inline h-3.5 w-3.5 text-muted-foreground/60 cursor-help shrink-0" />
         </TooltipTrigger>
-        <TooltipContent side="right" className="max-w-[280px] text-xs leading-relaxed space-y-1.5">
+        <TooltipContent side="right" className="max-w-[320px] text-xs leading-relaxed">
           <p>{description}</p>
-          <p className="text-muted-foreground italic">{impact}</p>
         </TooltipContent>
       </UITooltip>
     </TooltipProvider>
   );
 }
 
-/* ── Single threshold input row ── */
+/** One threshold input row. */
 function ThresholdInput({
   id,
   label,
@@ -91,7 +125,6 @@ function ThresholdInput({
   min,
   max,
   description,
-  impact,
   readOnly,
   onChange,
 }: {
@@ -103,7 +136,6 @@ function ThresholdInput({
   min?: string;
   max?: string;
   description: string;
-  impact: string;
   readOnly: boolean;
   onChange: (v: number) => void;
 }) {
@@ -113,7 +145,7 @@ function ThresholdInput({
         <Label htmlFor={id} className="text-sm whitespace-nowrap">
           {label}
         </Label>
-        <ThresholdInfo description={description} impact={impact} />
+        <ThresholdInfo description={description} />
       </div>
       <div className="flex items-center gap-2">
         {readOnly ? (
@@ -142,7 +174,7 @@ function ThresholdInput({
   );
 }
 
-/* ── Collapsible section wrapper ── */
+/** Collapsible group wrapper. */
 function ThresholdSection({
   title,
   children,
@@ -165,15 +197,13 @@ function ThresholdSection({
         {title}
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="ml-6 border-l border-border/50 pl-4 pb-1">
-          {children}
-        </div>
+        <div className="ml-6 border-l border-border/50 pl-4 pb-1">{children}</div>
       </CollapsibleContent>
     </Collapsible>
   );
 }
 
-/* ── Main grouped threshold fields ── */
+/** Main grouped threshold fields. */
 function ThresholdFields({
   thresholdMode,
   onModeChange,
@@ -216,132 +246,153 @@ function ThresholdFields({
         <div className="flex items-start gap-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md p-2.5">
           <AlertTriangle className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-600" />
           <span>
-            Custom thresholds override the recommended reference values. Changes may
-            affect scientific accuracy of FF classification.
+            Custom thresholds override the recommended reference values. Changes may affect
+            scientific accuracy of the classification.
           </span>
         </div>
       )}
 
-      {/* Section 1: SSW Thresholds */}
-      <ThresholdSection title="SSW Thresholds">
+      {/* ── Group 1: General secondary structure thresholds ── */}
+      <ThresholdSection title="General secondary structure thresholds">
         <ThresholdInput
-          id="min-ssw"
-          label="Min SSW Residues"
-          value={t.minSswResidues}
-          defaultValue={d.minSswResidues}
+          id="min-segment-length"
+          label="Minimal continuous residues"
+          value={t.minSegmentLength}
+          defaultValue={d.minSegmentLength}
+          step="1"
+          min="1"
+          max="50"
+          description="The minimal length of consecutive residues predicted to have the same secondary structure. To make secondary structure prediction longer, this value should be increased. Only integer numbers allowed."
+          readOnly={isReadOnly}
+          onChange={(v) => update("minSegmentLength", Math.round(v))}
+        />
+        <ThresholdInput
+          id="max-gap"
+          label="Maximum gap"
+          value={t.maxGap}
+          defaultValue={d.maxGap}
           step="1"
           min="0"
           max="20"
-          description="Minimum residues in structural switching window."
-          impact="Raising this requires more overlapping helix/beta residues to flag SSW, reducing false positives."
+          description="Maximum number of residues with mismatched secondary-structure prediction score allowed within a predicted segment stretch. To make secondary structure prediction more strict, this number should be closer to 0. Only integer numbers allowed."
           readOnly={isReadOnly}
-          onChange={(v) => update("minSswResidues", v)}
-        />
-        <ThresholdInput
-          id="ssw-max-diff"
-          label="SSW Max Difference"
-          value={t.sswMaxDifference}
-          defaultValue={d.sswMaxDifference}
-          step="0.1"
-          description="Maximum allowed difference between avg beta and avg helicity."
-          impact="Lower values require more balanced helix/beta contributions for SSW detection."
-          readOnly={isReadOnly}
-          onChange={(v) => update("sswMaxDifference", v)}
+          onChange={(v) => update("maxGap", Math.round(v))}
         />
       </ThresholdSection>
 
-      {/* Section 2: FF-Helix Thresholds */}
-      <ThresholdSection title="FF-Helix Thresholds">
+      {/* ── Group 2: Helical thresholds ── */}
+      <ThresholdSection title="Helical thresholds">
         <ThresholdInput
-          id="muH-cutoff"
-          label="μH Cutoff"
-          value={t.muHCutoff}
-          defaultValue={d.muHCutoff}
-          step="0.1"
-          description="Minimum hydrophobic moment for FF-Helix classification."
-          impact="Higher values restrict FF-Helix candidates to more amphipathic peptides."
-          readOnly={isReadOnly}
-          onChange={(v) => update("muHCutoff", v)}
-        />
-        <ThresholdInput
-          id="hydro-cutoff"
-          label="Hydrophobicity Cutoff"
-          value={t.hydroCutoff}
-          defaultValue={d.hydroCutoff}
-          step="0.1"
-          description="Minimum hydrophobicity for FF-Helix classification."
-          impact="Higher values require stronger hydrophobic character for FF candidacy."
-          readOnly={isReadOnly}
-          onChange={(v) => update("hydroCutoff", v)}
-        />
-      </ThresholdSection>
-
-      {/* Section 3: General Thresholds */}
-      <ThresholdSection title="General Thresholds">
-        <ThresholdInput
-          id="agg-threshold"
-          label="Agg Per-Residue %"
-          value={t.aggThreshold}
-          defaultValue={d.aggThreshold}
-          step="0.5"
-          min="0"
-          max="50"
-          description="Minimum aggregation per residue for flagging."
-          impact="Higher values reduce the number of peptides flagged for aggregation risk."
-          readOnly={isReadOnly}
-          onChange={(v) => update("aggThreshold", v)}
-        />
-        <ThresholdInput
-          id="pct-length"
-          label="% of Length Cutoff"
-          value={t.percentOfLengthCutoff}
-          defaultValue={d.percentOfLengthCutoff}
-          step="1"
-          min="0"
-          max="100"
-          description="Percentage of sequence length for aggregation flagging."
-          impact="Higher values require aggregation across a larger portion of the sequence."
-          readOnly={isReadOnly}
-          onChange={(v) => update("percentOfLengthCutoff", v)}
-        />
-        <ThresholdInput
-          id="min-prediction-pct"
-          label="Min Prediction %"
-          value={t.minPredictionPercent}
-          defaultValue={d.minPredictionPercent}
-          step="1"
-          min="0"
-          max="100"
-          description="If less than this % of amino acids are predicted as something, flag it."
-          impact="Lower values are more lenient with partial predictions."
-          readOnly={isReadOnly}
-          onChange={(v) => update("minPredictionPercent", v)}
-        />
-        <ThresholdInput
-          id="min-s4pred-helix"
-          label="Min S4PRED Helix Score"
+          id="min-s4pred-helix-score"
+          label="Minimal S4PRED helix score"
           value={t.minS4predHelixScore}
           defaultValue={d.minS4predHelixScore}
           step="0.01"
           min="0"
           max="1"
-          description="Minimum S4PRED helix prediction score."
-          impact="Higher values require stronger helix confidence from S4PRED neural network."
+          description="The minimal average reliability score of α-helical prediction by S4PRED."
           readOnly={isReadOnly}
           onChange={(v) => update("minS4predHelixScore", v)}
         />
         <ThresholdInput
-          id="max-tango-diff"
-          label="Max TANGO Difference"
-          value={t.maxTangoDifference ?? d.maxTangoDifference}
-          defaultValue={d.maxTangoDifference}
-          step="0.1"
-          description="Maximum allowed TANGO score difference between avg beta and avg helicity. TANGO is secondary to S4PRED."
-          impact="Lower values require more balanced TANGO helix/beta scores."
+          id="min-helix-percent-content"
+          label="Minimal % helix content"
+          value={t.minHelixPercentContent}
+          defaultValue={d.minHelixPercentContent}
+          step="1"
+          min="0"
+          max="100"
+          description="Minimum percentage of residues predicted to be helical so that the sequence will be defined as helical."
           readOnly={isReadOnly}
-          onChange={(v) => update("maxTangoDifference", v)}
+          onChange={(v) => update("minHelixPercentContent", v)}
         />
       </ThresholdSection>
+
+      {/* ── Group 3: Secondary structure switch thresholds ── */}
+      <ThresholdSection title="Secondary structure switch thresholds">
+        <ThresholdInput
+          id="s4pred-max-helix-beta-diff"
+          label="S4PRED maximum helix and beta difference"
+          value={t.s4predMaxHelixBetaDiff}
+          defaultValue={d.s4predMaxHelixBetaDiff}
+          step="0.01"
+          min="0"
+          max="1"
+          description="The maximal difference between α-helix and β prediction scores by S4PRED. To increase the potential for secondary structure, this value should be lower."
+          readOnly={isReadOnly}
+          onChange={(v) => update("s4predMaxHelixBetaDiff", v)}
+        />
+        <ThresholdInput
+          id="tango-max-helix-beta-diff"
+          label="TANGO maximum helix and beta difference"
+          value={t.tangoMaxHelixBetaDiff}
+          defaultValue={d.tangoMaxHelixBetaDiff}
+          step="0.1"
+          min="0"
+          max="100"
+          description="The maximal difference between α-helix and β prediction scores by TANGO. To increase the potential for secondary structure, this value should be lower."
+          readOnly={isReadOnly}
+          onChange={(v) => update("tangoMaxHelixBetaDiff", v)}
+        />
+        <ThresholdInput
+          id="min-ss-percent-content"
+          label="Minimal % secondary structure content"
+          value={t.minSsPercentContent}
+          defaultValue={d.minSsPercentContent}
+          step="1"
+          min="0"
+          max="100"
+          description="Minimum percentage of residues predicted to be secondary structure switch so that the sequence will be defined as such. To make secondary structure prediction more strict, this number should be closer to 100. Value range 0-100."
+          readOnly={isReadOnly}
+          onChange={(v) => update("minSsPercentContent", v)}
+        />
+      </ThresholdSection>
+
+      {/* ── Group 4: Fibril-formation thresholds ── */}
+      <ThresholdSection title="Fibril-formation thresholds">
+        <ThresholdInput
+          id="muH"
+          label="uH (Hydrophobic moment)"
+          value={t.muHCutoff}
+          defaultValue={d.muHCutoff}
+          step="0.01"
+          min="0"
+          max="3.26"
+          description="Minimum hydrophobic moment to predict fibril formation potential of α-helical fibrils. To perform a more strict prediction, this value should be higher. Value range 0 to 3.26"
+          readOnly={isReadOnly}
+          onChange={(v) => update("muHCutoff", v)}
+        />
+        <ThresholdInput
+          id="hydrophobicity"
+          label="Hydrophobicity"
+          value={t.hydroCutoff}
+          defaultValue={d.hydroCutoff}
+          step="0.01"
+          min="-1.01"
+          max="2.25"
+          description="Minimum hydrophobicity to predict fibril formation potential of secondary structure switch fibrils. To perform a more strict prediction, this value should be higher. Value range -1.01 to 2.25"
+          readOnly={isReadOnly}
+          onChange={(v) => update("hydroCutoff", v)}
+        />
+        {/* PELEG-Q6-PARTIAL: TANGO aggregation threshold made configurable per
+            Said 2026-05-06; awaiting Peleg's citation in the Wave C email. */}
+        <ThresholdInput
+          id="tango-aggregation-threshold"
+          label="TANGO aggregation threshold"
+          value={t.tangoAggregationThreshold}
+          defaultValue={d.tangoAggregationThreshold}
+          step="0.5"
+          min="0"
+          max="50"
+          description="TANGO score above which a residue is considered aggregation-prone. Default = 5; pending citation. Editable until validated."
+          readOnly={isReadOnly}
+          onChange={(v) => update("tangoAggregationThreshold", v)}
+        />
+      </ThresholdSection>
+
+      {/* PELEG-Q5-RESOLVED: removed per Said+Peleg 2026-05-06; previously
+          unclear "Aggregation per-residue %" threshold with no scientific justification. */}
+      {/* PELEG-PEL-G-RESOLVED: removed; "% of length cutoff" lacked scientific source and was confusing. */}
     </div>
   );
 }

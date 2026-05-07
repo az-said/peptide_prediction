@@ -10,6 +10,7 @@ Run from backend/ directory:
 Or with environment variables to disable providers:
     USE_TANGO=0 USE_S4PRED=0 python -m pytest tests/test_api_contracts.py -v
 """
+
 import os
 
 import pytest
@@ -73,7 +74,9 @@ class TestPredictContract:
             },
         )
 
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
 
         # Assert response structure: {row: {...}, meta: {...}}
@@ -88,13 +91,17 @@ class TestPredictContract:
 
         # Assert forbidden keys are NOT present (capitalized/CSV format)
         for key in FORBIDDEN_KEYS:
-            assert key not in row, f"Row contains forbidden key '{key}' (should be camelCase). Keys: {list(row.keys())}"
+            assert key not in row, (
+                f"Row contains forbidden key '{key}' (should be camelCase). Keys: {list(row.keys())}"
+            )
 
         # Assert specific required fields
         assert "id" in row, "Row must have 'id' field (camelCase)"
         assert "sequence" in row, "Row must have 'sequence' field (camelCase)"
         assert row["id"] == TEST_ENTRY, f"Expected id={TEST_ENTRY}, got {row['id']}"
-        assert row["sequence"] == TEST_SEQUENCE, f"Expected sequence={TEST_SEQUENCE}, got {row['sequence']}"
+        assert row["sequence"] == TEST_SEQUENCE, (
+            f"Expected sequence={TEST_SEQUENCE}, got {row['sequence']}"
+        )
 
     def test_predict_has_meta_field(self):
         """Assert /api/predict includes meta field with required structure."""
@@ -150,7 +157,9 @@ class TestUploadCsvContract:
             files={"file": ("test.csv", TEST_CSV_CONTENT, "text/csv")},
         )
 
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
 
         # Assert top-level structure
@@ -181,11 +190,15 @@ class TestUploadCsvContract:
 
         # Assert required keys are present (camelCase)
         for key in REQUIRED_KEYS:
-            assert key in first_row, f"Row missing required key '{key}'. Keys: {list(first_row.keys())}"
+            assert key in first_row, (
+                f"Row missing required key '{key}'. Keys: {list(first_row.keys())}"
+            )
 
         # Assert forbidden keys are NOT present (capitalized/CSV format)
         for key in FORBIDDEN_KEYS:
-            assert key not in first_row, f"Row contains forbidden key '{key}' (should be camelCase). Keys: {list(first_row.keys())}"
+            assert key not in first_row, (
+                f"Row contains forbidden key '{key}' (should be camelCase). Keys: {list(first_row.keys())}"
+            )
 
         # Assert specific required fields
         assert "id" in first_row, "Row must have 'id' field (camelCase)"
@@ -214,7 +227,9 @@ class TestUploadCsvContract:
 
             # Assert forbidden keys are NOT present
             for key in FORBIDDEN_KEYS:
-                assert key not in row, f"Row {i} contains forbidden key '{key}' (should be camelCase)"
+                assert key not in row, (
+                    f"Row {i} contains forbidden key '{key}' (should be camelCase)"
+                )
 
             # Assert id and sequence are present and valid
             assert "id" in row, f"Row {i} must have 'id' field"
@@ -260,16 +275,19 @@ class TestUploadCsvContract:
         for i, row in enumerate(data["rows"]):
             # Check numeric fields if present
             if "hydrophobicity" in row and row["hydrophobicity"] is not None:
-                assert isinstance(row["hydrophobicity"], (int, float)), \
+                assert isinstance(row["hydrophobicity"], (int, float)), (
                     f"Row {i} hydrophobicity must be number, got {type(row['hydrophobicity'])}: {row['hydrophobicity']}"
+                )
 
             if "charge" in row and row["charge"] is not None:
-                assert isinstance(row["charge"], (int, float)), \
+                assert isinstance(row["charge"], (int, float)), (
                     f"Row {i} charge must be number, got {type(row['charge'])}: {row['charge']}"
+                )
 
             if "length" in row and row["length"] is not None:
-                assert isinstance(row["length"], (int, float)), \
+                assert isinstance(row["length"], (int, float)), (
                     f"Row {i} length must be number, got {type(row['length'])}: {row['length']}"
+                )
 
     def test_upload_csv_response_is_flat_array(self):
         """
@@ -300,7 +318,7 @@ class TestUniprotExecuteContract:
 
     @pytest.mark.skipif(
         os.getenv("SKIP_UNIPROT_TESTS", "0") == "1",
-        reason="UniProt tests require network access. Set SKIP_UNIPROT_TESTS=0 to run."
+        reason="UniProt tests require network access. Set SKIP_UNIPROT_TESTS=0 to run.",
     )
     def test_uniprot_execute_returns_rows_and_meta(self):
         """Assert /api/uniprot/execute returns {rows, meta} structure (same as upload-csv)."""
@@ -311,7 +329,7 @@ class TestUniprotExecuteContract:
                 "mode": "accession",
                 "size": 5,
                 "run_tango": False,  # Disable providers for fast test
-                "run_psipred": False,
+                "run_s4pred": False,
             },
         )
 
@@ -337,7 +355,9 @@ class TestUniprotExecuteContract:
 
                 # Assert forbidden keys are NOT present
                 for key in FORBIDDEN_KEYS:
-                    assert key not in first_row, f"Row contains forbidden key '{key}' (should be camelCase)"
+                    assert key not in first_row, (
+                        f"Row contains forbidden key '{key}' (should be camelCase)"
+                    )
         else:
             # If UniProt is unavailable, that's OK - test is skipped or will fail gracefully
             # Log the status for debugging
@@ -345,7 +365,7 @@ class TestUniprotExecuteContract:
 
     @pytest.mark.skipif(
         os.getenv("SKIP_UNIPROT_TESTS", "0") == "1",
-        reason="UniProt tests require network access. Set SKIP_UNIPROT_TESTS=0 to run."
+        reason="UniProt tests require network access. Set SKIP_UNIPROT_TESTS=0 to run.",
     )
     def test_uniprot_execute_rows_have_camelcase_keys(self):
         """Assert rows in /api/uniprot/execute have camelCase keys (same as upload-csv)."""
@@ -356,7 +376,7 @@ class TestUniprotExecuteContract:
                 "mode": "accession",
                 "size": 3,
                 "run_tango": False,
-                "run_psipred": False,
+                "run_s4pred": False,
             },
         )
 
@@ -372,7 +392,9 @@ class TestUniprotExecuteContract:
 
                 # Assert forbidden keys are NOT present
                 for key in FORBIDDEN_KEYS:
-                    assert key not in first_row, f"Row contains forbidden key '{key}' (should be camelCase)"
+                    assert key not in first_row, (
+                        f"Row contains forbidden key '{key}' (should be camelCase)"
+                    )
         else:
             pytest.skip(f"UniProt API unavailable (status {response.status_code})")
 
@@ -392,9 +414,13 @@ class TestUniprotParseContract:
         )
 
         # Returns 200 with mode="unknown" (not 500)
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
-        assert data["mode"] == "unknown", f"Empty query should return mode='unknown', got {data['mode']}"
+        assert data["mode"] == "unknown", (
+            f"Empty query should return mode='unknown', got {data['mode']}"
+        )
         assert "error" in data, "Empty query response should have 'error' field"
         assert data["api_query_string"] == "", "Empty query should have empty api_query_string"
 
@@ -410,9 +436,13 @@ class TestUniprotParseContract:
         )
 
         # Returns 200 with mode="unknown"
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
-        assert data["mode"] == "unknown", f"Whitespace query should return mode='unknown', got {data['mode']}"
+        assert data["mode"] == "unknown", (
+            f"Whitespace query should return mode='unknown', got {data['mode']}"
+        )
 
     def test_uniprot_parse_endpoint_returns_valid_response(self):
         """
@@ -427,7 +457,9 @@ class TestUniprotParseContract:
         )
 
         # Must return 200, not 500 (validation error from coroutine)
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
 
         # Assert required fields from UniProtQueryParseResponse
@@ -463,10 +495,14 @@ P67890,ACDEFGHIKLMNPQRSTVW,20
         )
 
         # Must return 400, not 200
-        assert response.status_code == 400, f"Expected 400 for CSV without headers, got {response.status_code}"
+        assert response.status_code == 400, (
+            f"Expected 400 for CSV without headers, got {response.status_code}"
+        )
         assert "detail" in response.json()
         detail = response.json()["detail"]
-        assert "Entry" in detail or "Sequence" in detail, f"Error should mention missing columns: {detail}"
+        assert "Entry" in detail or "Sequence" in detail, (
+            f"Error should mention missing columns: {detail}"
+        )
 
     def test_upload_csv_with_id_column_returns_id_field(self):
         """
@@ -484,7 +520,9 @@ TEST002,VNWKKILGKIIKVVK
             files={"file": ("id_column.csv", csv_content, "text/csv")},
         )
 
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
         assert "rows" in data
         assert len(data["rows"]) > 0
@@ -510,7 +548,9 @@ ACC002,VNWKKILGKIIKVVK
             files={"file": ("accession_column.csv", csv_content, "text/csv")},
         )
 
-        assert response.status_code == 200, f"Expected 200, got {response.status_code}: {response.text}"
+        assert response.status_code == 200, (
+            f"Expected 200, got {response.status_code}: {response.text}"
+        )
         data = response.json()
         assert "rows" in data
         assert len(data["rows"]) > 0
@@ -559,8 +599,12 @@ class TestContractConsistency:
         # Both should NOT have capitalized keys
         assert "Entry" not in predict_row, "/api/predict row must NOT have 'Entry' (capitalized)"
         assert "Entry" not in upload_row, "/api/upload-csv rows must NOT have 'Entry' (capitalized)"
-        assert "Sequence" not in predict_row, "/api/predict row must NOT have 'Sequence' (capitalized)"
-        assert "Sequence" not in upload_row, "/api/upload-csv rows must NOT have 'Sequence' (capitalized)"
+        assert "Sequence" not in predict_row, (
+            "/api/predict row must NOT have 'Sequence' (capitalized)"
+        )
+        assert "Sequence" not in upload_row, (
+            "/api/upload-csv rows must NOT have 'Sequence' (capitalized)"
+        )
 
 
 class TestSentinelValueContract:
@@ -649,14 +693,14 @@ class TestSentinelValueContract:
         row = data["row"]
 
         # sswPrediction should be present
-        assert "sswPrediction" in row or row.get("sswPrediction") is None, \
+        assert "sswPrediction" in row or row.get("sswPrediction") is None, (
             "sswPrediction field should be present (can be -1, 0, 1, or null)"
+        )
 
         # If present and not null, must be -1, 0, or 1
         ssw = row.get("sswPrediction")
         if ssw is not None:
-            assert ssw in [-1, 0, 1], \
-                f"sswPrediction must be -1, 0, 1, or null. Got: {ssw}"
+            assert ssw in [-1, 0, 1], f"sswPrediction must be -1, 0, 1, or null. Got: {ssw}"
 
 
 class TestNullSemantics:
@@ -698,8 +742,9 @@ class TestNullSemantics:
             # We're just asserting the field exists in the schema
             if value is not None and field != "sswPrediction":
                 # For non-sswPrediction fields, -1 should never appear
-                assert value != -1 and value != -1.0, \
+                assert value != -1 and value != -1.0, (
                     f"Field '{field}' has -1 sentinel. Should be null for missing data."
+                )
 
     def test_required_fields_are_not_null(self):
         """Assert required fields (id, sequence) are never null."""
@@ -779,3 +824,116 @@ class TestHealthEndpoints:
         assert "uniprot" in data
         assert "available" in data["uniprot"]
         assert "reason" in data["uniprot"]
+
+    def test_version_endpoint_returns_expected_fields(self):
+        """
+        /api/version returns the reproducibility-ribbon payload
+        (Cowork V4-1): version + optional build_sha + optional build_timestamp.
+        """
+        from config import settings
+
+        response = client.get("/api/version")
+        assert response.status_code == 200
+        data = response.json()
+
+        # Exactly the three contract keys, no extras.
+        assert set(data.keys()) == {"version", "build_sha", "build_timestamp"}, (
+            f"Unexpected keys in /api/version response: {sorted(data.keys())}"
+        )
+
+        # version is always a non-empty string mirrored from settings.
+        assert isinstance(data["version"], str) and data["version"]
+        assert data["version"] == settings.VERSION
+
+        # build_sha / build_timestamp are populated from env at deploy time;
+        # they may be None in dev. Either str or None — never empty string.
+        for k in ("build_sha", "build_timestamp"):
+            value = data[k]
+            assert value is None or (isinstance(value, str) and value), (
+                f"{k} must be a non-empty string or None; got {value!r}"
+            )
+
+
+class TestSentryIntegration:
+    """
+    V6-1 Sentry integration contract tests.
+
+    Two surfaces are pinned:
+
+    1. ``_sentry_before_send`` drops the noisy 4xx classes (404, 422) and
+       cancellation, but lets 5xx and unrelated exceptions through. Tested at
+       the function level so we don't need a real DSN.
+
+    2. The ``TraceIdMiddleware`` calls ``sentry_sdk.set_tag("trace_id", ...)``
+       on every request so Sentry events correlate with the trace_id used by
+       the frontend SDK and structured logs.
+    """
+
+    def test_before_send_drops_422_http_exception(self):
+        """422 (contract validation noise) must be filtered."""
+        from fastapi import HTTPException
+
+        from api.main import _sentry_before_send
+
+        hint = {"exc_info": (HTTPException, HTTPException(status_code=422, detail="bad"), None)}
+        assert _sentry_before_send({"any": "event"}, hint) is None
+
+    def test_before_send_drops_404_http_exception(self):
+        """404 (expected not-found, e.g. polled job already cleaned up) must be filtered."""
+        from fastapi import HTTPException
+
+        from api.main import _sentry_before_send
+
+        hint = {"exc_info": (HTTPException, HTTPException(status_code=404, detail="nope"), None)}
+        assert _sentry_before_send({"any": "event"}, hint) is None
+
+    def test_before_send_keeps_500_http_exception(self):
+        """5xx must still be reported — they are real server errors."""
+        from fastapi import HTTPException
+
+        from api.main import _sentry_before_send
+
+        sentinel = {"sentinel": True}
+        hint = {"exc_info": (HTTPException, HTTPException(status_code=500, detail="oops"), None)}
+        assert _sentry_before_send(sentinel, hint) is sentinel
+
+    def test_before_send_drops_cancelled_error(self):
+        """CancelledError = client disconnect / shutdown — never an error."""
+        import asyncio
+
+        from api.main import _sentry_before_send
+
+        hint = {"exc_info": (asyncio.CancelledError, asyncio.CancelledError(), None)}
+        assert _sentry_before_send({"any": "event"}, hint) is None
+
+    def test_middleware_sets_sentry_trace_id_tag(self, monkeypatch):
+        """
+        TraceIdMiddleware must call sentry_sdk.set_tag('trace_id', <uuid>) so
+        Sentry events captured during the request carry the same trace_id the
+        frontend SDK used. The test does NOT require Sentry to be initialised:
+        we monkeypatch the SDK call and assert the middleware invokes it with
+        the same value the response echoes back via X-Trace-Id.
+        """
+        import api.main as main_mod
+
+        recorded: list[tuple[str, str]] = []
+
+        def _spy_set_tag(key, value):
+            recorded.append((key, value))
+
+        monkeypatch.setattr(main_mod.sentry_sdk, "set_tag", _spy_set_tag)
+
+        response = client.get("/api/health")
+        assert response.status_code == 200
+
+        trace_id = response.headers.get("X-Trace-Id")
+        assert trace_id, "middleware must set X-Trace-Id header"
+
+        trace_tags = [v for (k, v) in recorded if k == "trace_id"]
+        assert trace_tags, (
+            f"middleware must call sentry_sdk.set_tag('trace_id', ...); recorded={recorded}"
+        )
+        assert trace_id in trace_tags, (
+            f"set_tag trace_id values must include the request's trace_id "
+            f"({trace_id!r}); got {trace_tags!r}"
+        )

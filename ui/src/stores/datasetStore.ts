@@ -1,11 +1,13 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, type PersistStorage, type StorageValue } from "zustand/middleware";
 import type { ColumnMapping, DatasetStats, ParsedCSVData, DatasetMetadata } from "../types/peptide";
 
 import { mapApiRowToPeptide } from "@/lib/peptideMapper";
 import { uploadCSV, predictOne as apiPredictOne } from "@/lib/api";
 import type { Peptide, ThresholdConfig } from "@/types/peptide";
 import type { ResolvedThresholds } from "@/lib/thresholds";
+import { setPVLSentryContext } from "@/lib/sentryContext";
+import { useThresholdStore } from "@/stores/thresholdStore";
 
 // --- RANKING STORE v2 (proportional weights, direction toggles) ---
 import {
@@ -235,6 +237,26 @@ export const useDatasetStore = create<DatasetState>()(
 
         set({ peptides: mapped, meta: meta || null });
         get().calculateStats();
+
+        // V6-1: enrich Sentry context with the active dataset.
+        try {
+          const providers: string[] = [];
+          if (meta?.provider_status?.tango?.status === "AVAILABLE") providers.push("tango");
+          if (meta?.provider_status?.s4pred?.status === "AVAILABLE") providers.push("s4pred");
+          const dataSource: "demo" | "uniprot" | "csv" = meta?.isDemo
+            ? "demo"
+            : meta?.source === "uniprot_api"
+              ? "uniprot"
+              : "csv";
+          setPVLSentryContext({
+            peptideCount: mapped.length,
+            dataSource,
+            predictors: providers,
+            thresholdPreset: useThresholdStore.getState().preset,
+          });
+        } catch {
+          // Sentry context is non-critical; never block ingestion on it.
+        }
       },
 
       setColumnMapping: (mapping) => set({ columnMapping: mapping }),
@@ -260,7 +282,7 @@ export const useDatasetStore = create<DatasetState>()(
         const sswValidPeptides = peptides.filter((p) => {
           const sswVal = p.sswPrediction;
           // Only include rows with valid TANGO metrics (not null, not undefined, not NaN)
-          if (sswVal === null || sswVal === undefined || sswVal === "null") {
+          if (sswVal === null || sswVal === undefined) {
             return false;
           }
           // Also exclude NaN (shouldn't happen after backend fix, but defensive)
@@ -340,7 +362,7 @@ export const useDatasetStore = create<DatasetState>()(
           ? 0
           : peptides.filter((p) => {
               const sswVal = p.sswPrediction;
-              if (sswVal === null || sswVal === undefined || sswVal === "null") {
+              if (sswVal === null || sswVal === undefined) {
                 return false;
               }
               // Also exclude NaN (shouldn't happen after backend fix, but defensive)
@@ -394,7 +416,7 @@ export const useDatasetStore = create<DatasetState>()(
         // Count positives from actual peptides array (what table sees) - gate: only rows with valid TANGO metrics
         const tableValidPeptides = peptides.filter((p) => {
           const sswVal = p.sswPrediction;
-          return sswVal !== null && sswVal !== undefined && sswVal !== "null";
+          return sswVal !== null && sswVal !== undefined;
         });
         const tablePositives = tableValidPeptides.filter((p) => {
           const sswVal = p.sswPrediction;
@@ -532,28 +554,44 @@ export const useDatasetStore = create<DatasetState>()(
         lastRunConfig: state.lastRunConfig,
       }),
       storage: {
-        getItem: (name) => {
+        getItem: (name): StorageValue<unknown> | null => {
           try {
-            return localStorage.getItem(name);
+            const str = localStorage.getItem(name);
+            return str ? (JSON.parse(str) as StorageValue<unknown>) : null;
           } catch {
             return null;
           }
         },
         setItem: (name, value) => {
+          let serialized: string;
           try {
-            localStorage.setItem(name, value);
-          } catch (e: any) {
-            if (e?.name === "QuotaExceededError") {
+            serialized = JSON.stringify(value);
+          } catch {
+            return;
+          }
+          try {
+            localStorage.setItem(name, serialized);
+          } catch (e: unknown) {
+            const isQuota =
+              e instanceof DOMException && e.name === "QuotaExceededError";
+            if (isQuota) {
               // Drop per-residue curves to fit within 5MB localStorage limit
               try {
-                const parsed = JSON.parse(value);
-                if (parsed?.state?.peptides) {
-                  parsed.state.peptides = parsed.state.peptides.map((p: any) => {
-                    const { tango, s4predCurve, ...rest } = p;
-                    return rest;
-                  });
-                  localStorage.setItem(name, JSON.stringify(parsed));
-                }
+                const state =
+                  (value.state ?? {}) as { peptides?: Record<string, unknown>[] };
+                const stripped: StorageValue<unknown> = {
+                  ...value,
+                  state: {
+                    ...state,
+                    peptides: (state.peptides ?? []).map((p) => {
+                      const { tango, s4predCurve, ...rest } = p;
+                      void tango;
+                      void s4predCurve;
+                      return rest;
+                    }),
+                  },
+                };
+                localStorage.setItem(name, JSON.stringify(stripped));
               } catch {
                 // Last resort: clear persisted data rather than silently losing updates
                 localStorage.removeItem(name);
@@ -566,7 +604,7 @@ export const useDatasetStore = create<DatasetState>()(
             localStorage.removeItem(name);
           } catch {}
         },
-      },
+      } satisfies PersistStorage<unknown>,
     }
   )
 );

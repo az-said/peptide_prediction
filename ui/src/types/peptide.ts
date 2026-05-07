@@ -93,10 +93,9 @@ export type Peptide = {
   ffSswFlag?: number | null; // 1 (candidate), -1 (not candidate), null (no data)
   ffSswScore?: number | null; // Hydrophobicity + Beta_uH + Full_length_uH + SSW_prediction
 
-  // ----- Unified secondary-structure percentages used by Results table -----
-  // These are filled by the mapper from S4PRED if present, otherwise Tango fallback.
-  helixPercent?: number | null; // preferred: S4PRED helix %; fallback: "SSW helix percentage"
-  betaPercent?: number | null; // preferred: S4PRED beta %;  fallback: "SSW beta percentage"
+  // Tango-side beta % (kept for legacy callers; canonical helix % lives on
+  // s4predHelixPercent — see HELIX_PERCENTAGE_AUDIT.md).
+  betaPercent?: number | null;
 
   // --- Optional Tango per-residue curves
   tango?: {
@@ -174,7 +173,6 @@ export type ColumnMapping = {
   ff_helix_fragments?: string;
 
   // ----- Optional direct mapping for unified columns -----
-  helix_percent?: string; // maps to Peptide.helixPercent
   beta_percent?: string; // maps to Peptide.betaPercent
 
   // metadata
@@ -287,4 +285,6 @@ export type DatasetMetadata = {
   size_returned?: number | null;
   total_available?: number | null;
   run_tango?: boolean | null;
+  /** True when the dataset was auto-loaded by demo mode (not user-uploaded) */
+  isDemo?: boolean;
 };

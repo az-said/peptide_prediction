@@ -1,11 +1,22 @@
 /**
  * Percentile-based peptide ranking engine v2.
  *
- * 5 default metrics + 2 optional add-ons. Proportional weights sum to 100%.
+ * 3 default metrics + 4 optional add-ons. Proportional weights sum to 100%.
  * Direction toggles allow inverting "high is good" vs "low is good".
  *
- * Default metrics:  tangoAggMax, s4predHelixPercent, ffHelixPercent, muH, sswScore
- * Optional add-ons: hydrophobicity, absCharge
+ * Peleg FIX-024 (2026-04): TANGO Agg Max moved out of default metrics
+ * (Peleg: "should NOT be in the default ranking"); Hydrophobicity promoted
+ * into defaults (Peleg: "MUST be a default metric"). Added "helix" preset.
+ * Renamed "Amyloid Focus" UI label → "Fibril-formation Focus" (code key
+ * `amyloid` retained for back-compat).
+ *
+ * PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED (2026-05-06):
+ *   ffHelixPercent (Chou-Fasman) and sswScore moved from default → optional
+ *   per Said+Peleg. Both are dropped from user-facing surfaces; the keys
+ *   remain on the RankingMetric union for back-compat with persisted state.
+ *
+ * Default metrics:  s4predHelixPercent, muH, hydrophobicity
+ * Optional add-ons: tangoAggMax, absCharge, ffHelixPercent, sswScore
  */
 import type { Peptide } from "@/types/peptide";
 
@@ -37,30 +48,51 @@ export interface RankingOptions {
   directions?: MetricDirections;
 }
 
-export type RankingPreset = "equal" | "amyloid" | "switch";
+export type RankingPreset = "equal" | "amyloid" | "helix" | "switch";
 
 // ---- Constants ----
 
-export const DEFAULT_METRICS: RankingMetric[] = [
+// PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED (2026-05-06):
+//   ffHelixPercent (Chou-Fasman) + sswScore relegated to optional.
+export const DEFAULT_METRICS: RankingMetric[] = ["s4predHelixPercent", "muH", "hydrophobicity"];
+
+export const OPTIONAL_METRICS: RankingMetric[] = [
   "tangoAggMax",
-  "s4predHelixPercent",
+  "absCharge",
   "ffHelixPercent",
-  "muH",
   "sswScore",
 ];
-
-export const OPTIONAL_METRICS: RankingMetric[] = ["hydrophobicity", "absCharge"];
 
 export const ALL_METRICS: RankingMetric[] = [...DEFAULT_METRICS, ...OPTIONAL_METRICS];
 
 export const METRIC_LABELS: Record<RankingMetric, string> = {
-  tangoAggMax: "TANGO Agg Max",
+  tangoAggMax: "TANGO Aggregation Max",
   s4predHelixPercent: "S4PRED Helix %",
   ffHelixPercent: "FF-Helix %",
-  muH: "μH",
+  muH: "uH",
   sswScore: "SSW Score",
   hydrophobicity: "Hydrophobicity",
   absCharge: "|Charge|",
+};
+
+/**
+ * Peleg FIX-024: per-metric explanations shown in tooltips next to weight controls.
+ * Each describes what the weight emphasises and which underlying data column feeds it.
+ */
+export const METRIC_DESCRIPTIONS: Record<RankingMetric, string> = {
+  tangoAggMax:
+    "Peak per-residue TANGO aggregation propensity (column: tangoAggMax). Higher weight emphasises peptides with strong aggregation-prone regions.",
+  s4predHelixPercent:
+    "Percentage of residues S4PRED predicts as helical (column: s4predHelixPercent). Higher weight emphasises helix content.",
+  ffHelixPercent:
+    "FF-Helix score — sliding-window helix-propensity (column: ffHelixPercent). Higher weight emphasises intrinsic helix tendency.",
+  muH: "Hydrophobic moment uH (column: muH). Higher weight emphasises amphipathic peptides — used in fibril-formation classification.",
+  sswScore:
+    "TANGO secondary-structure-switch score (column: sswScore). Higher weight emphasises peptides with structural-switch potential.",
+  hydrophobicity:
+    "Mean hydrophobicity (Fauchere-Pliska, column: hydrophobicity). Higher weight emphasises hydrophobic peptides — used in FF-SSW classification.",
+  absCharge:
+    "Absolute net charge at pH 7.4 (column: |charge|). Higher weight emphasises strongly charged peptides.",
 };
 
 export const METRIC_COLORS: Record<RankingMetric, string> = {
@@ -94,17 +126,28 @@ export const DEFAULT_DIRECTIONS: MetricDirections = {
   absCharge: "high",
 };
 
-/** Equal weights across 5 default metrics (20% each). */
+/** Equal weights across 3 default metrics (sums to 100; 34/33/33). */
 function equalWeights(): ProportionalWeights {
   return {
-    tangoAggMax: 20,
-    s4predHelixPercent: 20,
-    ffHelixPercent: 20,
-    muH: 20,
-    sswScore: 20,
+    s4predHelixPercent: 34,
+    muH: 33,
+    hydrophobicity: 33,
   };
 }
 
+/**
+ * PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED preset rebalance (2026-05-06):
+ *   ffHelixPercent (Chou-Fasman) and sswScore are no longer surfaced — presets
+ *   now distribute weight across the 3 default metrics + S4PRED. Each preset's
+ *   weights still sum to 100.
+ *
+ * - `amyloid` (UI label: "Fibril-formation Focus") emphasises uH + hydrophobicity
+ *   — the two thresholds that drive Peleg's FF-Helix and FF-SSW classifications.
+ * - `helix` (UI label: "Helix Focus") emphasises S4PRED helix + uH.
+ * - `switch` (UI label: "Switch Focus") emphasises S4PRED helix balance against
+ *   uH + hydrophobicity (was previously SSW-score weighted; that metric is gone).
+ * Code key `amyloid` retained for back-compat with existing tests/state.
+ */
 export const PRESETS: Record<
   RankingPreset,
   { weights: ProportionalWeights; directions: MetricDirections }
@@ -115,24 +158,28 @@ export const PRESETS: Record<
   },
   amyloid: {
     weights: {
-      tangoAggMax: 35,
-      sswScore: 25,
-      ffHelixPercent: 15,
-      muH: 15,
-      s4predHelixPercent: 10,
+      muH: 40,
+      hydrophobicity: 40,
+      s4predHelixPercent: 20,
+    },
+    directions: { ...DEFAULT_DIRECTIONS },
+  },
+  helix: {
+    weights: {
+      s4predHelixPercent: 50,
+      muH: 30,
+      hydrophobicity: 20,
     },
     directions: {
       ...DEFAULT_DIRECTIONS,
-      s4predHelixPercent: "low", // low helix = more disordered = more amyloid-prone
+      s4predHelixPercent: "high",
     },
   },
   switch: {
     weights: {
-      s4predHelixPercent: 30,
-      tangoAggMax: 25,
-      sswScore: 20,
-      ffHelixPercent: 15,
-      muH: 10,
+      s4predHelixPercent: 40,
+      muH: 30,
+      hydrophobicity: 30,
     },
     directions: {
       ...DEFAULT_DIRECTIONS,

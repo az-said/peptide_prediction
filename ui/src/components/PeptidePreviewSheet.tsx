@@ -19,16 +19,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useChartSelection } from "@/stores/chartSelectionStore";
 import { useDatasetStore } from "@/stores/datasetStore";
-import { getConsensusSS, type ConsensusTier } from "@/lib/consensus";
-import { CHART_COLORS } from "@/lib/chartConfig";
 
-const TIER_BG: Record<ConsensusTier, string> = {
-  1: "bg-red-50 border-red-200",
-  2: "bg-amber-50 border-amber-200",
-  3: "bg-blue-50 border-blue-200",
-  4: "bg-green-50 border-green-200",
-  5: "bg-muted/50 border-muted",
-};
+// PELEG-Q7-RESOLVED: ConsensusCard / ConsensusTier / getConsensusSS removed entirely
+// per Said+Peleg 2026-05-06. The tier-based consensus UI was unjustified per
+// Peleg FIX-013. Keep this sheet's classification flags + KPI grid.
 
 function KpiTile({ label, value }: { label: string; value: string }) {
   return (
@@ -41,8 +35,7 @@ function KpiTile({ label, value }: { label: string; value: string }) {
 
 export function PeptidePreviewSheet() {
   const navigate = useNavigate();
-  const { selectedId, selectedFrom, sheetOpen, setSheetOpen, setActiveTab } =
-    useChartSelection();
+  const { selectedId, selectedFrom, sheetOpen, setSheetOpen, setActiveTab } = useChartSelection();
   const { getPeptideById } = useDatasetStore();
 
   const peptide = selectedId ? getPeptideById(selectedId) : undefined;
@@ -66,32 +59,20 @@ export function PeptidePreviewSheet() {
     );
   }
 
-  const consensus = getConsensusSS(peptide);
-  const tierColor =
-    CHART_COLORS[`tier${consensus.tier}` as keyof typeof CHART_COLORS];
   const truncSeq =
-    peptide.sequence.length > 80
-      ? peptide.sequence.slice(0, 77) + "..."
-      : peptide.sequence;
+    peptide.sequence.length > 80 ? peptide.sequence.slice(0, 77) + "..." : peptide.sequence;
 
-  const fmt = (v: number | null | undefined, d = 2) =>
-    v != null ? v.toFixed(d) : "\u2013";
-  const fmtPct = (v: number | null | undefined) =>
-    v != null ? `${v.toFixed(1)}%` : "\u2013";
-  const fmtSSW = (v: number | null | undefined) =>
-    v === 1 ? "+1" : v === -1 ? "-1" : "\u2013";
+  const fmt = (v: number | null | undefined, d = 2) => (v != null ? v.toFixed(d) : "\u2013");
+  const fmtPct = (v: number | null | undefined) => (v != null ? `${v.toFixed(1)}%` : "\u2013");
+  const fmtSSW = (v: number | null | undefined) => (v === 1 ? "+1" : v === -1 ? "-1" : "\u2013");
 
   return (
     <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
       <SheetContent side="right" className="w-[340px] sm:max-w-[380px] overflow-y-auto">
         <SheetHeader>
-          <SheetTitle className="font-mono text-base truncate pr-6">
-            {peptide.id}
-          </SheetTitle>
+          <SheetTitle className="font-mono text-base truncate pr-6">{peptide.id}</SheetTitle>
           <SheetDescription>
-            {selectedFrom && (
-              <span className="text-xs">From: {selectedFrom}</span>
-            )}
+            {selectedFrom && <span className="text-xs">From: {selectedFrom}</span>}
           </SheetDescription>
         </SheetHeader>
 
@@ -103,33 +84,17 @@ export function PeptidePreviewSheet() {
 
           {/* Species */}
           {peptide.species && (
-            <div className="text-xs text-muted-foreground">
-              Organism: {peptide.species}
-            </div>
+            <div className="text-xs text-muted-foreground">Organism: {peptide.species}</div>
           )}
 
-          {/* Consensus tier */}
-          <div className={`p-3 rounded border ${TIER_BG[consensus.tier]}`}>
-            <div className="flex items-center gap-2 mb-1">
-              <Badge
-                className="text-[10px] text-white px-1.5 py-0"
-                style={{ backgroundColor: tierColor }}
-              >
-                T{consensus.tier}
-              </Badge>
-              <span className="text-sm font-medium">{consensus.label}</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {consensus.explanation}
-            </p>
-          </div>
+          {/* PELEG-Q7-RESOLVED: consensus tier section removed. */}
 
           {/* KPI grid */}
           <div className="grid grid-cols-2 gap-2">
             <KpiTile label="Hydrophobicity" value={fmt(peptide.hydrophobicity)} />
             <KpiTile label="Charge" value={fmt(peptide.charge, 1)} />
             <KpiTile label="\u03BCH" value={fmt(peptide.muH)} />
-            <KpiTile label="FF-Helix %" value={fmtPct(peptide.ffHelixPercent)} />
+            {/* PELEG-Q1-RESOLVED: FF-Helix % tile dropped per Said+Peleg 2026-05-06. */}
             <KpiTile label="Agg Max" value={fmtPct(peptide.tangoAggMax)} />
             <KpiTile label="S4PRED Helix %" value={fmtPct(peptide.s4predHelixPercent)} />
             <KpiTile label="SSW (TANGO)" value={fmtSSW(peptide.sswPrediction)} />
@@ -151,10 +116,7 @@ export function PeptidePreviewSheet() {
           </div>
 
           {/* Open full detail */}
-          <Button
-            className="w-full"
-            onClick={handleOpenDetail}
-          >
+          <Button className="w-full" onClick={handleOpenDetail}>
             <ExternalLink className="h-4 w-4 mr-2" />
             Open Full Detail
           </Button>
