@@ -17,33 +17,27 @@ import { TangoBadge } from "@/components/TangoBadge";
 import { SequenceTrack } from "@/components/SequenceTrack";
 import { HelicalWheel } from "@/components/HelicalWheel";
 import { AggregationHeatmap } from "@/components/AggregationHeatmap";
-import { ChartExportButtons } from "@/components/ChartExportButtons";
-import { AlphaFoldViewer } from "@/components/AlphaFoldViewer";
+import { Mol3DViewer } from "@/components/Mol3DViewer";
 import { BackboneViewer } from "@/components/BackboneViewer";
 import { S4PredChart } from "@/components/S4PredChart";
+import { WindowProfileChart, DEFAULT_PVL_CHANNELS } from "@/components/charts/WindowProfileChart";
 // Peleg FIX-013: ConsensusCard tier system removed (certainty math unjustified).
 import { useChartSelection } from "@/stores/chartSelectionStore";
+import { useThresholdStore } from "@/stores/thresholdStore";
 import { cn } from "@/lib/utils";
 import { BgDotGrid } from "@/components/BgDotGrid";
 
-// NEW: small additions for sliding-window profiles
-import { useMemo, useState } from "react";
-import { Slider } from "@/components/ui/slider";
+import { useState } from "react";
 import {
   ResponsiveContainer,
-  LineChart,
-  Line,
   CartesianGrid,
   XAxis,
   YAxis,
   Tooltip,
-  ReferenceArea,
   ScatterChart,
   Scatter,
   Cell,
 } from "recharts";
-import { buildProfilePoints, helixRanges } from "@/lib/profile";
-import { useBrushZoom } from "@/components/ZoomableChart";
 import AppFooter from "@/components/AppFooter";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
@@ -126,8 +120,7 @@ export default function PeptideDetail() {
   const { getPeptideById, peptides, stats } = useDatasetStore();
 
   const { clearSelection } = useChartSelection();
-  const hydroZoom = useBrushZoom({ minSpan: 1 });
-  const muHZoom = useBrushZoom({ minSpan: 1 });
+  const tangoAggregationThreshold = useThresholdStore((s) => s.active.tangoAggregationThreshold);
 
   const peptide = id ? getPeptideById(id) : undefined;
 
@@ -203,37 +196,6 @@ export default function PeptideDetail() {
       />
     );
   };
-
-  // NEW: sliding-window profiles state + derived data (non-invasive)
-  const [win, setWin] = useState(11); // window size (odd numbers recommended)
-  const profilePoints = useMemo(
-    () => buildProfilePoints(peptide.sequence, win),
-    [peptide.sequence, win]
-  );
-  const helixBands = useMemo(
-    () => helixRanges(peptide.s4pred?.helixSegments as [number, number][] | undefined, win),
-    [peptide.s4pred, win]
-  );
-
-  // FF-Helix overlay bands (green, distinct from S4PRED helix bands)
-  const ffHelixBands = useMemo(
-    () => helixRanges(peptide.ffHelixFragments as [number, number][] | undefined, win),
-    [peptide.ffHelixFragments, win]
-  );
-
-  // Merge TANGO agg curve into profile points for overlay
-  const enrichedProfilePoints = useMemo(() => {
-    const tangoAgg = peptide.tango?.agg;
-    if (!tangoAgg || tangoAgg.length === 0) return profilePoints;
-    return profilePoints.map((pt) => {
-      // TANGO agg is per-residue (1-indexed in our x); window center = x + floor(win/2)
-      const residueIdx = pt.x - 1 + Math.floor(win / 2);
-      return {
-        ...pt,
-        agg: residueIdx < tangoAgg.length ? tangoAgg[residueIdx] : undefined,
-      };
-    });
-  }, [profilePoints, peptide.tango?.agg, win]);
 
   return (
     <div className="min-h-screen bg-background relative">
@@ -499,199 +461,13 @@ export default function PeptideDetail() {
             </Card>
           ) : null}
 
-          {/* Sliding-Window Profiles (frontend-only) */}
+          {/* Sliding-Window Profiles — V4-3 unified chart (lines + bands + markers). */}
           {peptide.length <= 200 ? (
             <CollapsibleCard
               title="Sliding-Window Profiles"
-              description="Hydrophobicity (Fauchere-Pliska) and hydrophobic moment (μH), computed on the fly from the sequence."
+              description="Hydrophobicity, hydrophobic moment (μH), and TANGO aggregation overlaid on a single axis. S4PRED helix and FF-Helix bands mark predicted segments; aggregation peaks above the threshold are highlighted."
             >
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Window size</span>
-                  <span className="text-muted-foreground">{win}</span>
-                </div>
-                <Slider
-                  min={5}
-                  max={21}
-                  step={2}
-                  value={[win]}
-                  onValueChange={([v]) => setWin(v)}
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  Odd sizes recommended (e.g., 9, 11, 13). Larger window = smoother profiles.
-                </p>
-              </div>
-
-              {/* Hydrophobicity (KD) + optional TANGO Agg overlay */}
-              <div className="space-y-2" data-chart-export>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Hydrophobicity (Fauchere-Pliska)</h3>
-                  {hydroZoom.ZoomControls}
-                </div>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={enrichedProfilePoints} {...hydroZoom.chartHandlers}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="x"
-                        tickCount={10}
-                        domain={hydroZoom.zoomDomain ?? ["auto", "auto"]}
-                        type="number"
-                        allowDataOverflow
-                      />
-                      <YAxis
-                        yAxisId="left"
-                        label={{
-                          value: "Hydrophobicity (KD)",
-                          angle: -90,
-                          position: "insideLeft",
-                          style: { fontSize: 11, fill: "hsl(var(--muted-foreground))" },
-                        }}
-                      />
-                      {peptide.tango?.agg && peptide.tango.agg.length > 0 && (
-                        <YAxis
-                          yAxisId="right"
-                          orientation="right"
-                          label={{
-                            value: "TANGO Agg %",
-                            angle: 90,
-                            position: "insideRight",
-                            style: { fontSize: 11, fill: "hsl(var(--muted-foreground))" },
-                          }}
-                        />
-                      )}
-                      <Tooltip formatter={(v: number) => v.toFixed(3)} />
-                      {helixBands.map((r, i) => (
-                        <ReferenceArea
-                          key={`s4-${i}`}
-                          x1={r.x1}
-                          x2={r.x2}
-                          fill="#6366f1"
-                          opacity={0.12}
-                        />
-                      ))}
-                      {ffHelixBands.map((r, i) => (
-                        <ReferenceArea
-                          key={`ff-${i}`}
-                          x1={r.x1}
-                          x2={r.x2}
-                          fill="#32CD32"
-                          opacity={0.12}
-                        />
-                      ))}
-                      <Line
-                        type="monotone"
-                        dataKey="H"
-                        name="Hydrophobicity"
-                        stroke="#2563eb"
-                        dot={false}
-                        yAxisId="left"
-                      />
-                      {peptide.tango?.agg && peptide.tango.agg.length > 0 && (
-                        <Line
-                          type="monotone"
-                          dataKey="agg"
-                          name="TANGO Agg %"
-                          stroke="#D55E00"
-                          strokeDasharray="5 3"
-                          dot={false}
-                          yAxisId="right"
-                        />
-                      )}
-                      {hydroZoom.brushProps && <ReferenceArea {...hydroZoom.brushProps} />}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex items-center justify-between">
-                  <ChartExportButtons filename={`${peptide.id}-hydrophobicity-w${win}`} />
-                  {hydroZoom.zoomHint}
-                </div>
-              </div>
-
-              {/* Hydrophobic moment (μH) */}
-              <div className="space-y-2" data-chart-export>
-                <div className="flex items-center justify-between">
-                  <h3 className="text-sm font-semibold">Hydrophobic Moment (μH)</h3>
-                  {muHZoom.ZoomControls}
-                </div>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={profilePoints} {...muHZoom.chartHandlers}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis
-                        dataKey="x"
-                        tickCount={10}
-                        domain={muHZoom.zoomDomain ?? ["auto", "auto"]}
-                        type="number"
-                        allowDataOverflow
-                      />
-                      <YAxis
-                        label={{
-                          value: "μH",
-                          angle: -90,
-                          position: "insideLeft",
-                          style: { fontSize: 11, fill: "hsl(var(--muted-foreground))" },
-                        }}
-                      />
-                      <Tooltip formatter={(v: number) => v.toFixed(3)} />
-                      {helixBands.map((r, i) => (
-                        <ReferenceArea
-                          key={`s4-${i}`}
-                          x1={r.x1}
-                          x2={r.x2}
-                          fill="#6366f1"
-                          opacity={0.12}
-                        />
-                      ))}
-                      {ffHelixBands.map((r, i) => (
-                        <ReferenceArea
-                          key={`ff-${i}`}
-                          x1={r.x1}
-                          x2={r.x2}
-                          fill="#32CD32"
-                          opacity={0.12}
-                        />
-                      ))}
-                      <Line type="monotone" dataKey="muH" name="μH" dot={false} />
-                      {muHZoom.brushProps && <ReferenceArea {...muHZoom.brushProps} />}
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="flex items-center justify-between">
-                  <ChartExportButtons filename={`${peptide.id}-muH-w${win}`} />
-                  {muHZoom.zoomHint}
-                </div>
-              </div>
-
-              <div className="text-xs text-muted-foreground">
-                <span
-                  className="inline-block w-3 h-3 rounded-sm mr-1"
-                  style={{ backgroundColor: "#6366f1", opacity: 0.3 }}
-                />{" "}
-                S4PRED helix segments
-                {ffHelixBands.length > 0 && (
-                  <span className="ml-3">
-                    <span
-                      className="inline-block w-3 h-3 rounded-sm mr-1"
-                      style={{ backgroundColor: "#32CD32", opacity: 0.3 }}
-                    />{" "}
-                    FF-Helix candidate regions
-                  </span>
-                )}
-                {peptide.tango?.agg && peptide.tango.agg.length > 0 && (
-                  <span className="ml-3">
-                    <span
-                      className="inline-block w-4 h-0.5 mr-1"
-                      style={{
-                        backgroundColor: "#D55E00",
-                        display: "inline-block",
-                        borderTop: "2px dashed #D55E00",
-                      }}
-                    />{" "}
-                    TANGO aggregation
-                  </span>
-                )}
-              </div>
+              <WindowProfileChart peptide={peptide} channels={DEFAULT_PVL_CHANNELS} />
             </CollapsibleCard>
           ) : (
             <Card className="shadow-soft border-[hsl(var(--border))] rounded-xl">
@@ -840,11 +616,22 @@ export default function PeptideDetail() {
               </Card>
             )}
 
-          {/* AlphaFold Structure Viewer */}
-          <AlphaFoldViewer peptideId={peptide.id} />
+          {/* 2D Backbone Visualization (at-a-glance card) — has a "View in 3D →"
+              button that scrolls to the Mol3DViewer section below. */}
+          <BackboneViewer
+            peptideId={peptide.id}
+            onView3D={() =>
+              document
+                .getElementById("peptide-detail-mol3d")
+                ?.scrollIntoView({ behavior: "smooth", block: "start" })
+            }
+          />
 
-          {/* 2D Backbone Visualization (B13: atom2svg) */}
-          <BackboneViewer peptideId={peptide.id} />
+          {/* V4-2: 3D structural deep-dive with TANGO / S4PRED-helix / FF-Helix /
+              SSW overlays computed from peptide data via buildDefaultOverlays. */}
+          <div id="peptide-detail-mol3d">
+            <Mol3DViewer peptide={peptide} aggThreshold={tangoAggregationThreshold} />
+          </div>
 
           {/* Peleg FIX-016: standalone feature tiles removed — moved into the
               BiochemComparison stat-card sub-panel above.

@@ -285,4 +285,6 @@ export type DatasetMetadata = {
   size_returned?: number | null;
   total_available?: number | null;
   run_tango?: boolean | null;
+  /** True when the dataset was auto-loaded by demo mode (not user-uploaded) */
+  isDemo?: boolean;
 };
