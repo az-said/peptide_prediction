@@ -3,6 +3,8 @@
 **Author**: T1 (CEO terminal). **Date**: 2026-05-07.
 **Target**: clean v0.1.0 push to GitHub `main` after this round.
 
+> **Scope note (Said directive 2026-05-07)**: PVL paper writing is Peleg's job, not Said's. This doc focuses on the **platform infrastructure** Said owns — observability, deployment, CI/CD, dependency hygiene, contributor onboarding, AI tooling. Zenodo DOI is auto-generated on GitHub release; Peleg cites it in her paper. Said doesn't write the paper. See `TECH_PLATFORM_VISION.md` for the full platform thesis.
+
 ---
 
 ## 1 — What's done vs. what's left before push
@@ -172,6 +174,43 @@ This is the manual setup that Cowork's V6-1 deferred to you.
 4. On the VPS, add a cron job: `*/5 * * * * curl -fsS http://localhost:8000/api/health && curl -fsS https://sentry.io/api/0/monitors/[slug]/checkins/`.
 5. If the VPS goes down, no check-in arrives, Sentry alerts.
 
+### Guide G — CodeRabbit AI code review in CI (NEW — platform investment)
+
+**Time**: 15 minutes. Sets up AI-pair-reviewer on every PR — your maintenance hedge during MIT.
+
+1. Sign up at https://coderabbit.ai with your GitHub account.
+2. Authorize CodeRabbit to access the `peptide_prediction` repo.
+3. The free tier covers public repos. Configuration: in your repo, add `.coderabbit.yaml`:
+   ```yaml
+   language: en
+   reviews:
+     profile: chill  # less aggressive than 'assertive'
+     auto_review:
+       enabled: true
+       drafts: false
+     path_filters:
+       - "!ui/dist/**"
+       - "!**/*.lock"
+       - "!**/*.min.js"
+   chat:
+     auto_reply: true
+   ```
+4. From now on, every PR (Dependabot, your branches, contributors) gets an AI review with line-level comments and a summary.
+5. Alternative: **Greptile** (https://greptile.com) — also free for OSS, slightly different review style. Either works; pick one.
+
+**Why this matters for you**: during MIT semesters when you have 2 hours/month for PVL, an AI reviewer catches the obvious issues (missing tests, unhandled errors, doc drift) before you spend your scarce minutes on them.
+
+### Guide H — Sentry Seer (AI-assisted issue triage)
+
+**Time**: 5 minutes after Guide E.
+
+1. In Sentry, the "Seer" feature uses AI to suggest root causes + fix PRs for new issues.
+2. Settings → Integrations → Seer (or "AI Assistance"). Enable.
+3. Connect your GitHub repo so Seer can open PRs with proposed fixes.
+4. From now on, when a new error appears, Seer auto-comments on the Sentry issue with a hypothesized cause and a suggested code change.
+
+**Why this matters**: triage-while-you're-busy. You read Seer's hypothesis on your phone at MIT, decide yes/no, click to merge or dismiss.
+
 ### Guide F — Dependabot setup (Phase O.1)
 
 **Time**: 5 minutes.
@@ -210,23 +249,25 @@ Commit it. Dependabot will start opening PRs the next Monday.
 
 ## 3 — README.md polish checklist (T1 does this, ~2h)
 
-When this round closes, T1 (Claude Code) writes a fresh README.md with:
+**Pivot per Said directive 2026-05-07**: focus on **platform documentation**, not paper-publishing. README is for engineers/contributors first, scientists second. Peleg's paper will provide the scientific framing — README provides the technical-platform framing.
 
-- **Hero section**: 1-line tagline + 4 differentiator bullets (multi-tool, 3D overlay, permalinks, open source)
-- **Demo GIF**: 12-second loop showing classification → drill-down → 3D overlay
+T1 will write a fresh README.md with:
+
+- **Hero section**: 1-line tagline + 4 differentiator bullets (multi-tool dashboard, live 3D overlay, reproducibility permalinks, AI-platform-ready via MCP)
+- **Demo GIF**: 12-second loop showing classification → drill-down → 3D overlay → permalink copy
 - **Quick start**: paste a sequence at https://[url]/quick (1 line)
 - **Self-host**: `docker compose up` (3-line block)
-- **Citing**: BibTeX block (placeholder until DOI live)
-- **Contributing**: link to CONTRIBUTING.md
-- **Authors / Decisions**: per Said directive
-  - **Built by**: Said Azaizah (Technion + DESY)
-  - **Algorithms by**: Dr. Peleg Ragonis-Bachar (Technion)
+- **Tech stack**: bullet list (FastAPI · Pydantic v2 · Mol\* · Recharts · Zustand · shadcn/ui · Sentry · CI/CD via GitHub Actions)
+- **Architecture diagram**: minimal block diagram (frontend ↔ backend ↔ TANGO/S4PRED ↔ AlphaFold/UniProt) — links to `TECH_PLATFORM_VISION.md` for detail
+- **Contributing**: link to CONTRIBUTING.md, mention CodeRabbit AI review in CI
+- **Authors**: per Said directive
+  - **Platform + UI**: Said Azaizah (Technion + DESY)
+  - **Algorithms / scientific design**: Dr. Peleg Ragonis-Bachar (Technion)
   - **Scientific advisor**: Dr. Aleksandr Golubev (DESY + Technion)
-  - **Decisions log**: 1-paragraph link to `docs/active/DECISIONS.md` (NEW — list of major project decisions with dates: 4-category classification, terminology cleanup, drop ffHelixPercent, etc.)
+- **Decisions log**: 1-paragraph pointer to `docs/active/DECISIONS.md` (NEW) — ADR-001 through ADR-010 documenting platform decisions (4-category classification, contract strictness, helix-% canonical, reproducibility-as-permalink, MCP-server-as-AI-front-door, etc.)
 - **License**: MIT
-- **Status badges**: build status, test count, license, version
-
-Said-flagged: every contribution credit + every decision should be logged so the project history is transparent for collaborators / paper reviewers / future you.
+- **Status badges**: build status, test count (887+), license, version, Sentry monitored
+- **Citing**: 1-line "If using PVL in your work, please cite the Zenodo DOI: 10.5281/zenodo.XXXXX" — that's it. Peleg's paper will be the long-form citation.
 
 ---
 
