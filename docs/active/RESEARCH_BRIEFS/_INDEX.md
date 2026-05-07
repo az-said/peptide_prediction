@@ -45,6 +45,18 @@ These are the first 5 missions Said + T1 set for T-RES on 2026-05-08. T-RES pick
 - **Why now**: PVL's adoption matters for sustainability. v0.1 is shipped on GitHub; what next?
 - **Decision impact**: extends Phase H roadmap; possibly new sub-phases.
 
+### M-006 — Best-in-class AI development workflow infrastructure
+- **Question**: What does a top-tier AI-native development workflow look like for a solo OSS scientific founder? Concretely:
+  - `.claude/` enhancements (hooks, custom skills, MCP servers, scheduled tasks) Said should adopt
+  - Cowork prompt-engineering discipline (memory files, pre-flight audits, anti-duplication patterns)
+  - Multi-terminal orchestration (T1 / T2 / T3 / T-RES / Cowork — what's missing?)
+  - Communication patterns Said ↔ Peleg ↔ Alex (async-via-repo vs Slack vs email)
+  - Productivity rituals (weekly review, monthly tech-radar, quarterly vision recheck)
+  - Cursor / VS Code multi-window setups for AI-pair-programming
+- **Why now**: Said directive 2026-05-08 — *"like the CEO of Y Combinator would do... top tier AI workflow"*. Plus he flagged Cowork trust issues (creates new files when refactor would suffice). This is a meta-decision affecting how every future wave is executed.
+- **Decision impact**: produces concrete enhancement plan for `.claude/` config + workflow protocol. May spawn a new wave entry in MASTER_PUSH_PLAN (Wave 8 — Workflow Infrastructure?).
+- **Inspiration sources to research**: Sindre Sorhus's solo-OSS workflow, Anthropic engineers' internal Claude Code patterns, Vercel/Guillermo Rauch, the Cursor team's own workflows, supermaven, Phind, top y-combinator OSS founders.
+
 ---
 
 ## Recurring missions (T-RES runs these on schedule)
