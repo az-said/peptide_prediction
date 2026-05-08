@@ -270,10 +270,14 @@ General domain knowledge (no single source): standard peptide analysis workflow 
 
 ---
 
-## §11 — Decisions Said needs to make before implementation
+## §11 — Decisions (resolved 2026-05-08)
 
-1. Is `backend/schemas/api_models.py` allowed to receive a new nullable `run_metadata` field for the metadata-in-CSV feature, or must this be handled purely at the export layer without schema changes?
-2. Should BibTeX export be a frontend-only static download (no new endpoint) or a backend-generated endpoint so the BibTeX stays in sync with predictor versions automatically?
-3. Gold-standard accuracy badge: is the Staphylococcus 2023 dataset (N=2916, 66 validated) cleared for display in the public UI, or is it embargoed pending Peleg's paper?
-4. Jupyter notebook export: use pvl-py (in `pvl-py/`) as the re-runnable kernel, or target the public PVL API directly so the notebook works without installing pvl-py locally?
-5. Wave assignment: are Wave 1 quick-wins (BibTeX, metadata-CSV, FASTA upload) targeted for pre-MIT (before Sept 2026), and Wave 2 features (trust signals, Jupyter) for the community-contribution window after MIT?
+Said gave T1 green light on all five questions; T1 made the calls per RB-001 §3 evidence:
+
+1. **api_models.py + run_metadata field** → ✅ YES, new NULLABLE field is allowed (backwards-compatible). Codified as ADR-013.
+2. **BibTeX architecture** → ✅ Frontend-static for v0.x. Predictor versions don't change often enough to justify backend round-trip. Codified as ADR-013.
+3. **Staphylococcus 2023 dataset display** → ⚠️ GATED on Peleg explicit clearance. Disagreement score (no dataset dependency) ships freely. Accuracy badge BLOCKED until Peleg green-lights — T1 must email Peleg before Wave 2 ships. Fallback: TANGO original validation set or AGGRESCAN public test set. Codified as ADR-014.
+4. **Jupyter notebook kernel** → ✅ Public REST API (not pvl-py install). Frictionless wins over offline correctness for v0.x. pvl-py remains documented alternative for power users. Codified as ADR-015.
+5. **Wave timing** → ✅ Features 1-3 (BibTeX, metadata-CSV, FASTA bulk) ship pre-MIT. Feature 4 splits — disagreement score pre-MIT, accuracy badge gated on Peleg. Feature 5 (Jupyter) pre-MIT if time allows, otherwise first-class community contribution.
+
+ADRs 013, 014, 015 added to `docs/active/DECISIONS.md` with status ACCEPTED (014 has caveat for Peleg gate).

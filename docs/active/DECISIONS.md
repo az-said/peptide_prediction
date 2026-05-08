@@ -138,6 +138,41 @@ See also: `TECH_PLATFORM_VISION.md` for the longer-form platform thesis and tech
 
 ---
 
+## ADR-013 — PVL exports include FAIR metadata + BibTeX
+
+**Date**: 2026-05-08 · **Status**: ACCEPTED · **Authors**: Said + T-RES + T1
+**Context**: Researchers using PVL in publications need citable, reproducible output. No competitor (TANGO web, PASTA 2.0, AGGRESCAN, Waltz, AggreProt) provides metadata-stamped exports or pre-filled citations. RB-001 §5 ranked these as the top-3 highest-leverage features (impact × 1/cost).
+**Decision**: All CSV/JSON exports SHALL include: predictor name + version, threshold values per predictor, run date (ISO 8601), sequence source (FASTA / UniProt / manual). A "Download BibTeX" button on Results.tsx SHALL produce a `.bib` file pre-filled for TANGO + S4PRED + Hamodrakas 2007 + PVL itself. BibTeX is FRONTEND-STATIC for v0.x — predictor versions don't change often enough to need backend round-trip.
+**Reasoning**: Pragmatic FAIR compliance without full RO-Crate overhead. Aligns with JOSS paper-readiness + ELIXIR bio.tools registration. Total effort < 14 h (2h BibTeX + 4h metadata-CSV + 8h FASTA bulk).
+**Implication**: `backend/schemas/api_models.py` receives a NEW NULLABLE `run_metadata: Optional[RunMetadata]` field (backwards-compatible — null for clients that don't request it). Frontend `ui/src/lib/exportBibtex.ts` is a static string builder, no API call. FASTA bulk parser added to backend ingestion path. Wave assignment: Wave 1 quick-wins, ship pre-MIT (before Sept 2026).
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-001_researcher-needs.md` §3 categories B+D+E, §5 features 1-3.
+
+---
+
+## ADR-014 — Predictor disagreement + gold-standard accuracy in UI
+
+**Date**: 2026-05-08 · **Status**: ACCEPTED (with caveat) · **Authors**: Said + T-RES + T1
+**Context**: Researchers cannot tell from any existing peptide prediction tool whether to trust a prediction. The 2021 Briefings in Bioinformatics benchmark (Table 1) showed wide accuracy variance across 9 tools (CIs 68–87.6%). PVL's consensus module already computes multi-predictor agreement; the Staphylococcus 2023 dataset (N=2916, 66 validated) is available internally.
+**Decision**: Results dashboard SHALL display:
+  (a) **Consensus confidence indicator** showing how many predictors agree on each classification (e.g. "2 of 3 algorithms agree — moderate confidence"). UI-only change, ships immediately.
+  (b) **Gold-standard accuracy badge** showing PVL's sensitivity on a benchmark dataset at current threshold settings — **GATED on Peleg explicit clearance**. Until Peleg confirms the Staphylococcus 2023 dataset can be displayed publicly without scooping her paper, this feature is parked. If Peleg embargoes, T1 will use a smaller public benchmark (TANGO original validation set, AGGRESCAN public test set) instead.
+**Reasoning**: Strongest trust signal in the aggregation prediction space. Competitor gap (no tool surfaces predictor disagreement or accuracy in-UI). Disagreement score is uncoupled from any embargoed dataset and can ship freely.
+**Implication**: Disagreement score: 8h, Wave 2, files `ui/src/components/ResultsKpis.tsx` + `ui/src/lib/consensus.ts`. Accuracy badge: 12h, BLOCKED until Peleg green-lights public dataset display. T1 must email Peleg with the question before Wave 2 ships. Static precomputation keeps runtime cost zero. Threshold-curve JSON is a build-time artifact, not runtime computation.
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-001_researcher-needs.md` §3 category F, §5 feature 4. Memory: `project_peleg_columns.md` (Peleg owns Staphylococcus dataset).
+
+---
+
+## ADR-015 — Jupyter notebook export targets public REST API (not pvl-py local install)
+
+**Date**: 2026-05-08 · **Status**: ACCEPTED · **Authors**: Said + T-RES + T1
+**Context**: RB-001 §5 ranks Jupyter notebook export as the top single adoption-leverage move for computational biology labs (PLOS Comp Biol 2024 BioConda + Jupyter benchmark). Two implementation options: (a) generated `.ipynb` calls the public PVL REST API directly — no local install needed; (b) generated `.ipynb` requires `pip install pvl-py` first.
+**Decision**: Notebook export uses option (a) — frictionless for the researcher (no install). Notebook includes a commented-out cell at the top showing how to swap to pvl-py for offline / batch use.
+**Reasoning**: Adoption matters more than offline correctness for v0.x. A notebook that "just works" when downloaded is a citable artefact; a notebook that requires `pip install` first creates a friction step that loses 50% of users at the first cell. pvl-py remains the alternative for power users.
+**Implication**: 20h effort, Wave 2-3. New `ui/src/lib/exportNotebook.ts` generates JSON. No new backend endpoint required (notebook calls existing public REST endpoints). API stability becomes more important — breaking changes to REST will break shipped notebooks. Versioning convention: notebook embeds the PVL version it was generated against; PVL keeps backwards compatibility for at least 12 months.
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-001_researcher-needs.md` §5 feature 5, §11 question 4.
+
+---
+
 ## How to add a new ADR
 
 When you (or a future contributor) make a load-bearing decision:
