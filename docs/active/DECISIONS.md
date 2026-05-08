@@ -96,7 +96,7 @@ See also: `TECH_PLATFORM_VISION.md` for the longer-form platform thesis and tech
 
 ## ADR-009 — MCP server as the AI-platform front door
 
-**Date**: 2026-05-07 · **Accepted**: 2026-05-08 · **Status**: ACCEPTED (Wave 2 §A) · **Merge SHA**: TBD by T1 on merge
+**Date**: 2026-05-07 · **Accepted**: 2026-05-08 · **Status**: ACCEPTED (Wave 2 §A) · **Local SHA**: 80a514f
 **Context**: Anthropic's MCP (Model Context Protocol) is being adopted by Claude Desktop, Cursor, Windsurf, Continue, and other major LLM clients. The protocol defines how an LLM agent calls external tools. PVL has a REST API that maps cleanly to MCP tools.
 **Decision**: when AI agent integration matures (Phase G1), expose PVL as an MCP server, NOT as a custom chat UI built into the web app. Researchers already use Claude Desktop / Cursor / their own agents — they don't need another chatbot, they need a tool their existing agent can call.
 **Reasoning**: standardize on the protocol the ecosystem converges on. Don't build a chatbot when the user already has one. Future-proof: MCP becoming the cross-vendor standard means PVL is automatically available to whichever LLM the researcher prefers.

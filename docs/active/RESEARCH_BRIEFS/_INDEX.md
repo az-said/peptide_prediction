@@ -57,6 +57,20 @@ These are the first 5 missions Said + T1 set for T-RES on 2026-05-08. T-RES pick
 - **Decision impact**: produces concrete enhancement plan for `.claude/` config + workflow protocol. May spawn a new wave entry in MASTER_PUSH_PLAN (Wave 8 — Workflow Infrastructure?).
 - **Inspiration sources to research**: Sindre Sorhus's solo-OSS workflow, Anthropic engineers' internal Claude Code patterns, Vercel/Guillermo Rauch, the Cursor team's own workflows, supermaven, Phind, top y-combinator OSS founders.
 
+### M-007 — What researchers actually need from a peptide prediction platform
+- **Question**: Beyond "predict TANGO + S4PRED + FF-Helix", what do bench scientists, computational biologists, and structural biologists actually want from a tool like PVL? Concretely:
+  - **Workflow integration**: how do researchers move between PVL → ChimeraX / PyMOL / Jupyter / Mol* / AlphaFold DB? What handoff formats matter (PDB? mmCIF? JSON? CSV? notebook export?)
+  - **Reproducibility expectations**: what counts as "publication-ready provenance" in 2026 — Snakemake/Nextflow integration? RO-Crate? Bioschemas markup?
+  - **Discovery features missing in competitors**: what do PASTA 2.0 / Waltz / AGGRESCAN / TANGO web / AlphaFold DB / PEP-FOLD / APD3 NOT do well that PVL could own?
+  - **Data ingestion gaps**: FASTA bulk, UniProt accession lists, mass spec output (.mzML?), structure-derived peptides (PDB → flexible-loop extraction?)
+  - **Output formats researchers ask for**: heatmaps for figures, supplementary table CSVs, BibTeX of methods, ChimeraX session files, Jupyter notebook export with re-runnable code
+  - **Trust signals**: confidence intervals, predictor disagreement scoring, error bands, validation against gold-standard datasets surfaced in-UI
+  - **Collaboration patterns**: do researchers want share-links? group workspaces? embargo until paper accepted?
+  - **Educational use**: undergrad teaching labs, MOOCs — does PVL's pedagogical clarity matter for adoption?
+- **Why now**: Said directive 2026-05-08 — *"make sure that t5 is also researching ways to make the platform itself also better not only my workflow with ai (what researchers need)"*. Half of T5's value is workflow, the other half is **product-direction research**.
+- **Decision impact**: feeds Phase H (research integrations) and possible new Phase M (researcher onboarding kit). May produce ADR for handoff format standards (e.g., "PVL exports ChimeraX-compatible session bundle").
+- **Inspiration sources to research**: cellxgene's user feedback channels, AlphaFold DB's most-requested features, Mol*'s API for downstream tools, Galaxy's tool-integration model, RCSB PDB's workflows, ELIXIR research-software-engineering surveys, Bioconductor user studies, ChEMBL's API design, BioStars threads about peptide prediction frustrations, Reddit r/bioinformatics power-user complaints.
+
 ---
 
 ## Recurring missions (T-RES runs these on schedule)
