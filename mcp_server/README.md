@@ -36,15 +36,15 @@ pvl-mcp --transport sse --host 0.0.0.0 --port 8765
 
 ## Tools
 
-| Tool                     | Backend route                              | Status |
-| ------------------------ | ------------------------------------------ | ------ |
-| `search_uniprot`         | `POST /api/uniprot/execute`                | LIVE   |
+| Tool                     | Backend route                                | Status |
+| ------------------------ | -------------------------------------------- | ------ |
+| `search_uniprot`         | `POST /api/uniprot/execute`                  | LIVE   |
 | `analyze_sequences`      | `POST /api/predict` + `POST /api/upload-csv` | LIVE   |
-| `get_pvl_version`        | `GET /api/version`                         | LIVE   |
-| `get_peptide_detail`     | `GET /api/peptide/{accession}`             | wraps a backend route that ships in a follow-up wave |
-| `rank_candidates`        | `POST /api/rank`                           | wraps a backend route that ships in a follow-up wave |
-| `compare_cohorts`        | `POST /api/compare`                        | wraps a backend route that ships in a follow-up wave |
-| `find_similar_peptides`  | `POST /api/peptides/similar`               | depends on Wave 2 §D vector store          |
+| `find_similar_peptides`  | `POST /api/peptides/similar`                 | LIVE (Wave 2 §D, ADR-016) |
+| `get_pvl_version`        | `GET /api/version`                           | LIVE   |
+| `get_peptide_detail`     | `GET /api/peptide/{accession}`               | wraps a backend route that ships in §I |
+| `rank_candidates`        | `POST /api/rank`                             | wraps a backend route that ships in §I |
+| `compare_cohorts`        | `POST /api/compare`                          | wraps a backend route that ships in §I |
 
 The MCP surface is fixed at seven tools so prompts and client configurations don't drift between releases. Tools whose backend route is still in flight return a clear backend error when called — the LLM surfaces it verbatim instead of inventing an answer.
 
