@@ -35,11 +35,27 @@ describe("FirstVisitModal", () => {
     expect(screen.getByText(/2,916 peptides/)).toBeInTheDocument();
   });
 
+  it("renders 3 highlighted features", () => {
+    render(<FirstVisitModal open={true} onDismiss={vi.fn()} />);
+    expect(screen.getByTestId("first-visit-features")).toBeInTheDocument();
+    expect(screen.getByText("Multi-tool consensus")).toBeInTheDocument();
+    expect(screen.getByText("Live 3D overlay")).toBeInTheDocument();
+    expect(screen.getByText("Reproducible permalinks")).toBeInTheDocument();
+  });
+
   it("calls onDismiss when 'Just let me explore' is clicked", () => {
     const onDismiss = vi.fn();
     render(<FirstVisitModal open={true} onDismiss={onDismiss} />);
 
     fireEvent.click(screen.getByTestId("first-visit-explore"));
+    expect(onDismiss).toHaveBeenCalledTimes(1);
+  });
+
+  it("calls onDismiss when close × button is clicked", () => {
+    const onDismiss = vi.fn();
+    render(<FirstVisitModal open={true} onDismiss={onDismiss} />);
+
+    fireEvent.click(screen.getByTestId("first-visit-close"));
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
 
@@ -80,6 +96,16 @@ describe("FirstVisitModal", () => {
     const dialog = screen.getByTestId("first-visit-modal");
     expect(dialog).toHaveAttribute("role", "dialog");
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(dialog).toHaveAttribute("aria-label", "Welcome to PVL");
+    expect(dialog).toHaveAttribute(
+      "aria-label",
+      "Welcome to Peptide Visual Lab",
+    );
+  });
+
+  it("renders value proposition text", () => {
+    render(<FirstVisitModal open={true} onDismiss={vi.fn()} />);
+    expect(
+      screen.getByText(/PVL combines TANGO, S4PRED, and AlphaFold/),
+    ).toBeInTheDocument();
   });
 });

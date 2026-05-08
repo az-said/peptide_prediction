@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { ResultsKpis } from "@/components/ResultsKpis";
+import { ReproducibilityRibbon } from "@/components/ReproducibilityRibbon";
+import { DemoLoadingSkeleton } from "@/components/DemoLoadingSkeleton";
 import { ActiveThresholdsPanel } from "@/components/ActiveThresholdsPanel";
 import { ResultsCharts } from "@/components/ResultsCharts";
 import { PeptideTable } from "@/components/PeptideTable";
@@ -28,6 +30,7 @@ import { RankedTable } from "@/components/RankedTable";
 import { WeightBar } from "@/components/WeightBar";
 
 import { useDatasetStore } from "@/stores/datasetStore";
+import { useDemoStore } from "@/stores/demoStore";
 import { useRankingStore, rankPeptides } from "@/stores/datasetStore";
 import {
   METRIC_LABELS,
@@ -177,13 +180,20 @@ export default function Results() {
     }
   }, [meta?.thresholds, initFromMeta]);
 
+  // Don't redirect to /upload while the demo dataset is mid-load on first
+  // visit — that flashes the upload screen and breaks the auto-load UX.
+  const isDemoLoading = useDemoStore((s) => s.isDemoLoading);
+
   useEffect(() => {
-    if (peptides.length === 0) {
+    if (peptides.length === 0 && !isDemoLoading) {
       navigate("/upload");
     }
-  }, [peptides.length, navigate]);
+  }, [peptides.length, isDemoLoading, navigate]);
 
   if (peptides.length === 0) {
+    if (isDemoLoading) {
+      return <DemoLoadingSkeleton />;
+    }
     return null;
   }
 
@@ -541,11 +551,18 @@ export default function Results() {
             </div>
           )}
 
+          {/* Reproducibility ribbon — version + permalink + cite. */}
+          <div id="reproducibility-ribbon">
+            <ReproducibilityRibbon />
+          </div>
+
           {/* Peleg FIX-032: active thresholds visible above the dashboard. */}
           <ActiveThresholdsPanel />
 
           {/* KPIs */}
-          <ResultsKpis stats={stats} meta={meta} allPeptides={peptidesTyped} />
+          <div id="kpi-cards">
+            <ResultsKpis stats={stats} meta={meta} allPeptides={peptidesTyped} />
+          </div>
 
           {/* Main Content Tabs — Data Table first (researcher workflow) */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -580,13 +597,15 @@ export default function Results() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <PeptideTable peptides={peptidesTyped} />
+                  <div id="peptide-detail-link">
+                    <PeptideTable peptides={peptidesTyped} />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
 
             {/* Candidate Ranking */}
-            <TabsContent value="ranking" className="space-y-6">
+            <TabsContent value="ranking" className="space-y-6" id="smart-ranking">
               <Card className="shadow-soft border-[hsl(var(--border))] rounded-xl overflow-hidden">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-h3">Smart Candidate Ranking</CardTitle>

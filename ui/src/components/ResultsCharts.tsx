@@ -106,6 +106,7 @@ export function ResultsCharts({ peptides, providerStatus }: ResultsChartsProps) 
     <div className="grid lg:grid-cols-2 gap-6">
       {/* ═══ Row 1: Euler Diagram + UpSet Matrix ═══ */}
       <motion.div
+        id="set-diagram"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1 }}

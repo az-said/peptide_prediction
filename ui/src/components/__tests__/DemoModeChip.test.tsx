@@ -16,6 +16,11 @@ vi.mock("react-router-dom", () => ({
 vi.mock("framer-motion", () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    p: ({ children, ...props }: any) => <p {...props}>{children}</p>,
+    span: ({ children, ...props }: any) => <span {...props}>{children}</span>,
+    button: ({ children, ...props }: any) => (
+      <button {...props}>{children}</button>
+    ),
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
 }));

@@ -1,5 +1,6 @@
 // src/App.tsx
-import React, { Suspense, useEffect } from "react";
+import React, { Suspense, useCallback, useEffect, useState } from "react";
+import * as Sentry from "@sentry/react";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -15,6 +16,7 @@ import { useJobStore } from "@/stores/jobStore";
 import { useDemoMode } from "@/hooks/useDemoMode";
 import { DemoModeChip } from "@/components/DemoModeChip";
 import { FirstVisitModal } from "@/components/FirstVisitModal";
+import { DemoCoachmark } from "@/components/DemoCoachmark";
 import { initSentrySession, setPVLSentryContext } from "@/lib/sentryContext";
 
 // Lazy-loaded pages (Index kept direct for instant first load)
@@ -37,6 +39,22 @@ function AppLayout() {
   const navigate = useNavigate();
   const isLanding = location.pathname === "/";
   const demoMode = useDemoMode();
+  const [tourActive, setTourActive] = useState(false);
+
+  // FirstVisitModal "Take a tour" → ensure user is on /results, then run.
+  // Sentry tag lets us measure tour-start funnel separately from completion.
+  const startTour = useCallback(() => {
+    try {
+      Sentry.setTag("coachmark_started", "true");
+    } catch {
+      // Sentry may not be initialized in dev / tests
+    }
+    if (location.pathname !== "/results") {
+      navigate("/results");
+    }
+    // Wait for the route + dataset to settle before joyride scans for targets.
+    window.setTimeout(() => setTourActive(true), 350);
+  }, [location.pathname, navigate]);
 
   // Set global navigate for job store polling callbacks
   useEffect(() => {
@@ -196,6 +214,11 @@ function AppLayout() {
       <FirstVisitModal
         open={demoMode.showFirstVisit}
         onDismiss={demoMode.dismissFirstVisit}
+        onTour={startTour}
+      />
+      <DemoCoachmark
+        run={tourActive}
+        onComplete={() => setTourActive(false)}
       />
     </>
   );

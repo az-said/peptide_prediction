@@ -1,19 +1,20 @@
 /**
  * DemoModeChip — Floating indicator when demo data is active.
  *
- * Displays in the bottom-right corner when `isDemo: true` in datasetStore metadata.
- * Shows dataset name + peptide count. "Use your own data →" button navigates to Upload.
- * Dismissible — dismiss persists in localStorage.
+ * V8-1 polish:
+ * - Position: bottom-right, 16px from edges
+ * - Two states: collapsed (icon only) ↔ expanded (icon + dataset name + CTA)
+ * - Smooth transitions on hover/focus
+ * - Dismissible with localStorage persistence
  *
  * Design: Stripe-style restraint — subtle, non-blocking, informative.
  */
 
+import { useState } from "react";
 import { X, Upload, Beaker } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
 import { DEMO_DATASET_INFO } from "@/hooks/useDemoMode";
-import type { DemoModeState } from "@/hooks/useDemoMode";
 
 interface DemoModeChipProps {
   /** Subset of useDemoMode() return — pass them through */
@@ -32,6 +33,7 @@ export function DemoModeChip({
   dismissChip,
 }: DemoModeChipProps) {
   const navigate = useNavigate();
+  const [isExpanded, setIsExpanded] = useState(true);
 
   const visible = (isDemo || isDemoLoading) && !isChipDismissed;
 
@@ -48,11 +50,17 @@ export function DemoModeChip({
           animate={{ opacity: 1, y: 0, scale: 1 }}
           exit={{ opacity: 0, y: 20, scale: 0.95 }}
           transition={{ duration: 0.3, ease: "easeOut" }}
-          className="fixed bottom-4 right-4 z-50 max-w-sm"
+          className="fixed bottom-4 right-4 z-50"
           data-testid="demo-mode-chip"
+          onMouseEnter={() => setIsExpanded(true)}
+          onFocus={() => setIsExpanded(true)}
         >
-          <div className="rounded-xl border border-border/60 bg-card/95 backdrop-blur-md shadow-lg px-4 py-3">
-            <div className="flex items-start gap-3">
+          <motion.div
+            layout
+            className="rounded-xl border border-border/60 bg-card/95 backdrop-blur-md shadow-lg overflow-hidden"
+            transition={{ layout: { duration: 0.25, ease: "easeOut" } }}
+          >
+            <div className="flex items-start gap-3 px-4 py-3">
               {/* Icon */}
               <div className="shrink-0 mt-0.5">
                 <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -60,14 +68,27 @@ export function DemoModeChip({
                 </div>
               </div>
 
-              {/* Content */}
-              <div className="flex-1 min-w-0">
+              {/* Content — expanded */}
+              <AnimatePresence mode="wait">
                 {isDemoLoading ? (
-                  <p className="text-sm text-muted-foreground">
+                  <motion.p
+                    key="loading"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="text-sm text-muted-foreground self-center"
+                  >
                     Loading demo dataset…
-                  </p>
-                ) : (
-                  <>
+                  </motion.p>
+                ) : isExpanded ? (
+                  <motion.div
+                    key="expanded"
+                    initial={{ opacity: 0, width: 0 }}
+                    animate={{ opacity: 1, width: "auto" }}
+                    exit={{ opacity: 0, width: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="flex-1 min-w-0"
+                  >
                     <p className="text-sm font-medium text-foreground leading-tight">
                       Demo data: {DEMO_DATASET_INFO.name}
                     </p>
@@ -84,9 +105,9 @@ export function DemoModeChip({
                         Use your own data →
                       </span>
                     </button>
-                  </>
-                )}
-              </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
 
               {/* Dismiss */}
               {!isDemoLoading && (
@@ -100,7 +121,7 @@ export function DemoModeChip({
                 </button>
               )}
             </div>
-          </div>
+          </motion.div>
         </motion.div>
       )}
     </AnimatePresence>
