@@ -1,6 +1,6 @@
 // src/pages/Results.tsx
 import { motion } from "framer-motion";
-import { Download, ArrowUp, ArrowDown, ChevronDown, FileText, FileDown } from "lucide-react";
+import { Download, ArrowUp, ArrowDown, ChevronDown, FileText, FileDown, BookOpen } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -41,6 +41,7 @@ import {
 import { useThresholdStore } from "@/stores/thresholdStore";
 import { BgDotGrid } from "@/components/BgDotGrid";
 import { exportShortlistPDF } from "@/lib/report";
+import { downloadBibtex } from "@/lib/exportBibtex";
 import { DEFAULT_THRESHOLDS, type ResolvedThresholds } from "@/lib/thresholds";
 import { uploadCSV, predictOne } from "@/lib/api";
 import { RotateCcw, FlaskConical, Info, AlertTriangle, XCircle, X } from "lucide-react";
@@ -408,6 +409,11 @@ export default function Results() {
                   >
                     <FileDown className="w-4 h-4 mr-2" />
                     PDF Report
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => downloadBibtex()}>
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    BibTeX (methods)
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

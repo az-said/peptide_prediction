@@ -14,19 +14,13 @@ import { useState, useCallback } from "react";
 import { Copy, Check, Github, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { PVL_CITATION } from "@/lib/exportBibtex";
 
 interface CitingSectionProps {
   className?: string;
 }
 
-const BIBTEX = `@software{pvl2026,
-  author       = {Azaizah, Said and Ragonis-Bachar, Peleg and Golubev, Aleksandr},
-  title        = {{Peptide Visual Lab (PVL): All-in-one Prediction and Visualization for Peptide Aggregation and Structure}},
-  year         = {2026},
-  publisher    = {GitHub},
-  url          = {https://github.com/saidaz24-meet/peptide_prediction},
-  note         = {DOI pending -- Zenodo submission in progress}
-}`;
+const BIBTEX = PVL_CITATION;
 
 export function CitingSection({ className }: CitingSectionProps) {
   const [copied, setCopied] = useState(false);
