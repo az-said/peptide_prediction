@@ -16,7 +16,7 @@ import { useSearchParams } from "react-router-dom";
 
 export interface DrillDownState {
   isOpen: boolean;
-  mode: "metric" | "chart" | "peptide" | null;
+  mode: "metric" | "chart" | "peptide" | "similar" | null;
   metricId: string | null;
   peptideId: string | null;
 }
@@ -26,7 +26,7 @@ export interface DrillDownContextValue {
   open: (opts: {
     metric?: string;
     peptide?: string;
-    mode: "metric" | "chart" | "peptide";
+    mode: "metric" | "chart" | "peptide" | "similar";
   }) => void;
   close: () => void;
 }
@@ -71,7 +71,7 @@ export function DrillDownProvider({ children }: { children: React.ReactNode }) {
     (opts: {
       metric?: string;
       peptide?: string;
-      mode: "metric" | "chart" | "peptide";
+      mode: "metric" | "chart" | "peptide" | "similar";
     }) => {
       setSearchParams(
         (prev) => {

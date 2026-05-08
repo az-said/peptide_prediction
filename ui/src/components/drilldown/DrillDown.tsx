@@ -12,17 +12,19 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { Button } from "@/components/ui/button";
 import { X, Share2, Download } from "lucide-react";
 import { getMetric } from "@/lib/metricRegistry";
+import { useDatasetStore } from "@/stores/datasetStore";
 import { useDrillDown } from "./DrillDownProvider";
 import { MetricInspector } from "./MetricInspector";
 import { PeptideInspector } from "./PeptideInspector";
 import { ChartInspector } from "./ChartInspector";
+import { SimilarPeptidesInspector } from "./SimilarPeptidesInspector";
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function resolveTitle(
-  mode: "metric" | "chart" | "peptide" | null,
+  mode: "metric" | "chart" | "peptide" | "similar" | null,
   metricId: string | null,
   peptideId: string | null,
 ): string {
@@ -35,6 +37,9 @@ function resolveTitle(
   if (mode === "peptide" && peptideId) {
     return `Peptide: ${peptideId}`;
   }
+  if (mode === "similar" && peptideId) {
+    return `Similar to: ${peptideId}`;
+  }
   return "Inspector";
 }
 
@@ -45,6 +50,9 @@ function resolveTitle(
 export function DrillDown() {
   const { state, close } = useDrillDown();
   const { isOpen, mode, metricId, peptideId } = state;
+  const referencePeptide = useDatasetStore((s) =>
+    peptideId ? s.getPeptideById(peptideId) : undefined,
+  );
 
   // Copy shareable URL to clipboard
   const handleShare = useCallback(() => {
@@ -111,6 +119,17 @@ export function DrillDown() {
             )}
             {mode === "peptide" && peptideId && (
               <PeptideInspector peptideId={peptideId} />
+            )}
+            {mode === "similar" && peptideId && referencePeptide && (
+              <SimilarPeptidesInspector
+                reference={referencePeptide}
+                isLoading={false}
+              />
+            )}
+            {mode === "similar" && peptideId && !referencePeptide && (
+              <div className="text-sm text-muted-foreground">
+                Peptide not found: <code>{peptideId}</code>
+              </div>
             )}
           </div>
         )}
