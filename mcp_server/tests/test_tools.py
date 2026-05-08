@@ -224,18 +224,27 @@ async def test_compare_cohorts_posts_both_lists(registered_tools, fake_client):
 
 
 @pytest.mark.asyncio
-async def test_find_similar_peptides_posts_reference_and_k(
+async def test_find_similar_peptides_posts_reference_id_and_k(
     registered_tools, fake_client
 ):
-    await registered_tools["find_similar_peptides"](
-        reference_sequence="GIGAVLKVLTTGLPALISWIKRKRQQ", k=15
-    )
+    await registered_tools["find_similar_peptides"](reference_id="P0C1Q4", k=15)
     call = fake_client.calls[0]
     assert call["method"] == "POST"
     assert call["path"] == "/api/peptides/similar"
-    assert call["json"] == {
-        "reference_sequence": "GIGAVLKVLTTGLPALISWIKRKRQQ",
-        "k": 15,
+    assert call["json"] == {"reference_id": "P0C1Q4", "k": 15}
+
+
+@pytest.mark.asyncio
+async def test_find_similar_peptides_passes_dataset_id_when_set(
+    registered_tools, fake_client
+):
+    await registered_tools["find_similar_peptides"](
+        reference_id="P0C1Q4", k=5, dataset_id="ds-1"
+    )
+    assert fake_client.calls[0]["json"] == {
+        "reference_id": "P0C1Q4",
+        "k": 5,
+        "dataset_id": "ds-1",
     }
 
 

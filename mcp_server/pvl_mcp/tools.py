@@ -6,17 +6,17 @@ docstring is what the LLM "sees" when deciding whether to use the tool — keep
 it scientific, concrete, and aligned with Peleg's category definitions in
 ``prompts.py``.
 
-Backend wiring status (2026-05-08):
+Backend wiring status (2026-05-08, post Wave 2 §D):
 
 | Tool                     | Backend route                            | Status |
 | ------------------------ | ---------------------------------------- | ------ |
 | search_uniprot           | POST /api/uniprot/execute                | LIVE   |
 | analyze_sequences        | POST /api/predict + POST /api/upload-csv | LIVE   |
+| find_similar_peptides    | POST /api/peptides/similar               | LIVE (Wave 2 §D, ADR-016) |
 | get_pvl_version          | GET  /api/version                        | LIVE   |
-| get_peptide_detail       | GET  /api/peptide/{accession}            | TODO   |
-| rank_candidates          | POST /api/rank                           | TODO   |
-| compare_cohorts          | POST /api/compare                        | TODO   |
-| find_similar_peptides    | POST /api/peptides/similar               | TODO (Wave 2 §D) |
+| get_peptide_detail       | GET  /api/peptide/{accession}            | TODO (Wave 2 §I) |
+| rank_candidates          | POST /api/rank                           | TODO (Wave 2 §I) |
+| compare_cohorts          | POST /api/compare                        | TODO (Wave 2 §I) |
 
 Tools whose backend route is TODO will still register with the MCP client
 but raise ``PVLAPIError`` with a clear "endpoint not yet implemented" message
@@ -301,12 +301,13 @@ def register_tools(mcp: Any) -> None:
     # -----------------------------------------------------------------------
     @mcp.tool()
     async def find_similar_peptides(
-        reference_sequence: Annotated[
+        reference_id: Annotated[
             str,
             Field(
-                description="Reference peptide sequence (single-letter amino acids).",
-                min_length=2,
-                max_length=500,
+                description="Accession / row id of the reference peptide. The "
+                "peptide must already be indexed (auto-indexed at analysis time).",
+                min_length=1,
+                max_length=128,
             ),
         ],
         k: Annotated[
@@ -317,17 +318,31 @@ def register_tools(mcp: Any) -> None:
                 le=100,
             ),
         ] = 10,
+        dataset_id: Annotated[
+            Optional[str],
+            Field(
+                description="Restrict the search to one dataset by id. Omit to "
+                "search every indexed dataset.",
+            ),
+        ] = None,
     ) -> dict[str, Any]:
         """Return the k peptides most semantically similar to the reference.
 
-        Uses PVL's vector embedding store (Chroma) — see Wave 2 §D. Distance
-        is cosine; lower = more similar. Each result includes accession,
-        sequence, distance, and metadata flags (helix/FF-Helix/SSW).
+        Uses PVL's LanceDB embedded vector store (ADR-016). Distance is
+        cosine on L2-normalized embeddings; lower = more similar. The
+        reference itself is never returned. Each result row contains the
+        full PVL ``peptide`` dict + a ``distance`` float.
+
+        If the reference is not yet in the index, results is an empty list
+        (not an error) — analyse the peptide first via ``analyze_sequences``.
         """
+        body: dict[str, Any] = {"reference_id": reference_id, "k": k}
+        if dataset_id is not None:
+            body["dataset_id"] = dataset_id
         return await _client.request(
             "POST",
             "/api/peptides/similar",
-            json={"reference_sequence": reference_sequence, "k": k},
+            json=body,
         )
 
     # -----------------------------------------------------------------------

@@ -9,6 +9,11 @@ __pycache__/
 # Runtime cache (prevents uvicorn --reload from watching TANGO/PSIPRED outputs)
 backend/.run_cache/
 
+# Wave 2 §D — LanceDB local Lance files (vector embedding store, ADR-016).
+# Volume-mounted in Docker; in dev they live at <repo_root>/data/lance/.
+data/lance/
+backend/data/lance/
+
 # Legacy runtime directories (moved to .run_cache, but keep ignored for safety)
 backend/Tango/out/
 backend/Tango/work/

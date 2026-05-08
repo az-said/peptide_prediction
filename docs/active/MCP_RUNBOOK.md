@@ -1,6 +1,6 @@
 # MCP Runbook — PVL as a tool for any MCP-aware LLM client
 
-> **Status**: Wave 2 §A landed (2026-05-08). Backend MCP server scaffolded; three tools (`search_uniprot`, `analyze_sequences`, `get_pvl_version`) wrap live backend endpoints. The other four (`get_peptide_detail`, `rank_candidates`, `compare_cohorts`, `find_similar_peptides`) are wired to documented paths and ship as the matching backend routes land in subsequent waves.
+> **Status**: Wave 2 §A + §D landed (2026-05-08). Backend MCP server scaffolded; four tools (`search_uniprot`, `analyze_sequences`, `find_similar_peptides`, `get_pvl_version`) wrap live backend endpoints. The other three (`get_peptide_detail`, `rank_candidates`, `compare_cohorts`) are wired to documented paths and ship in §I (MCP backend route gaps).
 
 This document is the operator's guide for `pvl-mcp`. If you want the high-level "why MCP", see [ADR-009 in `DECISIONS.md`](DECISIONS.md). If you want the dev-facing API surface, see [`mcp_server/README.md`](../../mcp_server/README.md).
 
@@ -197,14 +197,15 @@ Class-fraction deltas + biochem distribution shifts between two cohorts.
 
 ### 4.6 `find_similar_peptides`
 
-Cosine-similarity search over PVL's vector embedding store.
+Cosine-similarity search over PVL's LanceDB vector embedding store (ADR-016, Wave 2 §D).
 
-| Parameter             | Type | Description |
-| --------------------- | ---- | ----------- |
-| `reference_sequence`  | str  | Reference peptide (single-letter AAs). 2–500 chars. |
-| `k`                   | int  | Number of neighbors to return (1–100). |
+| Parameter      | Type   | Description |
+| -------------- | ------ | ----------- |
+| `reference_id` | str    | Accession / row id of the reference peptide (must already be indexed — auto-indexed at analysis time). |
+| `k`            | int    | Number of neighbors to return (1–100). Default 10. |
+| `dataset_id`   | str?   | Restrict the search to one dataset. Omit to search every indexed dataset. |
 
-**Backend status**: depends on Wave 2 §D (Chroma vector store + `POST /api/peptides/similar`).
+**Backend status**: LIVE as of Wave 2 §D (2026-05-08). If the reference is not yet in the index, results is an empty list — analyse the peptide first via `analyze_sequences`.
 
 ### 4.7 `get_pvl_version`
 
@@ -262,7 +263,7 @@ If you change the prompt, run `pytest mcp_server/tests/test_prompts.py` to confi
 | Wire `get_peptide_detail` to a real `/api/peptide/{accession}` route | Wave 2 / 3 | Backend currently lacks a single peptide-detail endpoint at the API surface. |
 | Wire `rank_candidates` to a real `/api/rank` endpoint | Wave 2 / 3 | Today ranking is computed client-side; lifting to backend matches the MCP shape. |
 | Wire `compare_cohorts` to `/api/compare` | Wave 2 / 3 | Same story — currently client-side. |
-| Implement `find_similar_peptides` end-to-end | Wave 2 §D | Depends on the Chroma vector-store work. |
+| ~~Implement `find_similar_peptides` end-to-end~~ | ✅ Wave 2 §D landed | LanceDB embedded (ADR-016). See `VECTOR_SEARCH_SPEC.md`. |
 | Add `analyze_pdb` tool | Wave 3+ | When the structure-aware predictors land. |
 | Auth-header passthrough | Wave 4 | If/when PVL gets a hosted multi-tenant deployment. |
 

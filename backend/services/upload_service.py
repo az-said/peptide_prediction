@@ -1207,6 +1207,18 @@ def process_upload_dataframe(
         }
     )
 
+    # Wave 2 §D: best-effort vector indexing of every analyzed row. Failures
+    # are swallowed by vector_store.index_rows so the upload response is never
+    # affected. Done before validation/return so it sees the same dicts the
+    # client gets — keeping single/batch parity (CLAUDE.md principle 1).
+    try:
+        from services import vector_store
+
+        if vector_store.is_enabled() and rows_out:
+            vector_store.index_rows(rows_out, dataset_id=inputs_hash)
+    except Exception as _exc:  # pragma: no cover — defensive
+        log_warning("vector_index_upload_swallow", f"Indexing swallowed: {_exc}")
+
     # ISSUE-018: Validate response through Pydantic model
     # This ensures the response matches the RowsResponse schema
     try:

@@ -305,4 +305,16 @@ def process_single_sequence(
     set_cached(ck, seq, result)
     log_info("cache_store", f"Cached result for {entry_id}", sequence_len=len(seq))
 
+    # Wave 2 §D: best-effort vector indexing of the analyzed peptide. Failures
+    # are swallowed by vector_store.index_peptide so the predict response is
+    # never affected. Cache hits skip this path because the row was indexed on
+    # its first analysis.
+    try:
+        from services import vector_store
+
+        if vector_store.is_enabled():
+            vector_store.index_peptide(row_data)
+    except Exception as _exc:  # pragma: no cover — defensive
+        log_warning("vector_index_predict_swallow", f"Indexing swallowed: {_exc}")
+
     return result

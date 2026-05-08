@@ -25,6 +25,8 @@ services:
       - ${TOOLS_HOST_PATH:-../tools}:/opt/tools:ro
       # Runtime cache
       - pvl-cache:/data/cache
+      # Wave 2 §D — LanceDB embedded vector store (ADR-016)
+      - pvl-lance:/data/lance
     environment:
       - HOST=0.0.0.0
       - PORT=8000
@@ -38,6 +40,9 @@ services:
       - SENTRY_DSN=${SENTRY_DSN:-}
       # TANGO scratch directory (on named volume, not overlay)
       - TANGO_RUNTIME_DIR=/data/runs/tango
+      # Vector index (LanceDB) — backed by named volume above
+      - LANCE_DB_PATH=/data/lance
+      - VECTOR_INDEX_ENABLED=${VECTOR_INDEX_ENABLED:-1}
       # Celery / Redis (enabled when redis service is present)
       - CELERY_ENABLED=${CELERY_ENABLED:-1}
       - CELERY_BROKER_URL=redis://redis:6379/0
@@ -90,6 +95,7 @@ services:
       - pvl-uploads:/data/uploads
       - ${TOOLS_HOST_PATH:-../tools}:/opt/tools:ro
       - pvl-cache:/data/cache
+      - pvl-lance:/data/lance
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
@@ -99,6 +105,8 @@ services:
       - S4PRED_MODEL_PATH=/opt/tools/s4pred/models
       - SENTRY_DSN=${SENTRY_DSN:-}
       - TANGO_RUNTIME_DIR=/data/runs/tango
+      - LANCE_DB_PATH=/data/lance
+      - VECTOR_INDEX_ENABLED=${VECTOR_INDEX_ENABLED:-1}
     depends_on:
       redis:
         condition: service_healthy
@@ -131,6 +139,7 @@ services:
       - pvl-uploads:/data/uploads
       - pvl-cache:/data/cache
       - ${TOOLS_HOST_PATH:-../tools}:/opt/tools:ro
+      - pvl-lance:/data/lance
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
@@ -140,6 +149,8 @@ services:
       - S4PRED_MODEL_PATH=/opt/tools/s4pred/models
       - SENTRY_DSN=${SENTRY_DSN:-}
       - TANGO_RUNTIME_DIR=/data/runs/tango
+      - LANCE_DB_PATH=/data/lance
+      - VECTOR_INDEX_ENABLED=${VECTOR_INDEX_ENABLED:-1}
     depends_on:
       redis:
         condition: service_healthy
@@ -175,4 +186,8 @@ volumes:
   pvl-cache:
     driver: local
   pvl-redis:
+    driver: local
+  # Wave 2 §D — LanceDB Lance files (peptide vector index, ADR-016).
+  # Plain on-disk files; VPS rsync/snapshot of named volumes already covers it.
+  pvl-lance:
     driver: local
