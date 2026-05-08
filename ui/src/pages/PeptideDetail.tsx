@@ -1,6 +1,14 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowLeft, Copy, Download, ExternalLink, ChevronDown } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  Download,
+  ExternalLink,
+  ChevronDown,
+  FileText,
+  Sparkles,
+} from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +33,9 @@ import { WindowProfileChart, DEFAULT_PVL_CHANNELS } from "@/components/charts/Wi
 // Peleg FIX-013: ConsensusCard tier system removed (certainty math unjustified).
 import { useChartSelection } from "@/stores/chartSelectionStore";
 import { useThresholdStore } from "@/stores/thresholdStore";
+import { useDrillDown } from "@/components/drilldown/DrillDownProvider";
+import { downloadPeptideReport } from "@/lib/peptideReport";
+import { PVL_VERSION } from "@/stores/reproducibilityStore";
 import { cn } from "@/lib/utils";
 import { BgDotGrid } from "@/components/BgDotGrid";
 
@@ -122,6 +133,9 @@ export default function PeptideDetail() {
 
   const { clearSelection } = useChartSelection();
   const tangoAggregationThreshold = useThresholdStore((s) => s.active.tangoAggregationThreshold);
+  const muHCutoff = useThresholdStore((s) => s.active.muHCutoff);
+  const hydroCutoff = useThresholdStore((s) => s.active.hydroCutoff);
+  const { open: openDrillDown } = useDrillDown();
 
   const peptide = id ? getPeptideById(id) : undefined;
 
@@ -173,6 +187,25 @@ export default function PeptideDetail() {
     link.click();
     URL.revokeObjectURL(url);
     toast.success("FASTA downloaded");
+  };
+
+  const handleDownloadPDFReport = async () => {
+    try {
+      toast.loading("Generating PDF report...", { id: "pdf-report" });
+      await downloadPeptideReport(peptide, {
+        version: PVL_VERSION,
+        permalink: window.location.href,
+        thresholds: { muHCutoff, hydroCutoff },
+      });
+      toast.success("PDF report downloaded", { id: "pdf-report" });
+    } catch (err) {
+      toast.error("PDF generation failed", { id: "pdf-report" });
+      console.error("downloadPeptideReport failed", err);
+    }
+  };
+
+  const handleFindSimilar = () => {
+    openDrillDown({ peptide: peptide.id, mode: "similar" });
   };
 
   // Use centralized TangoBadge for consistent display semantics
@@ -252,6 +285,26 @@ export default function PeptideDetail() {
                 >
                   <Download className="w-3.5 h-3.5 mr-1" />
                   JSON
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleDownloadPDFReport}
+                  title="Download a 6-page Nature-supplement-quality PDF report"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-1" />
+                  PDF Report
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleFindSimilar}
+                  title="Find peptides similar to this one (vector similarity)"
+                >
+                  <Sparkles className="w-3.5 h-3.5 mr-1" />
+                  Find Similar
                 </Button>
               </div>
             </div>
@@ -436,8 +489,7 @@ export default function PeptideDetail() {
                   kind="helix"
                 />
               ) : null}
-              {(peptide.s4predSswFragments?.length ||
-                peptide.s4pred?.betaSegments?.length) ? (
+              {peptide.s4predSswFragments?.length || peptide.s4pred?.betaSegments?.length ? (
                 <SegmentTrack
                   sequence={peptide.sequence}
                   fragments={
