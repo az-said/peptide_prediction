@@ -259,10 +259,14 @@ PVL agent (under the hood, 12 seconds):
 7. compose answer, attach Anthropic Citations API per-passage attribution
 
 UI displays:
-  P02743 is a strong amyloid candidate.[1] FF-Helix coverage is 78%, well
-  above the 25% threshold per Peleg's category-2 definition.[axiom-1]
-  The SSW region at positions 15-28 indicates a structural switching zone
-  consistent with amyloid fibril nucleation.[2]
+  P02743 shows aggregation-propensity signals on multiple metrics.[1]
+  FF-Helix coverage is 78%, above the 25% threshold per Peleg's
+  category-2 definition (a screening criterion, not a fibril-formation
+  proof).[axiom-1] The SSW region at positions 15-28 indicates a
+  structural-switching zone — a feature the literature associates with
+  amyloid fibril nucleation in published case studies.[2] These
+  signals are supportive, not confirmatory; experimental validation
+  remains required.
 
   [1] = Pepys et al., Nature 422 (2006), passage at line 23.
   [2] = Tennent et al., Amyloid 14 (2007), passage at line 8.

@@ -63,7 +63,7 @@ This brief was commissioned on 2026-05-08 by Said (M-007 in the T-RES mission qu
 |---|---|---|
 | TANGO web | β-aggregation propensity per residue | No visualization, no S4PRED, no batch, no comparison, no export |
 | AGGRESCAN | APR identification | Single-algorithm, ~2008 methodology, no inter-tool comparison |
-| PASTA 2.0 | Energy-based aggregation + β-sheet pairing | No secondary structure, no fibrils, no visualization |
+| PASTA 2.0 | Energy-based aggregation + β-sheet pairing | No secondary structure, no amyloid/fibril-risk labeling, no visualization |
 | Waltz | Amyloid prediction | Single algorithm, non-visual |
 | AggreProt (2024) | Deep-learning APR predictor, up to 3 sequences comparison | No secondary structure, no FF-Helix, no batch CSV, no Jupyter export |
 | AlphaFold DB | 3D structure, pLDDT, AlphaMissense heatmap | Not a peptide aggregation predictor; downstream tool |

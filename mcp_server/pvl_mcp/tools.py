@@ -29,6 +29,7 @@ import csv
 import io
 import json
 from typing import Annotated, Any, Optional
+from urllib.parse import quote
 
 from pydantic import Field
 
@@ -200,7 +201,10 @@ def register_tools(mcp: Any) -> None:
         ffSswFlag), provider raw outputs (TANGO peaks, S4PRED helix segments),
         and structure metadata (PDB / AlphaFold link if available).
         """
-        return await _client.request("GET", f"/api/peptide/{accession}")
+        # CodeRabbit #6: URL-encode accession so reserved characters
+        # (e.g. forward-slash variants in synthetic IDs) don't malform the route.
+        safe_accession = quote(accession, safe="")
+        return await _client.request("GET", f"/api/peptide/{safe_accession}")
 
     # -----------------------------------------------------------------------
     # 4. rank_candidates — wraps POST /api/rank  (TODO backend)

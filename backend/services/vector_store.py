@@ -45,6 +45,32 @@ _LOCK = threading.Lock()
 _TABLE: Optional[Any] = None
 _EMBEDDER: Optional[Callable[[str], List[float]]] = None
 _DISABLED_REASON: Optional[str] = None  # if non-None, indexing/search short-circuit
+_DISABLED_AT_MONO: Optional[float] = None  # monotonic time when _DISABLED_REASON was set
+
+# CodeRabbit #3: transient init failures (model download, disk-full hiccup,
+# network blip) used to brick the index permanently until process restart.
+# After this cooldown elapses, _ensure_*() retries from scratch. If the
+# failure was real (missing weights, permission denied), it re-fails and
+# the disabled flag is reset with a fresh timestamp. If it was transient,
+# we recover automatically.
+_DISABLED_COOLDOWN_S: float = 60.0
+
+
+def _clear_stale_disabled_reason() -> None:
+    """Reset _DISABLED_REASON if the cooldown window has elapsed.
+
+    Called at entry of is_enabled() and the _ensure_*() helpers so any
+    path retries the lazy init after _DISABLED_COOLDOWN_S seconds.
+    """
+    global _DISABLED_REASON, _DISABLED_AT_MONO
+    if _DISABLED_REASON is None or _DISABLED_AT_MONO is None:
+        return
+    import time
+
+    if time.monotonic() - _DISABLED_AT_MONO >= _DISABLED_COOLDOWN_S:
+        _DISABLED_REASON = None
+        _DISABLED_AT_MONO = None
+
 
 _TABLE_NAME = "peptides"
 
@@ -78,10 +104,12 @@ def is_enabled() -> bool:
     """Whether the vector index is available for reads/writes.
 
     Returns False when ``VECTOR_INDEX_ENABLED=0`` or a previous lazy-init
-    attempt failed (missing dependency, model download error, disk full).
+    attempt failed within the last _DISABLED_COOLDOWN_S window. After the
+    cooldown elapses, transient failures auto-retry (CodeRabbit #3).
     """
     if not settings.VECTOR_INDEX_ENABLED:
         return False
+    _clear_stale_disabled_reason()
     return _DISABLED_REASON is None
 
 
@@ -89,6 +117,7 @@ def disabled_reason() -> Optional[str]:
     """Why the index is not currently usable (None = it is usable)."""
     if not settings.VECTOR_INDEX_ENABLED:
         return "VECTOR_INDEX_ENABLED=0"
+    _clear_stale_disabled_reason()
     return _DISABLED_REASON
 
 
@@ -109,11 +138,12 @@ def reset_for_tests() -> None:
     Tests that point ``LANCE_DB_PATH`` at a tmpdir must call this so the
     next operation re-opens against the new path.
     """
-    global _TABLE, _EMBEDDER, _DISABLED_REASON
+    global _TABLE, _EMBEDDER, _DISABLED_REASON, _DISABLED_AT_MONO
     with _LOCK:
         _TABLE = None
         _EMBEDDER = None
         _DISABLED_REASON = None
+        _DISABLED_AT_MONO = None
 
 
 def index_peptide(row: Dict[str, Any], dataset_id: Optional[str] = None) -> bool:
@@ -363,9 +393,10 @@ def _coerce_metadata_value(row: Dict[str, Any], field: str) -> Any:
 
 def _ensure_embedder() -> Optional[Callable[[str], List[float]]]:
     """Return the active embedder (test-injected or lazy-loaded model)."""
-    global _EMBEDDER, _DISABLED_REASON
+    global _EMBEDDER, _DISABLED_REASON, _DISABLED_AT_MONO
     if _EMBEDDER is not None:
         return _EMBEDDER
+    _clear_stale_disabled_reason()
     with _LOCK:
         if _EMBEDDER is not None:
             return _EMBEDDER
@@ -379,7 +410,10 @@ def _ensure_embedder() -> Optional[Callable[[str], List[float]]]:
                     "Currently supported: 'local-esm2-8m' (ADR-017)."
                 )
         except Exception as exc:
+            import time
+
             _DISABLED_REASON = f"embedder_init_failed: {exc}"
+            _DISABLED_AT_MONO = time.monotonic()
             log_warning(
                 "vector_embedder_disabled",
                 f"Vector index disabled — embedder init failed: {exc}",
@@ -439,16 +473,20 @@ def _build_local_esm2_embedder() -> Callable[[str], List[float]]:
 
 def _ensure_table(seed_record: Optional[Dict[str, Any]] = None) -> Optional[Any]:
     """Open or create the Lance table. Returns None on any setup failure."""
-    global _TABLE, _DISABLED_REASON
+    global _TABLE, _DISABLED_REASON, _DISABLED_AT_MONO
     if _TABLE is not None:
         return _TABLE
+    _clear_stale_disabled_reason()
     with _LOCK:
         if _TABLE is not None:
             return _TABLE
         try:
             import lancedb  # type: ignore
         except Exception as exc:
+            import time
+
             _DISABLED_REASON = f"lancedb_import_failed: {exc}"
+            _DISABLED_AT_MONO = time.monotonic()
             log_warning(
                 "vector_lancedb_disabled",
                 f"Vector index disabled — lancedb import failed: {exc}",
@@ -477,7 +515,10 @@ def _ensure_table(seed_record: Optional[Dict[str, Any]] = None) -> Optional[Any]
             )
             return _TABLE
         except Exception as exc:
+            import time
+
             _DISABLED_REASON = f"lance_table_init_failed: {exc}"
+            _DISABLED_AT_MONO = time.monotonic()
             log_warning(
                 "vector_table_disabled",
                 f"Vector index disabled — lance table init failed: {exc}",

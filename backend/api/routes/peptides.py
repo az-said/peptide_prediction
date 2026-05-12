@@ -8,6 +8,7 @@ both call. The actual vector work happens in
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any, Dict
 
 from fastapi import APIRouter
@@ -36,7 +37,12 @@ async def find_similar_peptides(req: FindSimilarRequest) -> FindSimilarResponse:
       load failed), results are empty and ``method`` is ``"disabled"`` so the
       UI / MCP tool can surface a helpful message.
     """
-    payload = vector_store.find_similar(
+    # CodeRabbit #1: LanceDB read + ESM-2 embed are synchronous CPU/IO work.
+    # Calling them directly from an `async def` route blocks the event loop
+    # so a slow query stalls every other in-flight request. asyncio.to_thread
+    # offloads to the default thread pool — the route stays cooperative.
+    payload = await asyncio.to_thread(
+        vector_store.find_similar,
         reference_id=req.reference_id,
         k=req.k,
         dataset_id=req.dataset_id,

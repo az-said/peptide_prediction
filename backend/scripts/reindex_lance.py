@@ -83,8 +83,13 @@ def _snapshot_existing_rows() -> List[Dict[str, Any]]:
     try:
         db = lancedb.connect(str(lance_dir))
     except Exception as exc:
-        print(f"[reindex] Could not open LanceDB at {lance_dir}: {exc}", file=sys.stderr)
-        return []
+        # CodeRabbit #2 (Critical): never return [] on open-failure — the
+        # script drops peptides.lance later and would destroy the only
+        # index copy after a transient error. Raise instead so the script
+        # aborts and the existing index is preserved.
+        raise RuntimeError(
+            f"Cannot open LanceDB at {lance_dir}; aborting reindex to avoid data loss: {exc}"
+        ) from exc
 
     if "peptides" not in db.table_names():
         print(f"[reindex] No 'peptides' table in {lance_dir} — nothing to migrate.")
@@ -171,9 +176,7 @@ def reindex(rows: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
                 file=sys.stderr,
             )
             continue
-        if vector_store.index_peptide(
-            camel, dataset_id=snake_row.get("dataset_id") or None
-        ):
+        if vector_store.index_peptide(camel, dataset_id=snake_row.get("dataset_id") or None):
             indexed += 1
 
     elapsed_ms = int((time.perf_counter() - started) * 1000)
