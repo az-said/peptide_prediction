@@ -34,8 +34,9 @@ export const API_BASE = (() => {
   );
 })();
 
-import type { ThresholdConfig } from "@/types/peptide";
+import type { ThresholdConfig, Peptide } from "@/types/peptide";
 import type { RowsResponse, PredictResponse } from "@/types/api";
+import { mapApiRowToPeptide } from "@/lib/peptideMapper";
 
 class ApiError extends Error {
   status: number;
@@ -164,4 +165,76 @@ export async function executeUniProtQuery(
   }
 
   return await response.json();
+}
+
+// ---------------------------------------------------------------------------
+// Peptide similarity search (Wave 2 §G, backend §D — schemas/peptides.py)
+// ---------------------------------------------------------------------------
+
+/** Raw backend response shape for POST /api/peptides/similar. */
+interface FindSimilarRawResponse {
+  reference_id: string;
+  results: Array<{
+    peptide: Record<string, unknown>;
+    distance: number;
+  }>;
+  method: string;
+  elapsed_ms: number;
+}
+
+/** Result row exposed to the UI (peptide is the canonical frontend type). */
+export interface SimilarPeptideHit {
+  peptide: Peptide;
+  distance: number;
+}
+
+/** Mapped response — what UI components consume. */
+export interface FindSimilarPeptidesResult {
+  referenceId: string;
+  results: SimilarPeptideHit[];
+  /** Identifier for the embedding pipeline. "disabled" when the index is off. */
+  method: string;
+  elapsedMs: number;
+}
+
+/**
+ * Find the k peptides most similar to `referenceId` by embedding distance.
+ *
+ * Backend contract: `backend/schemas/peptides.py`. The response peptide rows
+ * are partial PeptideRow shapes (camelCase) which we forward through the
+ * standard mapper so the UI gets canonical `Peptide` objects.
+ *
+ * Empty `results` is a valid response (reference not in index, or
+ * `method === "disabled"`). Callers should surface the empty state.
+ */
+export async function findSimilarPeptides(
+  referenceId: string,
+  k: number = 10,
+  datasetId?: string,
+  signal?: AbortSignal,
+): Promise<FindSimilarPeptidesResult> {
+  const body: Record<string, unknown> = { reference_id: referenceId, k };
+  if (datasetId) body.dataset_id = datasetId;
+
+  const res = await fetch(`${API_BASE}/api/peptides/similar`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    mode: "cors",
+    signal,
+  });
+  const raw = (await handleResponse(res)) as FindSimilarRawResponse;
+
+  return {
+    referenceId: raw.reference_id,
+    method: raw.method,
+    elapsedMs: raw.elapsed_ms,
+    results: raw.results.map((r) => ({
+      peptide: mapApiRowToPeptide(
+        r.peptide as Record<string, unknown>,
+        "/api/peptides/similar",
+      ),
+      distance: r.distance,
+    })),
+  };
 }
