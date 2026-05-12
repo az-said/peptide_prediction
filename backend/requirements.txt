@@ -6,7 +6,7 @@ gunicorn>=23.0,<24.0
 # Data processing
 pandas>=2.3,<3.0
 numpy>=2.4.4,<3.0
-openpyxl>=3.1,<4.0
+openpyxl>=3.1.5,<4.0
 
 # HTTP & middleware
 python-multipart>=0.0.28,<1.0
