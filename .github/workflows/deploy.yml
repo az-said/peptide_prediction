@@ -1,0 +1,159 @@
+# Peptide Visual Lab — Deploy on main push (and manual trigger)
+#
+# Deploy target is configured via REPOSITORY SECRETS, not hardcoded — so when
+# PVL moves from the current Hetzner VPS to DESY K8s, AWS, Fly.io, or anywhere
+# else, the workflow stays unchanged; only the secrets get updated. The
+# secrets that drive this workflow live in:
+#
+#   Settings → Secrets and variables → Actions → Repository secrets
+#
+# Required secrets:
+#   - DEPLOY_HOST       e.g. "94.130.178.182" or "pvl.example.com"
+#   - DEPLOY_USER       e.g. "root" or "deploy"
+#   - DEPLOY_PATH       e.g. "/opt/pvl" — absolute path to the cloned repo on
+#                       the deploy target
+#   - DEPLOY_SSH_KEY    full private SSH key (BEGIN/END lines included) the
+#                       runner uses to ssh in. Add the matching public key to
+#                       the deploy user's ~/.ssh/authorized_keys
+#   - DEPLOY_KNOWN_HOSTS  (optional) output of `ssh-keyscan <DEPLOY_HOST>`.
+#                       If omitted, the workflow uses StrictHostKeyChecking=no
+#                       which is fine for fresh hosts; set this when you want
+#                       proper host-key verification.
+#
+# Optional secrets (with sensible defaults):
+#   - DEPLOY_COMPOSE_FILE   path to docker compose file relative to
+#                           DEPLOY_PATH. Defaults to "docker-compose.yml".
+#
+# Triggers:
+#   - On every push to main (auto-deploy)
+#   - Manual via "Run workflow" button in the Actions tab (workflow_dispatch)
+#     so you can also re-deploy without a new commit (e.g. rolling back via
+#     git checkout + redeploy).
+#
+# Safety:
+#   - Concurrency group ensures only one deploy runs at a time per branch.
+#   - Job fails loudly if any required secret is missing.
+
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Git ref to deploy (default: latest main)"
+        required: false
+        default: "main"
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false # don't cancel in-flight deploys — let them finish
+
+jobs:
+  deploy:
+    name: Deploy to ${{ vars.DEPLOY_ENV || 'production' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Verify required secrets are configured
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          missing=""
+          [ -z "$DEPLOY_HOST" ]    && missing="$missing DEPLOY_HOST"
+          [ -z "$DEPLOY_USER" ]    && missing="$missing DEPLOY_USER"
+          [ -z "$DEPLOY_PATH" ]    && missing="$missing DEPLOY_PATH"
+          [ -z "$DEPLOY_SSH_KEY" ] && missing="$missing DEPLOY_SSH_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::Missing required secrets:$missing"
+            echo "Configure them in: Settings → Secrets and variables → Actions"
+            exit 1
+          fi
+          echo "All required deploy secrets are configured."
+
+      - name: Set up SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          echo "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            echo "$DEPLOY_KNOWN_HOSTS" >> ~/.ssh/known_hosts
+            chmod 644 ~/.ssh/known_hosts
+            echo "Using DEPLOY_KNOWN_HOSTS for strict host-key verification."
+          else
+            echo "DEPLOY_KNOWN_HOSTS not set — using StrictHostKeyChecking=accept-new (TOFU)."
+          fi
+
+      - name: Deploy (git pull + docker compose up -d --build)
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_COMPOSE_FILE: ${{ secrets.DEPLOY_COMPOSE_FILE || 'docker-compose.yml' }}
+          DEPLOY_REF: ${{ inputs.ref || 'main' }}
+        run: |
+          # accept-new = trust on first use when DEPLOY_KNOWN_HOSTS isn't provided.
+          # strict     = strict host-key check when DEPLOY_KNOWN_HOSTS is provided.
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            STRICT="StrictHostKeyChecking=yes"
+          else
+            STRICT="StrictHostKeyChecking=accept-new"
+          fi
+
+          ssh -o "$STRICT" -i ~/.ssh/deploy_key "$DEPLOY_USER@$DEPLOY_HOST" bash -se <<EOF
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          echo "[deploy] === $(date -u +%FT%TZ) ==="
+          echo "[deploy] At $(pwd) on $(hostname)"
+          echo "[deploy] Fetching $DEPLOY_REF..."
+          git fetch --prune origin
+          git checkout "$DEPLOY_REF"
+          git pull --ff-only origin "$DEPLOY_REF"
+          echo "[deploy] HEAD is now \$(git rev-parse --short HEAD): \$(git log -1 --pretty=%s)"
+          echo "[deploy] Rebuilding + restarting containers (compose: $DEPLOY_COMPOSE_FILE)..."
+          docker compose -f "$DEPLOY_COMPOSE_FILE" up -d --build --remove-orphans
+          echo "[deploy] Containers up. Status:"
+          docker compose -f "$DEPLOY_COMPOSE_FILE" ps
+          echo "[deploy] Done."
+          EOF
+
+      - name: Smoke test
+        if: success()
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_HEALTHCHECK_URL: ${{ secrets.DEPLOY_HEALTHCHECK_URL }}
+        run: |
+          # If DEPLOY_HEALTHCHECK_URL is set, hit it. Otherwise default to
+          # http://<host>:3000/ which is the current VPS frontend URL. Override
+          # by setting DEPLOY_HEALTHCHECK_URL in repo secrets when the URL
+          # changes (e.g. moving behind a domain or to K8s ingress).
+          URL="${DEPLOY_HEALTHCHECK_URL:-http://${DEPLOY_HOST}:3000/}"
+          echo "Smoke-testing $URL ..."
+          # Give the new container ~30s to come up before failing.
+          for attempt in 1 2 3 4 5 6; do
+            if curl -fsS --max-time 10 -o /dev/null "$URL"; then
+              echo "✅ Smoke test passed (attempt $attempt)."
+              exit 0
+            fi
+            echo "Attempt $attempt failed, retrying in 5s..."
+            sleep 5
+          done
+          echo "::warning::Smoke test never returned 200 from $URL — check container logs on the host."
+          # Warning, not failure: the container may need >30s for slow models
+          # (ESM-2 download) on first boot. Don't fail the workflow over it.
+
+      - name: Clean up SSH key
+        if: always()
+        run: |
+          rm -f ~/.ssh/deploy_key
