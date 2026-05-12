@@ -8,7 +8,7 @@
 
 | Person | Role | Owns |
 |---|---|---|
-| **Said Azaizah** | Founder, full-stack architect | Platform code, design, deployment, AI integration, observability, technology choices |
+| **Said Azaizah** | Lead developer, full-stack architect | Platform code, design, deployment, AI integration, observability, technology choices |
 | **Dr. Peleg Ragonis-Bachar** (Technion) | Scientific algorithms + benchmark data | Scientific definitions (FF-Helix, FF-SSW, SSW logic), Staphylococcus 2023 dataset, threshold justifications, paper science |
 | **Dr. Aleksandr Golubev** (DESY) | Scientific advisor + project management | Scientific direction, DESY infrastructure liaison, AI-platform vision (Phase G), grant pathways |
 
