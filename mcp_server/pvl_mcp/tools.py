@@ -6,21 +6,17 @@ docstring is what the LLM "sees" when deciding whether to use the tool — keep
 it scientific, concrete, and aligned with Peleg's category definitions in
 ``prompts.py``.
 
-Backend wiring status (2026-05-08, post Wave 2 §D):
+Backend wiring status (2026-05-12, post Wave 2 §I — all 7 tools LIVE):
 
-| Tool                     | Backend route                            | Status |
-| ------------------------ | ---------------------------------------- | ------ |
-| search_uniprot           | POST /api/uniprot/execute                | LIVE   |
-| analyze_sequences        | POST /api/predict + POST /api/upload-csv | LIVE   |
-| find_similar_peptides    | POST /api/peptides/similar               | LIVE (Wave 2 §D, ADR-016) |
-| get_pvl_version          | GET  /api/version                        | LIVE   |
-| get_peptide_detail       | GET  /api/peptide/{accession}            | TODO (Wave 2 §I) |
-| rank_candidates          | POST /api/rank                           | TODO (Wave 2 §I) |
-| compare_cohorts          | POST /api/compare                        | TODO (Wave 2 §I) |
-
-Tools whose backend route is TODO will still register with the MCP client
-but raise ``PVLAPIError`` with a clear "endpoint not yet implemented" message
-when invoked — this keeps the MCP surface stable while the backend catches up.
+| Tool                     | Backend route                              | Status |
+| ------------------------ | ------------------------------------------ | ------ |
+| search_uniprot           | POST /api/uniprot/execute                  | LIVE   |
+| analyze_sequences        | POST /api/predict + POST /api/upload-csv   | LIVE   |
+| find_similar_peptides    | POST /api/peptides/similar                 | LIVE (Wave 2 §D, ADR-016) |
+| get_pvl_version          | GET  /api/version                          | LIVE   |
+| get_peptide_detail       | GET  /api/peptide/{accession}              | LIVE (Wave 2 §I) |
+| rank_candidates          | POST /api/rank                             | LIVE (Wave 2 §I) |
+| compare_cohorts          | POST /api/compare                          | LIVE (Wave 2 §I) |
 """
 
 from __future__ import annotations
@@ -183,7 +179,7 @@ def register_tools(mcp: Any) -> None:
         )
 
     # -----------------------------------------------------------------------
-    # 3. get_peptide_detail — wraps GET /api/peptide/{accession}  (TODO backend)
+    # 3. get_peptide_detail — wraps GET /api/peptide/{accession}  (Wave 2 §I)
     # -----------------------------------------------------------------------
     @mcp.tool()
     async def get_peptide_detail(
@@ -194,20 +190,25 @@ def register_tools(mcp: Any) -> None:
             ),
         ],
     ) -> dict[str, Any]:
-        """Return all PVL data for a single peptide.
+        """Return the indexed PVL row for a single peptide.
 
-        Includes biochem metrics (length, charge, hydrophobicity, μH), all
-        four classification flags (helixFlag, ffHelixFlag, sswPrediction,
-        ffSswFlag), provider raw outputs (TANGO peaks, S4PRED helix segments),
-        and structure metadata (PDB / AlphaFold link if available).
+        Includes biochem metrics (length, charge, hydrophobicity, μH) and
+        all four classification flags (helixFlag, ffHelixFlag, sswPrediction,
+        ffSswFlag) that were stored at index time. For full-pipeline data
+        (TANGO curves, S4PRED segments, structure overlays) re-run the
+        peptide through ``analyze_sequences`` — the vector index only
+        stores the narrow subset used by the classification pills.
+
+        Returns 404 if the peptide is not in the index. Call
+        ``analyze_sequences`` first to auto-index.
         """
-        # CodeRabbit #6: URL-encode accession so reserved characters
-        # (e.g. forward-slash variants in synthetic IDs) don't malform the route.
+        # URL-encode the accession so reserved characters (e.g. synthetic IDs
+        # containing '/' or '#') don't malform the route. CodeRabbit #6.
         safe_accession = quote(accession, safe="")
         return await _client.request("GET", f"/api/peptide/{safe_accession}")
 
     # -----------------------------------------------------------------------
-    # 4. rank_candidates — wraps POST /api/rank  (TODO backend)
+    # 4. rank_candidates — wraps POST /api/rank  (Wave 2 §I)
     # -----------------------------------------------------------------------
     @mcp.tool()
     async def rank_candidates(
@@ -220,32 +221,36 @@ def register_tools(mcp: Any) -> None:
         dataset_id: Annotated[
             Optional[str],
             Field(
-                description="Server-side dataset identifier. Pass either this OR sequences.",
+                description="Server-side dataset identifier (the inputs-hash from a prior analysis). Pass either this OR sequences.",
             ),
         ] = None,
         preset: Annotated[
             str,
             Field(
-                description="Ranking preset. One of: 'equal', 'helix-focus', 'fibril-formation-focus', 'switch-focus'.",
+                description="Ranking preset. One of: 'equal', 'amyloid' (Fibril-formation Focus), 'helix' (Helix Focus), 'switch' (Switch Focus).",
             ),
         ] = "equal",
         weights: Annotated[
             Optional[dict[str, float]],
             Field(
-                description="Custom weights map (overrides preset). Keys are signal names, values are non-negative weights.",
+                description="Custom proportional weights map (overrides preset). Keys are metric names (s4predHelixPercent, muH, hydrophobicity, ffHelixPercent, sswScore, tangoAggMax, absCharge), values are non-negative weights.",
             ),
         ] = None,
         top_n: Annotated[
             int,
-            Field(description="Number of top peptides to return."),
+            Field(description="Number of top peptides to return.", ge=1, le=1000),
         ] = 10,
     ) -> dict[str, Any]:
         """Rank a peptide set by configurable multi-signal weights.
 
-        PVL ranking is multi-signal by design (helix score, FF-Helix flag,
-        SSW indecisiveness, hydrophobicity, charge, μH); never rely on TANGO
-        alone. Use one of the named presets unless the user has a reason to
-        diverge.
+        PVL ranking is multi-signal by design — composite score is a
+        percentile-weighted average across S4PRED helix %, hydrophobic
+        moment (uH), hydrophobicity (and optionally TANGO aggregation,
+        FF-Helix %, SSW score, absolute charge). Never rely on TANGO alone
+        — use the ``amyloid`` preset for fibril-formation focus instead.
+
+        Each result includes a ``reasons`` list explaining the top
+        contributors to its composite score (e.g. "high S4PRED Helix % (p87)").
         """
         if (sequences is None) == (dataset_id is None):
             raise _client.PVLAPIError(
@@ -261,7 +266,7 @@ def register_tools(mcp: Any) -> None:
         return await _client.request("POST", "/api/rank", json=payload)
 
     # -----------------------------------------------------------------------
-    # 5. compare_cohorts — wraps POST /api/compare  (TODO backend)
+    # 5. compare_cohorts — wraps POST /api/compare  (Wave 2 §I)
     # -----------------------------------------------------------------------
     @mcp.tool()
     async def compare_cohorts(
