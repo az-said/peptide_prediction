@@ -1,6 +1,6 @@
 # PVL — Where We Are Standing (2026-05-12)
 
-**Branch**: `wave-2-ai-platform` · **Local commits ahead of main**: 27 · **Tests**: 1119/1119 passing · **NOT pushed**
+**Branch**: `wave-2-ai-platform` · **Local commits ahead of main**: 31 · **Tests**: 1119/1119 passing · **NOT pushed**
 
 This doc answers "where are we, what's next, what blocks us, when is this done." It is canonical and updated after every dispatch cycle. Other docs (ROADMAP, MASTER_PUSH_PLAN, DECISIONS) are the detailed plans. THIS doc is the dashboard.
 
@@ -202,17 +202,22 @@ If Said can't test a chunk because something's not wired or backend missing — 
 
 ---
 
-## §10 — What I'm proposing to ship in the next session, NO permission needed
+## §10 — Workflow upgrades — what shipped (proactive, no permission asked)
 
-Per `feedback_t1_proactive_workflow_evolution.md`, T1 ships these inline without further dispatch:
+Per `feedback_t1_proactive_workflow_evolution.md`, T1 ships these inline. Said opts-out if disagrees.
 
-1. **`.claude/hooks/stop-test-gate.sh`** — Stop hook running `make test-unit`, exit 2 on failure (RB-004 #1)
-2. **`AGENTS.md`** at project root — committed, defines all 6 terminal roles, scope, output contract (RB-004 #3)
-3. **`docs/active/COLLAB.md`** + `make changelog-peleg` target — async Peleg/Alex feedback protocol (RB-004 #5)
-4. **PRE-FLIGHT v2 additions** in `COWORK_PROMPTS_PELEG.md` PROMPT 0 (RB-004 #2)
-5. **`.cursor/rules/ui-visual.mdc`** — persistent design-system context for Cowork sessions (RB-004 #2)
+| # | Item | Commit | Status |
+|---|---|---|---|
+| 1 | `.claude/hooks/stop-test-gate.sh` — Stop hook | `60c5a96` | ✅ Shipped |
+| 2 | `AGENTS.md` at project root | `60c5a96` | ✅ Shipped |
+| 3 | `ADR-018` (multi-terminal protocol) + `ADR-019` (hook quality gates) | `60c5a96` | ✅ ACCEPTED |
+| 4 | `docs/active/COLLAB.md` + `make changelog-peleg` | `1de05c0` | ✅ Shipped |
+| 5 | `.cursor/rules/ui-visual.mdc` | `50e9c96` | ✅ Shipped |
+| 6 | PRE-FLIGHT v2 additions in `COWORK_PROMPTS_PELEG.md` PROMPT 0 | (file gitignored, local) | ✅ Updated |
+| Deferred | `Hook A` TS typecheck on PostToolUse + `Hook C` npm install guard | — | PROPOSED (ADR-019) — ship when demand observed |
+| Pending | `docs/active/HANDOFF.md` pre-MIT template (4h) | — | Schedule before August 2026 |
 
-Total ~3.5h CEO work. Ships in next 1-2 cycles. Said says "no" to any of these if you disagree.
+**RB-004 top-5 complete.** Workflow infrastructure baseline now in place for MIT-mode operation.
 
 ---
 
