@@ -187,6 +187,8 @@ def process_single_sequence(
     df: pd.DataFrame,
     threshold_config_requested: Optional[Dict[str, Any]],
     threshold_config_resolved: Dict[str, Any],
+    sequence_source: str = "manual",
+    permalink: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
     Process a single sequence through the prediction pipeline.
@@ -266,6 +268,20 @@ def process_single_sequence(
         _compute_reproducibility_primitives(entry_id, seq, ssw_hits)
     )
 
+    # Wave 2 §G / ADR-013 — FAIR provenance stamp. Single-sequence runs have
+    # no batch dataset id, so we omit datasetId entirely (helper drops None).
+    from services.run_metadata import build_run_metadata as _build_run_metadata
+
+    _merged_thresholds = {**resolved_thresholds, **ff_thresholds_used}
+    _run_metadata = _build_run_metadata(
+        sequence_source=sequence_source,
+        thresholds=_merged_thresholds,
+        use_tango=settings.USE_TANGO,
+        use_s4pred=settings.USE_S4PRED,
+        dataset_id=None,
+        permalink=permalink,
+    )
+
     # Build complete meta structure
     meta_dict = ensure_trace_id_in_meta(
         {
@@ -281,7 +297,9 @@ def process_single_sequence(
             "providerStatusSummary": provider_status_summary,
             "thresholdConfigRequested": threshold_config_requested,
             "thresholdConfigResolved": threshold_config_resolved,
-            "thresholds": {**resolved_thresholds, **ff_thresholds_used},
+            "thresholds": _merged_thresholds,
+            # Wave 2 §G — provenance for reproducible CSV/JSON exports.
+            "runMetadata": _run_metadata,
         }
     )
 
@@ -304,5 +322,17 @@ def process_single_sequence(
     # --- Cache store ---
     set_cached(ck, seq, result)
     log_info("cache_store", f"Cached result for {entry_id}", sequence_len=len(seq))
+
+    # Wave 2 §D: best-effort vector indexing of the analyzed peptide. Failures
+    # are swallowed by vector_store.index_peptide so the predict response is
+    # never affected. Cache hits skip this path because the row was indexed on
+    # its first analysis.
+    try:
+        from services import vector_store
+
+        if vector_store.is_enabled():
+            vector_store.index_peptide(row_data)
+    except Exception as _exc:  # pragma: no cover — defensive
+        log_warning("vector_index_predict_swallow", f"Indexing swallowed: {_exc}")
 
     return result

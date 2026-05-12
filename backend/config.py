@@ -266,6 +266,43 @@ class Settings:
     """Debug entry ID for tracing specific peptide through pipeline (optional)"""
 
     # ============================================================================
+    # Vector similarity search — Wave 2 §D (ADR-016: LanceDB embedded)
+    # ============================================================================
+    # The vector store is an in-process LanceDB. Auto-indexing is best-effort:
+    # any failure (missing model, no internet on first model download, disk full,
+    # etc.) is logged and analysis still succeeds. Disable entirely via
+    # VECTOR_INDEX_ENABLED=0 — useful for environments with no GPU/internet
+    # where the sentence-transformers model can't be loaded.
+
+    VECTOR_INDEX_ENABLED: bool = _env_bool("VECTOR_INDEX_ENABLED", True)
+    """Master switch for the LanceDB vector index. When False, both auto-indexing
+    on ingest and the /api/peptides/similar route short-circuit (route returns an
+    empty result list with method="disabled"). Set to 0 in environments where the
+    embedding model cannot be loaded."""
+
+    LANCE_DB_PATH: str = os.getenv("LANCE_DB_PATH", "").strip() or str(
+        _REPO_ROOT / "data" / "lance"
+    )
+    """Filesystem path for the LanceDB Lance files. Default: <repo_root>/data/lance/.
+    Volume-mount this directory in Docker so embeddings survive container restarts."""
+
+    EMBEDDING_PROVIDER: str = os.getenv("EMBEDDING_PROVIDER", "local-esm2-8m").strip().lower()
+    """Embedding provider for vector search. Currently supported: 'local-esm2-8m'
+    (ESM-2 8M protein LM, 320-dim, CPU-fast). ADR-017 supersedes the provisional
+    'local-minilm' choice (RB-003 showed generic English LMs produce biologically
+    invalid embeddings for peptide sequences)."""
+
+    EMBEDDING_MODEL_NAME: str = os.getenv("EMBEDDING_MODEL_NAME", "facebook/esm2_t6_8M_UR50D")
+    """HuggingFace model id for the local embedding provider. Default is
+    Meta AI's ESM-2 8M (Lin et al., Science 2023). Override only if you have
+    a domain-specific protein LM already cached on disk."""
+
+    VECTOR_DIM: int = int(os.getenv("VECTOR_DIM", "320"))
+    """Embedding vector dimension. Must match the provider; ESM-2 8M = 320.
+    Changing this requires reindexing — Lance schema is dimension-locked.
+    Use ``python -m backend.scripts.reindex_lance`` to migrate after swap."""
+
+    # ============================================================================
     # Default Threshold Values (for threshold resolution service)
     # ============================================================================
 

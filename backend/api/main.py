@@ -18,7 +18,17 @@ from sentry_sdk.integrations.logging import LoggingIntegration
 from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import routers
-from api.routes import example, feedback, health, jobs, predict, providers, uniprot, upload
+from api.routes import (
+    example,
+    feedback,
+    health,
+    jobs,
+    peptides,
+    predict,
+    providers,
+    uniprot,
+    upload,
+)
 from config import settings
 from services.logger import get_logger, log_error, log_info, set_trace_id
 
@@ -227,6 +237,7 @@ app.include_router(providers.router)
 app.include_router(uniprot.router)
 app.include_router(feedback.router)
 app.include_router(jobs.router)
+app.include_router(peptides.router)
 
 
 # Configure thread pool for asyncio.to_thread() — allows concurrent analysis requests.

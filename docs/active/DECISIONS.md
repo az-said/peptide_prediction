@@ -94,14 +94,14 @@ See also: `TECH_PLATFORM_VISION.md` for the longer-form platform thesis and tech
 
 ---
 
-## ADR-009 — MCP server as the AI-platform front door (proposed)
+## ADR-009 — MCP server as the AI-platform front door
 
-**Date**: 2026-05-07 · **Status**: PROPOSED (target v0.2 summer 2026)
+**Date**: 2026-05-07 · **Accepted**: 2026-05-08 · **Status**: ACCEPTED (Wave 2 §A) · **Local SHA**: 80a514f
 **Context**: Anthropic's MCP (Model Context Protocol) is being adopted by Claude Desktop, Cursor, Windsurf, Continue, and other major LLM clients. The protocol defines how an LLM agent calls external tools. PVL has a REST API that maps cleanly to MCP tools.
 **Decision**: when AI agent integration matures (Phase G1), expose PVL as an MCP server, NOT as a custom chat UI built into the web app. Researchers already use Claude Desktop / Cursor / their own agents — they don't need another chatbot, they need a tool their existing agent can call.
 **Reasoning**: standardize on the protocol the ecosystem converges on. Don't build a chatbot when the user already has one. Future-proof: MCP becoming the cross-vendor standard means PVL is automatically available to whichever LLM the researcher prefers.
-**Implication**: every PVL REST endpoint should map cleanly to an MCP tool. Endpoints designed with this in mind from now on (clean inputs, structured outputs, no UI-specific fields). The MCP server lives in a new `mcp_server/` directory at repo root.
-**Evidence**: roadmap Phase G1, `TECH_PLATFORM_VISION.md` §4.
+**Implication**: every PVL REST endpoint should map cleanly to an MCP tool. Endpoints designed with this in mind from now on (clean inputs, structured outputs, no UI-specific fields). The MCP server lives in `mcp_server/` at repo root and ships seven tools: `search_uniprot`, `analyze_sequences`, `get_peptide_detail`, `rank_candidates`, `compare_cohorts`, `find_similar_peptides`, `get_pvl_version`. Three are LIVE today (`search_uniprot`, `analyze_sequences`, `get_pvl_version`); the remaining four wrap documented backend paths that ship in subsequent waves.
+**Evidence**: `mcp_server/`, `docs/active/MCP_RUNBOOK.md`, roadmap Phase G1, `TECH_PLATFORM_VISION.md` §4.
 
 ---
 
@@ -135,6 +135,97 @@ See also: `TECH_PLATFORM_VISION.md` for the longer-form platform thesis and tech
 **Reasoning**: a contributor base requires active management; an AI tool doesn't. The two are complementary — contributors are welcome via CONTRIBUTING.md but never required.
 **Implication**: CONTRIBUTING.md sets clear "no expectations" tone — responses in 1-4 weeks, suggestions accepted without commitment. Said does NOT actively recruit contributors.
 **Evidence**: `.github/dependabot.yml`, `.coderabbit.yaml`, `CONTRIBUTING.md`.
+
+---
+
+## ADR-013 — PVL exports include FAIR metadata + BibTeX
+
+**Date**: 2026-05-08 · **Status**: ACCEPTED · **Authors**: Said + T-RES + T1
+**Context**: Researchers using PVL in publications need citable, reproducible output. No competitor (TANGO web, PASTA 2.0, AGGRESCAN, Waltz, AggreProt) provides metadata-stamped exports or pre-filled citations. RB-001 §5 ranked these as the top-3 highest-leverage features (impact × 1/cost).
+**Decision**: All CSV/JSON exports SHALL include: predictor name + version, threshold values per predictor, run date (ISO 8601), sequence source (FASTA / UniProt / manual). A "Download BibTeX" button on Results.tsx SHALL produce a `.bib` file pre-filled for TANGO + S4PRED + Hamodrakas 2007 + PVL itself. BibTeX is FRONTEND-STATIC for v0.x — predictor versions don't change often enough to need backend round-trip.
+**Reasoning**: Pragmatic FAIR compliance without full RO-Crate overhead. Aligns with JOSS paper-readiness + ELIXIR bio.tools registration. Total effort < 14 h (2h BibTeX + 4h metadata-CSV + 8h FASTA bulk).
+**Implication**: `backend/schemas/api_models.py` receives a NEW NULLABLE `run_metadata: Optional[RunMetadata]` field (backwards-compatible — null for clients that don't request it). Frontend `ui/src/lib/exportBibtex.ts` is a static string builder, no API call. FASTA bulk parser added to backend ingestion path. Wave assignment: Wave 1 quick-wins, ship pre-MIT (before Sept 2026).
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-001_researcher-needs.md` §3 categories B+D+E, §5 features 1-3.
+
+---
+
+## ADR-014 — Predictor disagreement + gold-standard accuracy in UI
+
+**Date**: 2026-05-08 · **Status**: ACCEPTED · **Authors**: Said + Peleg + T-RES + T1 · **Peleg cleared dataset**: 2026-05-08
+**Context**: Researchers cannot tell from any existing peptide prediction tool whether to trust a prediction. The 2021 Briefings in Bioinformatics benchmark (Table 1) showed wide accuracy variance across 9 tools (CIs 68–87.6%). PVL's consensus module already computes multi-predictor agreement; the Staphylococcus 2023 dataset (N=2916, 66 validated) is owned by Peleg.
+**Decision**: Results dashboard SHALL display:
+  (a) **Consensus confidence indicator** showing how many predictors agree on each classification (e.g. "2 of 3 algorithms agree — moderate confidence"). UI-only change, ships in this wave.
+  (b) **Gold-standard accuracy badge** showing PVL's sensitivity on the Staphylococcus 2023 benchmark (N=66 validated) at current threshold settings. **Peleg cleared 2026-05-08** — dataset can be displayed publicly with attribution to Peleg (Technion). Citation in About page + accuracy card.
+**Reasoning**: Strongest trust signal in the aggregation prediction space. Competitor gap (no tool surfaces predictor disagreement or accuracy in-UI).
+**Implication**: Disagreement score: 8h, Wave 2, files `ui/src/components/ResultsKpis.tsx` + `ui/src/lib/consensus.ts`, new `ui/src/components/TrustSignalCard.tsx`. Accuracy badge: 12h, also Wave 2, requires precomputed accuracy curves per threshold combination as static JSON (build-time artifact, runtime cost zero). Peleg credited in About page + dataset README.
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-001_researcher-needs.md` §3 category F, §5 feature 4. Memory: `project_peleg_columns.md`.
+
+---
+
+## ADR-020 — Phase G2 Scientific RAG architecture (agentic PaperQA2-pattern, zero hallucinated citations)
+
+**Date**: 2026-05-12 · **Status**: PROPOSED · **Authors**: T5 (RB-005) + T1 + Said
+**Pending**: Peleg axiom registry review (~1-2 weeks) + Alex sign-off on hallucination-guard rules
+**Context**: Phase G1 (MCP server) is LIVE; Phase G2 (scientific RAG with PubMed citations) is the next AI surface per ROADMAP Phase G. RB-005 evaluated naive RAG vs agentic RAG vs ChemCrow vs PaperQA2 patterns. PaperQA2 (Future House, Apache 2.0, peer-reviewed *arXiv 2409.13740*) achieves 0% citation hallucination on scientific QA vs 40-60% for raw LLMs. Said's directive 2026-05-12 (A.14): ZERO tolerance for AI-generated text without retrieved-paper backing. Peleg's FIX-013 (killing ConsensusTier for unjustified math) defines her line: any domain claim must derive from a tool-call to her axiom registry.
+**Decision**: Adopt PaperQA2-pattern agentic RAG for Phase G2. Five tools: (1) `query_pvl`, (2) `search_pubmed`, (3) `retrieve_paper_chunk`, (4) `lookup_peleg_axiom`, (5) `compute_disagreement`. ReAct loop with Anthropic Claude Sonnet 4.6 default, Helmholtz Blablador (`helmholtz-blablador.fz-juelich.de`) as on-prem opt-in via `LLM_PROVIDER=helmholtz`. Extend LanceDB (ADR-016) with new `papers` table — no new infrastructure. Anthropic Citations API for per-passage attribution (`cited_text` field, generally available since Jan 2025). Five hallucination guards: tool-call gate + citation round-trip + axiom-shield + system prompt invariant + 6-month audit log (EU AI Act Article 12 compliance).
+**Reasoning**: Naive RAG fails 40% on multi-hop scientific questions. PaperQA2 pattern is the only architecture that survives Peleg's zero-tolerance rule. Helmholtz Blablador gives DESY-hosted PVL on-prem LLM option without new infra work. Audit log is EU AI Act compliance + JOSS-paper-ready provenance.
+**Implication**: New `backend/services/g2_agent.py`. Extended LanceDB schema with `papers` table. New `data/axioms.json` (Peleg-reviewed). New `backend/api/routes/g2.py` (`POST /api/g2/explain`). MCP tool 8 (`explain_peptide`). Frontend `ExplainPanel.tsx` with cite-hover (NotebookLM-style). G2 MVP scope: explain one peptide at a time with PubMed citations. ~40h, target Wave 3, 4-6 weeks wall-clock. Peleg axiom review is critical-path gate.
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-005_workflow-and-ai-platform-deep.md` §5, FutureHouse PaperQA2 [arXiv 2409.13740], Anthropic Citations API docs (Jan 2025), EU AI Act Article 12 (Aug 2026 deadline), Helmholtz Blablador (helmholtz-blablador.fz-juelich.de).
+
+---
+
+## ADR-018 — Multi-terminal orchestration protocol (AGENTS.md + STATUS.md as canonical surfaces)
+
+**Date**: 2026-05-12 · **Status**: ACCEPTED · **Authors**: Said + T-RES (RB-004) + T1
+**Context**: PVL uses 4-6 Claude Code terminals (T1 CEO, T2 backend, T3 frontend, T5 research, Cowork visual, T-PEL Peleg-feedback). No committed file legibly described which terminal does what, what's forbidden, and how they coordinate. Said had to invent the multi-terminal pattern, the CEO role, and the T5 distinction — symptom of T1 not proposing infrastructure proactively (`feedback_t1_proactive_workflow_evolution.md`). Without this protocol committed at repo root, a future maintainer or Said-after-MIT-absence cannot rebuild context.
+**Decision**: Adopt **`AGENTS.md`** at project root (committed, public) as the canonical role map. Every terminal reads it at session start. Adopt **`docs/active/STATUS.md`** as the always-up-to-date dispatch dashboard — T1 updates it after every cycle. Per-terminal instructions (`TX-INSTRUCTIONS.md`) stay gitignored — those are working specs, not canonical roles.
+**Reasoning**: AGENTS.md is the legible map; STATUS.md is the live state. Together they let a fresh terminal — or Said after a 3-month gap — re-enter the project without T1 context. Addy Osmani's multi-agent research (RB-004 §3) confirms human-curated AGENTS.md files improve agent success vs AI-written ones. The 3-5 effective-terminal sweet spot matches PVL's persistent set (T1/T2/T3/T5).
+**Implication**: T1 maintains AGENTS.md (proactive review quarterly) + updates STATUS.md after every dispatch. Sub-terminal instructions docs reference AGENTS.md rather than re-declaring roles. Any new terminal role (e.g., future T-OPS for observability) requires an AGENTS.md update first.
+**Evidence**: `AGENTS.md` (this commit), `docs/active/STATUS.md`, RB-004 §3 Domain 3, RB-COWORK-AUDIT.
+
+---
+
+## ADR-019 — Claude Code hook quality gates (Stop+test, future TS typecheck + npm guard)
+
+**Date**: 2026-05-12 · **Status**: ACCEPTED (Stop hook); PROPOSED (TS typecheck + npm guard — Wave 0.3 follow-up) · **Authors**: Said + T-RES (RB-004) + T1
+**Context**: `.claude/settings.json` had 4 hooks: API contract guard (PreToolUse Write), git-push warning (PreToolUse Bash), ruff format (PostToolUse), prettier format (PostToolUse). All hooks were correctness-adjacent (formatting + critical-file protection) but none verified that tests still pass. Per Said directive 2026-05-12 (`feedback_simplicity_and_testability.md`), the #1 friction is "I couldn't make sure it worked" — that's exactly what a Stop+test gate addresses.
+**Decision**: Add a `Stop` hook (`.claude/hooks/stop-test-gate.sh`) that runs `backend/.venv/bin/python -m pytest -q tests/` + `npx vitest run` if code changes are present in this session, and exits 2 on any failure. Future Wave 0.3 follow-up: TS typecheck on PostToolUse (Hook A from RB-004) and npm install guard on PreToolUse Bash (Hook C). Those ship when their value is observed (i.e., when type regressions or supply-chain hallucinations actually occur).
+**Reasoning**: Said's biggest friction is verification. Stop+test gate is the cheapest, highest-leverage automation to ensure no session closes with red tests. Per Anthropic's documented Stop+exit-2 pattern, Claude sees stderr and self-corrects within the same session.
+**Implication**: Sessions that introduce failing tests cannot close cleanly — Claude must fix or explicitly explain the intentional red state. Hook gracefully skips if `backend/.venv` or `ui/node_modules` aren't present (fresh-clone friendly). Skips if no code diffs in the session (docs-only / research sessions don't trigger tests).
+**Evidence**: `.claude/hooks/stop-test-gate.sh`, `.claude/settings.json`, RB-004 §3 Domain 1.
+
+---
+
+## ADR-017 — Embedding model: ESM-2 8M (supersedes provisional all-MiniLM-L6-v2)
+
+**Date**: 2026-05-12 · **Status**: ACCEPTED · **Authors**: Said + T-RES + T1
+**Context**: ADR-016 locked LanceDB as the vector store but left the embedding model open. T2 Section D shipped (commit `8e907fc`) using provisional `sentence-transformers/all-MiniLM-L6-v2` (384-dim). RB-003 found this is a **correctness failure**, not a tradeoff — MiniLM is trained on 1B English sentence pairs with no amino acid vocabulary; embeddings of peptide sequences capture letter-frequency patterns, not biological signal. Any nearest-neighbor result is biologically meaningless.
+**Decision**: Replace all-MiniLM-L6-v2 with **ESM-2 8M** (`facebook/esm2_t6_8M_UR50D`, MIT license) as the production embedding model. Output: 320-dim sequence embedding via mean-pooled residue embeddings. Compute: CPU-only (no GPU). Model loaded lazily at first embed call (~150–250 MB RAM, ~30 MB disk). One-time LanceDB table drop + recreate to switch schema dim 384 → 320. Reindex of all existing peptides via `python -m backend.scripts.reindex_lance`.
+**Reasoning**: ESM-2 (Lin et al., *Science* 2023, doi:10.1126/science.ade2574) is the smallest peer-reviewed protein language model trained on 250M UniRef50 sequences with biologically grounded representations of evolutionary conservation, structural context, and biochemical properties. 8M variant fits CX33 RAM budget with ~3 GB headroom; CPU inference ~10–50 ms for 5–100 AA peptides. PepBERT (peptide-specific, April 2025) would be marginally better scientifically but has no stable HuggingFace release and is too immature for solo-maintained production. Paid API embeddings violate ADR-011's offline-first requirement.
+**Implication**: T2 must (1) replace SentenceTransformer call in `backend/services/vector_store.py` with `transformers.AutoModel` + `AutoTokenizer` for `facebook/esm2_t6_8M_UR50D`; (2) change LanceDB schema embedding dim 384 → 320; (3) implement lazy-load pattern (avoid FastAPI cold-start health check timeout); (4) run one-time reindex script. `transformers` is already transitively available via `sentence-transformers`. Future upgrade path: PepBERT if it stabilizes, or ESM-2 35M if latency degrades at >500k peptides. **Priority interrupt**: this work happens BEFORE T2 §G — every peptide currently being indexed produces biologically invalid vectors.
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-003_embedding-model-evaluation.md`, Lin et al. Science 2023, PepBERT bioRxiv 2025.
+
+---
+
+## ADR-016 — Vector store: LanceDB embedded (supersedes provisional Chroma)
+
+**Date**: 2026-05-08 · **Status**: ACCEPTED · **Authors**: Said + T-RES + T1
+**Context**: Wave 2 §D implements `POST /api/peptides/similar`. MASTER_PUSH_PLAN.md §3 chose Chroma local provisionally without comparative research. RB-002 (T-RES, M-003) evaluated 8 candidates against PVL's binding constraints: MIT-compatible OSS (ADR-011), solo-maintainer ops burden (~2h/month after Sept 2026), no paid services, Hetzner CX33 VPS (8 GB RAM), <500 ms latency for k=10 at <1 M peptides, future portability to DESY K8s.
+**Decision**: Adopt LanceDB (Apache 2.0) in embedded mode as the vector store for PVL v0.x and v1.x. Store Lance files at `./data/lance` (volume-mounted in Docker). Migrate to pgvector when Postgres is introduced per MASTER_DEV_DOC D2 (multi-user auth phase — RB-002 estimates 2-4h migration effort).
+**Reasoning**: LanceDB is the only candidate satisfying all three binding constraints — zero-infra embedded mode, MIT-compatible OSS, crash-safe columnar persistence. Chroma has a documented HNSW index-growth bug (index never shrinks after deletes), known memory leaks under sustained load, and no crash-safe persistence — exactly the failure modes that kill a solo-maintained tool on a shared VPS. Qdrant/Weaviate/Milvus require a separate server process the solo maintainer cannot reliably operate. pgvector is the correct long-term answer but premature — adding Postgres solely for vector search violates D2. At <1 M peptides and 384-dim embeddings, LanceDB exceeds the <500 ms latency target by ~100x.
+**Implication**: T2 implements §D using `lancedb` Python package — single new backend dependency. Chroma never enters the codebase. New files: `backend/services/vector_store.py`, `backend/migrations/init_lance.py`. Modified: `backend/api/routes/peptides.py` (POST /api/peptides/similar route), `backend/config.py` (LANCE_DB_PATH setting, default `./data/lance`), `docker-compose.yml` (volume mount). Lance files are plain on-disk artifacts — VPS rsync/snapshot backup covers them automatically. Tech radar: LanceDB moves untracked → "adopt now". DESY K8s migration: volume mount maps to ReadWriteOnce PVC.
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-002_vector-store-evaluation.md`, AltexSoft Chroma audit, TigerData pgvector vs Qdrant benchmark, LanceDB embedded docs.
+
+---
+
+## ADR-015 — Jupyter notebook export targets public REST API (not pvl-py local install)
+
+**Date**: 2026-05-08 · **Status**: ACCEPTED · **Authors**: Said + T-RES + T1
+**Context**: RB-001 §5 ranks Jupyter notebook export as the top single adoption-leverage move for computational biology labs (PLOS Comp Biol 2024 BioConda + Jupyter benchmark). Two implementation options: (a) generated `.ipynb` calls the public PVL REST API directly — no local install needed; (b) generated `.ipynb` requires `pip install pvl-py` first.
+**Decision**: Notebook export uses option (a) — frictionless for the researcher (no install). Notebook includes a commented-out cell at the top showing how to swap to pvl-py for offline / batch use.
+**Reasoning**: Adoption matters more than offline correctness for v0.x. A notebook that "just works" when downloaded is a citable artefact; a notebook that requires `pip install` first creates a friction step that loses 50% of users at the first cell. pvl-py remains the alternative for power users.
+**Implication**: 20h effort, Wave 2-3. New `ui/src/lib/exportNotebook.ts` generates JSON. No new backend endpoint required (notebook calls existing public REST endpoints). API stability becomes more important — breaking changes to REST will break shipped notebooks. Versioning convention: notebook embeds the PVL version it was generated against; PVL keeps backwards compatibility for at least 12 months.
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-001_researcher-needs.md` §5 feature 5, §11 question 4.
 
 ---
 

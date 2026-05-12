@@ -95,7 +95,7 @@ Each wave is sized 1-3 months wall-clock (parallel agents make many items concur
 1. **MCP server (Phase G1)** — FastMCP wrapping every PVL endpoint, Claude Desktop tested
 2. **`pvl-py` real package** — Jupyter-native, used in 1+ test notebook
 3. **`pvl-cli` real package** — `pvl analyze` + `pvl rank` + `pvl export` working
-4. **Vector embedding similarity search** — Chroma local, "find peptides like this one"
+4. **Vector embedding similarity search** — LanceDB embedded (per ADR-016 / RB-002), "find peptides like this one"
 5. **Galagos-style auto-PDF** — multi-page scientific report per peptide via jsPDF + LLM-templated copy
 6. **Demo mode polish** — first-visit modal active, dataset auto-loaded, conversion measured via Sentry tag
 
@@ -139,7 +139,7 @@ Each wave is sized 1-3 months wall-clock (parallel agents make many items concur
 
 **Headline deliverables**:
 1. **PubMed integration** — query API, fetch abstracts
-2. **Vector embedding store** — Chroma or pgvector for paper abstracts (extends Wave 2 vector store)
+2. **Vector embedding store** — LanceDB embedded for paper abstracts (extends Wave 2 vector store; migrates to pgvector at D2 trigger per ADR-016)
 3. **Domain axiom library** — structured definitions of amyloid / SSW / FF-Helix / aggregation (Peleg-reviewed)
 4. **Citation verification** — never hallucinate DOIs; only cite papers PubMed returned
 5. **Per-peptide interpretation** — "P02743 (Serum amyloid P-component) shows 78% FF-Helix and high TANGO. Consistent with Pepys et al., Nature 2006…" with verified citation
@@ -247,7 +247,7 @@ Each wave is sized 1-3 months wall-clock (parallel agents make many items concur
 | **P0** | MCP server (Phase G1) | Differentiator. Makes PVL discoverable in every Claude Desktop / Cursor instance globally. |
 | **P0** | `pvl-py` real (B18) | Researchers in Jupyter notebooks don't switch to a browser. Critical for adoption. |
 | **P1** | `pvl-cli` real (B17) | Pipeline integration for batch labs. |
-| **P1** | Vector similarity search | "Find peptides like this one" is the #1 ask researchers have. Chroma local; small infra. |
+| **P1** | Vector similarity search | "Find peptides like this one" is the #1 ask researchers have. LanceDB embedded per ADR-016; zero infra. |
 | **P2** | Auto-PDF report (G5) | Galagos-style scientific PDF. High wow-factor for paper reviewers + bio.tools curators. |
 | **P2** | Demo mode polish + first-visit modal active | Conversion. v0.1.0 release-readiness. |
 
@@ -289,13 +289,13 @@ Each wave is sized 1-3 months wall-clock (parallel agents make many items concur
 - B17.7 Smoke tests
 - B17.8 Publish to test PyPI under `pvl-cli`
 
-#### VEC vector similarity search (~12-16h)
-- VEC.1 Pick: Chroma local (zero infra) — start here
-- VEC.2 Embedding model: Anthropic / OpenAI API for v0.x; later swap for local sentence-transformers
-- VEC.3 On peptide ingestion, compute embeddings for sequence + metadata; store in Chroma
-- VEC.4 New API endpoint `POST /api/peptides/similar` — `{accession, k}` → list of similar peptides with scores
-- VEC.5 UI surface: "Find similar peptides" button on PeptideDetail → opens drill-down with results
-- VEC.6 MCP tool `find_similar_peptides` (already in G1.2 list)
+#### VEC vector similarity search (~4-6h, was 12-16h — LanceDB embedded eliminates infra setup)
+- VEC.1 **LanceDB embedded** per ADR-016 / RB-002 (was Chroma; superseded for production reliability)
+- VEC.2 Embedding model: 384-dim all-MiniLM via sentence-transformers (default), swap-in for Anthropic embeddings (1024-dim) configurable. Final pick from M-004 brief.
+- VEC.3 On peptide ingestion, compute embeddings for sequence + metadata; store in Lance table at `./data/lance/peptides.lance`
+- VEC.4 New API endpoint `POST /api/peptides/similar` — `{reference_id, k?, dataset_id?}` → list of similar peptides with cosine distance scores. Frontend already wired (commit `4bca7e9`).
+- VEC.5 UI: "Find similar peptides" button on PeptideDetail (commit `707426b`, button shipped, awaits backend)
+- VEC.6 MCP tool `find_similar_peptides` (in G1.2 list — wires automatically once route is live)
 - VEC.7 Document in `docs/active/VECTOR_SEARCH_SPEC.md`
 
 #### G5 Auto-PDF report (~16-24h)
@@ -346,15 +346,55 @@ These get written into `T2-INSTRUCTIONS.md` / `T3-INSTRUCTIONS.md` / `COWORK_PRO
 
 ### 3.4 — Wave 2 success criteria
 
-- [ ] `claude` running locally with PVL MCP server can answer: "find me top 5 amyloid candidates from S.aureus length 10-50"
-- [ ] `pip install pvl-py` works from test PyPI; quickstart notebook runs to completion
-- [ ] `pvl analyze test.fasta` outputs results
-- [ ] "Find similar peptides" works for melittin and returns 5+ semantically similar entries
-- [ ] Auto-PDF report for melittin renders all 7 sections, embeds permalink, Peleg-reviews and approves
-- [ ] First-visit demo modal shows on fresh localStorage; coachmark walkthrough completes
-- [ ] All 887 prior tests still pass; Wave 2 adds 100+ new tests
-- [ ] Sentry has zero new error fingerprints attributed to Wave 2 work
-- [ ] Wave C email goes out with Wave 2 demo links
+**Status as of 2026-05-08 PM (local branch `wave-2-ai-platform`, 14 commits ahead of main, NOT pushed):**
+
+- [x] **MCP server scaffold** — `mcp_server/` with 7 tools, 33 tests. ADR-009 ACCEPTED. Commit `80a514f`.
+- [x] **Auto-PDF report renderer** — 6 panels, 42 tests. Commit `18b8e49`. **Wired in toolbar** `707426b`.
+- [x] **First-visit demo modal + coachmark walkthrough** — V8-1 refactor in place. Commits `1028891` + `707426b`.
+- [x] **SimilarPeptidesInspector frontend + button** — Commits `4bca7e9` + `707426b`. Backend route pending (Section D).
+- [x] **BibTeX export (RB-001 #1, ADR-013)** — `7cf6ee9`. 10 tests.
+- [x] **Peleg cleared Staphylococcus 2023 dataset for public display** — ADR-014 fully ACCEPTED `6225810`. Accuracy badge feature unblocked.
+- [ ] `claude` running locally with PVL MCP server can answer: "find me top 5 amyloid candidates from S.aureus length 10-50" — **manual test pending** (Said local box, see `MCP_RUNBOOK.md` §2.3)
+- [ ] `pip install pvl-py` works from test PyPI; quickstart notebook runs — **T2 §B in queue**
+- [ ] `pvl analyze test.fasta` outputs results — **T2 §C in queue**
+- [ ] "Find similar peptides" returns 5+ semantically similar entries — **T2 §D priority #1, blocked on RB-002 vector store brief (T-RES running)**
+- [ ] FASTA bulk upload (RB-001 #3, ADR-013) — **T2 §H + T3 §F**
+- [ ] `run_metadata` in CSV/JSON exports (RB-001 #2, ADR-013) — **T2 §G + T3 §I**
+- [ ] About page Peleg credit + Staphylococcus 2023 dataset card (ADR-014) — **T3 §E priority #1**
+- [ ] Gold-standard accuracy badge (RB-001 #4b, ADR-014) — **T2 produces threshold-curve JSON, T3 §H**
+- [x] **All prior tests still pass** — 1002/1002 passing (463 backend + 33 MCP + 506 frontend; +115 from baseline 887)
+- [ ] Sentry has zero new error fingerprints attributed to Wave 2 work — **measured after deploy**
+- [ ] Wave C email goes out with Wave 2 demo links — **after push**
+
+**Predictor disagreement score (RB-001 #4a)**: SKIPPED per Said directive 2026-05-08 — Peleg killed `ConsensusCard`/`ConsensusTier` in FIX-013 (2026-05-06) for unjustified tier math. Said: skip entirely, move on.
+
+### 3.5 — Current dispatch state (2026-05-12 evening — fifth cycle)
+
+T2 D-fix + T3 §G + T5 M-006 all delivered. Wave 2 §D is now end-to-end scientifically valid.
+
+| Terminal | Last delivery | Next chunk |
+|---|---|---|
+| **T2 (backend)** | ✅ D-fix ESM-2 swap (`81e77cc`, +7 tests) | §G run_metadata in CSV/JSON (4h, ADR-013), then §H FASTA bulk (8h), §I MCP routes (8h), §B pvl-py (12h), §C pvl-cli (8h). |
+| **T3 (frontend)** | ✅ §G wire SimilarPeptidesInspector → backend (`ba2c15d`, +36 tests). PVL "Find Similar" is now end-to-end. | §I run-metadata CSV preview (2h, blocked on T2 §G). Then §F FASTA UI (3h, blocked on T2 §H). Then §H accuracy badge (6h, blocked on T2 threshold-curve JSON). |
+| **T-RES (T5)** | ✅ RB-004 AI workflow infra (`9d0e8b5`, Tier 1 baseline). | Tier 2 deep-dive on M-002 hosting platforms when Said opens manual terminal. Background-agent missions reserved for Tier 1 quick scans only. |
+| **Cowork** | Idle since V9 | Wait for V10 polish round after Wave 2 ships end-to-end. |
+| **T-PEL** | Idle | Wait for next Peleg feedback batch. |
+
+**Current test totals**: 1119/1119 passing (491 backend + 34 MCP + 561 frontend + 33 mcp). Up from 887 baseline = +232 net new tests for Wave 2.
+
+### Earlier dispatch state (2026-05-12 — fourth cycle, priority interrupt) — superseded
+
+T-RES delivered RB-003 → ADR-017 ACCEPTED. **Priority interrupt**: T2 must fix the embedding model before progressing — RB-003 found `all-MiniLM-L6-v2` is biologically meaningless on amino acids (English text model). Swap to ESM-2 8M is a correctness fix.
+
+| Terminal | Last delivery | Next chunk |
+|---|---|---|
+| **T2 (backend)** | ✅ §D LanceDB backend (`8e907fc`) — but embedding model is wrong | **D-fix (priority interrupt, 3-5h)**: swap to ESM-2 8M per ADR-017; LanceDB dim 384→320; reindex. Then §G. See `T2-INSTRUCTIONS.md` D-fix section. |
+| **T3 (frontend)** | ✅ §E About page Peleg credit (`f3dfd13`) | §G wire SimilarPeptidesInspector → backend (3h, UNBLOCKED by §D). Embedding model swap doesn't change the API contract — T3 work proceeds in parallel with T2 D-fix. |
+| **T-RES (research)** | ✅ RB-002 LanceDB (`fb46b1c`), ✅ RB-003 ESM-2 (this commit) | Idle. Next mission queue: M-001 (MCP alternatives), M-005 (OSS adoption), M-006 (AI workflow). Pick when T1 needs strategic input. |
+| **Cowork** | Idle since V9 | Wait for V10 polish round after Wave 2 ships end-to-end. |
+| **T-PEL** | Idle | Wait for next Peleg feedback batch. |
+
+**Current test totals**: 1043/1043 passing. D-fix will require updating ~2 vector_store tests; net should remain >1040.
 
 ---
 

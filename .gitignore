@@ -1,10 +1,18 @@
 # 🔁 PYTHON
 backend/.venv/
+mcp_server/.venv/
+pvl-cli/.venv/
+pvl-py/.venv/
 __pycache__/
 *.pyc
 
 # Runtime cache (prevents uvicorn --reload from watching TANGO/PSIPRED outputs)
 backend/.run_cache/
+
+# Wave 2 §D — LanceDB local Lance files (vector embedding store, ADR-016).
+# Volume-mounted in Docker; in dev they live at <repo_root>/data/lance/.
+data/lance/
+backend/data/lance/
 
 # Legacy runtime directories (moved to .run_cache, but keep ignored for safety)
 backend/Tango/out/
@@ -75,11 +83,15 @@ Thumbs.db
 .coverage
 htmlcov/
 .pytest_cache/
+.ruff_cache/
 *.cover
 .hypothesis/
 
 # 🎯 TERMINAL ORCHESTRATION (temporary coordination files)
+# T-INSTRUCTIONS files are local terminal-specific guides; not committed.
+# T-RES-INSTRUCTIONS.md is the only one that's session-priming, not work-in-progress.
 T*-INSTRUCTIONS.md
+T*_DISPATCH_*.md
 PLAN.md
 RECOVERY_PROMPT.md
 TERMINAL_SETUP.md

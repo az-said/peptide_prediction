@@ -23,6 +23,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useDatasetStore } from "@/stores/datasetStore";
+import { useDemoStore } from "@/stores/demoStore";
 import { uploadCSV } from "@/lib/api";
 import type { DatasetMetadata } from "@/types/peptide";
 
@@ -117,6 +118,7 @@ export function useDemoMode(): DemoModeState {
   // ── Load strategy: JSON first, XLSX fallback ────────────────────────
   async function loadDemoDataset() {
     setIsDemoLoading(true);
+    useDemoStore.getState().setDemoLoading(true);
     setDemoError(null);
 
     const demoMeta: Partial<DatasetMetadata> = {
@@ -137,6 +139,7 @@ export function useDemoMode(): DemoModeState {
           } as DatasetMetadata);
           lsSet(LS_KEY_ACKNOWLEDGED, "true");
           setIsDemoLoading(false);
+          useDemoStore.getState().setDemoLoading(false);
           return;
         }
       }
@@ -168,6 +171,7 @@ export function useDemoMode(): DemoModeState {
       console.warn("[useDemoMode] Demo dataset load failed:", message);
     } finally {
       setIsDemoLoading(false);
+      useDemoStore.getState().setDemoLoading(false);
     }
   }
 
