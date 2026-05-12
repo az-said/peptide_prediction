@@ -2,6 +2,11 @@
  * CSS-only regular dot grid background pattern.
  * Adapts opacity automatically for dark/light mode.
  *
+ * Per Said directive 2026-05-12: viewport-fixed (not page-scrolling).
+ * The dots stay still while content scrolls past them — gives the page
+ * a calm, anchored feel rather than the parallax-of-a-parallax effect
+ * you get when the background scrolls with its container.
+ *
  * @example
  * <div className="relative min-h-screen">
  *   <BgDotGrid />
@@ -23,7 +28,7 @@ export function BgDotGrid({ opacity, spacing = 24, className }: BgDotGridProps) 
   return (
     <div
       className={cn(
-        "absolute inset-0 z-0 pointer-events-none overflow-hidden",
+        "fixed inset-0 z-0 pointer-events-none overflow-hidden",
         // Auto dark/light opacity if no override
         !opacity && "opacity-[0.15] dark:opacity-[0.06]",
         className
