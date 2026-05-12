@@ -1,0 +1,83 @@
+---
+description: Design system and visual conventions for PVL UI work. Fires on .tsx files in ui/src/components/ and ui/src/pages/.
+globs: ui/src/components/**/*.tsx,ui/src/pages/**/*.tsx,ui/src/components/**/*.ts
+alwaysApply: false
+---
+
+# PVL UI — Visual rules
+
+You are working on Peptide Visual Lab. Read these conventions before writing or modifying any visual code. Violating them produces design drift that T1 will reject.
+
+## Design language
+- **Light-first** by default. Dark mode must also render correctly. Test both.
+- **Stripe-level calm**: ample whitespace, subdued saturation, motion only when it serves a state change. No bouncing, no rainbow gradients, no oversaturated CTAs.
+- **Professional, not playful**. PVL is a scientific instrument. No emojis in production UI copy unless Said explicitly requests them.
+- **Mobile responsive at 375px width** is mandatory (`feedback_mobile_responsive.md`). Use `px-4 sm:px-6`, `grid-cols-1 sm:grid-cols-N`, `flex-wrap`.
+
+## Theme tokens (NEVER hardcode colors)
+- `bg-card`, `bg-background`, `bg-muted/30`
+- `text-foreground`, `text-muted-foreground`
+- `border-border`, `border-border/40`, `border-border/60`
+- Classification palette tokens (defined in `ui/src/index.css`):
+  - `--helix` (helix-positive peptides)
+  - `--ssw` (SSW-positive peptides)
+  - `--ff-helix` (fibril-forming helix candidates)
+  - `--ff-ssw` (fibril-forming SSW candidates)
+- Tailwind utility classes use these tokens — never write `#3b82f6` or `bg-blue-500`.
+
+## Component primitives
+- Use shadcn/ui: `Card`, `Button`, `Badge`, `Tabs`, `Tooltip`, `HoverCard`, `Dialog`, `Sheet`, `Collapsible`, `DropdownMenu`.
+- Icons: `lucide-react`. Standard size `w-4 h-4` for body, `w-3.5 h-3.5` for inline, `w-5 h-5` for hero.
+- Animations: `framer-motion` only. Calm easing (`easeInOut` or `easeOut`), 200-400ms durations. No spring bounce unless explicit.
+- Charts: `recharts` for standard charts (BarChart, ScatterChart, etc.). Raw SVG for custom (HelicalWheel, PositionBars).
+
+## Component pattern
+```typescript
+interface MyComponentProps {
+  peptides: Peptide[];
+  className?: string;
+}
+
+export function MyComponent({ peptides, className }: MyComponentProps) {
+  // hooks at top, then derived state, then handlers, then JSX
+}
+```
+- Named export, not default (except pages — those use default).
+- Props as explicit interface; never `Record<string, any>`.
+- No `any` types — use `Peptide` from `@/types/peptide` and other canonical types.
+
+## State
+- `Zustand` for global state: `datasetStore`, `thresholdStore`, `chartSelectionStore`, `demoStore`.
+- `useState` for local UI only. No new state libraries.
+- Use `??` not `||` for numeric fallbacks (`0` is a valid value).
+
+## Layout discipline
+- Page header pattern: subtitle + title + meta row. See `Results.tsx` and `PeptideDetail.tsx` for canonical layout.
+- KPI cards in a responsive grid `grid grid-cols-2 sm:grid-cols-4 gap-3` or `gap-4`.
+- Drill-down inspector via `useDrillDown` from `@/components/drilldown/DrillDownProvider`. Never duplicate the Sheet pattern.
+- BgDotGrid for hero backgrounds; never add another background pattern.
+
+## Pre-flight before creating a new component
+1. Search for existing: `grep -rn "<concept-keyword>" ui/src/components/ ui/src/pages/`
+2. Read any matches in full.
+3. Decide explicitly per match: extend / refactor / replace / leave alone. Justify in one sentence.
+4. Default = extend or refactor existing. Only create new if no existing component fits.
+
+## What NOT to do
+- Don't add CSS modules or styled-components. Tailwind only.
+- Don't add npm dependencies without flagging T1.
+- Don't write tests that test implementation details — test behavior.
+- Don't add unmotivated abstractions. The boring obvious version is preferred.
+- Don't generate emoji-heavy copy. Stripe-level means quiet.
+
+## Tests
+- Vitest + jsdom + `@testing-library/react`.
+- Test files in `__tests__/` siblings: `MyComponent.tsx` → `__tests__/MyComponent.test.tsx`.
+- Use factory functions for test data, not inline literals everywhere.
+
+## Reference (read these for style):
+- `ui/src/pages/Results.tsx` — page layout pattern
+- `ui/src/components/PeptideTable.tsx` — table pattern
+- `ui/src/components/ResultsKpis.tsx` — KPI card pattern
+- `ui/src/components/drilldown/SimilarPeptidesInspector.tsx` — drill-down content pattern
+- `AGENTS.md` (project root) — multi-terminal role map
