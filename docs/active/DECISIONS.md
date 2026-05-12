@@ -162,6 +162,28 @@ See also: `TECH_PLATFORM_VISION.md` for the longer-form platform thesis and tech
 
 ---
 
+## ADR-018 — Multi-terminal orchestration protocol (AGENTS.md + STATUS.md as canonical surfaces)
+
+**Date**: 2026-05-12 · **Status**: ACCEPTED · **Authors**: Said + T-RES (RB-004) + T1
+**Context**: PVL uses 4-6 Claude Code terminals (T1 CEO, T2 backend, T3 frontend, T5 research, Cowork visual, T-PEL Peleg-feedback). No committed file legibly described which terminal does what, what's forbidden, and how they coordinate. Said had to invent the multi-terminal pattern, the CEO role, and the T5 distinction — symptom of T1 not proposing infrastructure proactively (`feedback_t1_proactive_workflow_evolution.md`). Without this protocol committed at repo root, a future maintainer or Said-after-MIT-absence cannot rebuild context.
+**Decision**: Adopt **`AGENTS.md`** at project root (committed, public) as the canonical role map. Every terminal reads it at session start. Adopt **`docs/active/STATUS.md`** as the always-up-to-date dispatch dashboard — T1 updates it after every cycle. Per-terminal instructions (`TX-INSTRUCTIONS.md`) stay gitignored — those are working specs, not canonical roles.
+**Reasoning**: AGENTS.md is the legible map; STATUS.md is the live state. Together they let a fresh terminal — or Said after a 3-month gap — re-enter the project without T1 context. Addy Osmani's multi-agent research (RB-004 §3) confirms human-curated AGENTS.md files improve agent success vs AI-written ones. The 3-5 effective-terminal sweet spot matches PVL's persistent set (T1/T2/T3/T5).
+**Implication**: T1 maintains AGENTS.md (proactive review quarterly) + updates STATUS.md after every dispatch. Sub-terminal instructions docs reference AGENTS.md rather than re-declaring roles. Any new terminal role (e.g., future T-OPS for observability) requires an AGENTS.md update first.
+**Evidence**: `AGENTS.md` (this commit), `docs/active/STATUS.md`, RB-004 §3 Domain 3, RB-COWORK-AUDIT.
+
+---
+
+## ADR-019 — Claude Code hook quality gates (Stop+test, future TS typecheck + npm guard)
+
+**Date**: 2026-05-12 · **Status**: ACCEPTED (Stop hook); PROPOSED (TS typecheck + npm guard — Wave 0.3 follow-up) · **Authors**: Said + T-RES (RB-004) + T1
+**Context**: `.claude/settings.json` had 4 hooks: API contract guard (PreToolUse Write), git-push warning (PreToolUse Bash), ruff format (PostToolUse), prettier format (PostToolUse). All hooks were correctness-adjacent (formatting + critical-file protection) but none verified that tests still pass. Per Said directive 2026-05-12 (`feedback_simplicity_and_testability.md`), the #1 friction is "I couldn't make sure it worked" — that's exactly what a Stop+test gate addresses.
+**Decision**: Add a `Stop` hook (`.claude/hooks/stop-test-gate.sh`) that runs `backend/.venv/bin/python -m pytest -q tests/` + `npx vitest run` if code changes are present in this session, and exits 2 on any failure. Future Wave 0.3 follow-up: TS typecheck on PostToolUse (Hook A from RB-004) and npm install guard on PreToolUse Bash (Hook C). Those ship when their value is observed (i.e., when type regressions or supply-chain hallucinations actually occur).
+**Reasoning**: Said's biggest friction is verification. Stop+test gate is the cheapest, highest-leverage automation to ensure no session closes with red tests. Per Anthropic's documented Stop+exit-2 pattern, Claude sees stderr and self-corrects within the same session.
+**Implication**: Sessions that introduce failing tests cannot close cleanly — Claude must fix or explicitly explain the intentional red state. Hook gracefully skips if `backend/.venv` or `ui/node_modules` aren't present (fresh-clone friendly). Skips if no code diffs in the session (docs-only / research sessions don't trigger tests).
+**Evidence**: `.claude/hooks/stop-test-gate.sh`, `.claude/settings.json`, RB-004 §3 Domain 1.
+
+---
+
 ## ADR-017 — Embedding model: ESM-2 8M (supersedes provisional all-MiniLM-L6-v2)
 
 **Date**: 2026-05-12 · **Status**: ACCEPTED · **Authors**: Said + T-RES + T1

@@ -39,6 +39,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/stop-test-gate.sh"
+          }
+        ]
+      }
     ]
   }
 }

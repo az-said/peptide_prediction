@@ -16,9 +16,29 @@
 
 ---
 
-## §A — Questions T1 needs Said to answer BEFORE T5 starts
+## §A — Said's answers (provided 2026-05-12, inferred from his message + the priors below)
 
-These are the **human-touch and external-context inputs** T5 cannot get from the web or codebase. T5's recommendations are only as good as these answers.
+These are Said's directives. T5 must respect them as constraints, not re-litigate.
+
+- **A.1 Hours/day**: not a worry. 4 months until MIT is comfortable. Don't pad recommendations for "time-saving" — pad for "quality" and "Said-can-verify."
+- **A.3 Top friction**: TWO concrete pains in last 2 weeks — (1) Said couldn't manually verify that shipped work actually functioned end-to-end; (2) solutions felt over-complicated, hard to audit. T5 must propose workflow upgrades that surface live testability and bias to simplest implementation.
+- **A.5 Ambition**: keep shipping at current pace. "We should ship whatever is best." Don't slow down for handoff-only mode.
+- **A.9 Peleg fear**: "Don't be afraid from her. She does what researchers want. We should do what we find best, and make her try everything later on." Ship first, review fast. Peleg's review cycles drive the majority of future work — that's expected, not avoided.
+- **A.10 Alex's current Phase G priority**: "They would like a and b, but also whatever Alex said." Whatever Alex specified in ROADMAP Phase G — defer to his canonical write-up (G1 done, G2 RAG next, G3 long-term scientific OpenClaw).
+- **A.12 First-AI-interaction pick**: (a) Natural-language search + (b) generative explanation with citations. Both — this is the G2 MVP target.
+- **A.14 Citation-hallucination tolerance**: ZERO tolerance for AI-generated text without backing. "I don't want AI to be just a buzzword we add... we should really research and according to the things that Alex gave us how would ML help with our project, and try to solve the problem not integrate so we can say that we integrated, but rather actually add specific value." Every AI-generated sentence must cite a real paper PVL retrieved.
+- **A.16 Frustration / delight**: Loves Claude making insightful decisions without being asked. Hates having to invent workflow infrastructure himself (T5, CEO terminal, skills, memory files — all Said-invented). Wants T1/T5 to PROPOSE proactively.
+- **A.17 Perfect in 6 months**: AI integration that adds *specific value* matched to PVL's specific problem — not buzzword-driven. "What is the plan?" answered through Alex's vision + concrete G2 architecture.
+
+### Still-uncertain Said inputs (T5 may ask once if blocking, otherwise infer):
+
+- **A.7 Tamarind Bio personal read**: not given. T5 researches their public artifacts and proposes; Said reviews recommendation.
+- **A.8 Galagos.ai specific takeaway**: memory `reference_galagos.md` says "inspires Phase I multi-predictor + G5 auto-PDF" — work from that.
+- **A.11 DESY AI compliance**: not given. T5 assumes standard scientific-institution constraints (audit logging required, data residency preferred but not strict, cloud LLMs allowed for non-confidential metadata). T1 will email Alex if T5 surfaces a hard blocker.
+- **A.13 Funding angle**: not given. Treat as "always relevant" — every recommendation notes funding/citation implications where applicable.
+- **A.15 AI kill switches**: not given. T5 defaults to "every AI feature has runtime toggle" — this is the conservative bet, cheap to add.
+
+### Original §A questions (preserved below for completeness, but answered above)
 
 ### A.1 — Workflow side (how Said works with Claude AI today)
 
