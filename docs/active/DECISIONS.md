@@ -162,6 +162,18 @@ See also: `TECH_PLATFORM_VISION.md` for the longer-form platform thesis and tech
 
 ---
 
+## ADR-020 — Phase G2 Scientific RAG architecture (agentic PaperQA2-pattern, zero hallucinated citations)
+
+**Date**: 2026-05-12 · **Status**: PROPOSED · **Authors**: T5 (RB-005) + T1 + Said
+**Pending**: Peleg axiom registry review (~1-2 weeks) + Alex sign-off on hallucination-guard rules
+**Context**: Phase G1 (MCP server) is LIVE; Phase G2 (scientific RAG with PubMed citations) is the next AI surface per ROADMAP Phase G. RB-005 evaluated naive RAG vs agentic RAG vs ChemCrow vs PaperQA2 patterns. PaperQA2 (Future House, Apache 2.0, peer-reviewed *arXiv 2409.13740*) achieves 0% citation hallucination on scientific QA vs 40-60% for raw LLMs. Said's directive 2026-05-12 (A.14): ZERO tolerance for AI-generated text without retrieved-paper backing. Peleg's FIX-013 (killing ConsensusTier for unjustified math) defines her line: any domain claim must derive from a tool-call to her axiom registry.
+**Decision**: Adopt PaperQA2-pattern agentic RAG for Phase G2. Five tools: (1) `query_pvl`, (2) `search_pubmed`, (3) `retrieve_paper_chunk`, (4) `lookup_peleg_axiom`, (5) `compute_disagreement`. ReAct loop with Anthropic Claude Sonnet 4.6 default, Helmholtz Blablador (`helmholtz-blablador.fz-juelich.de`) as on-prem opt-in via `LLM_PROVIDER=helmholtz`. Extend LanceDB (ADR-016) with new `papers` table — no new infrastructure. Anthropic Citations API for per-passage attribution (`cited_text` field, generally available since Jan 2025). Five hallucination guards: tool-call gate + citation round-trip + axiom-shield + system prompt invariant + 6-month audit log (EU AI Act Article 12 compliance).
+**Reasoning**: Naive RAG fails 40% on multi-hop scientific questions. PaperQA2 pattern is the only architecture that survives Peleg's zero-tolerance rule. Helmholtz Blablador gives DESY-hosted PVL on-prem LLM option without new infra work. Audit log is EU AI Act compliance + JOSS-paper-ready provenance.
+**Implication**: New `backend/services/g2_agent.py`. Extended LanceDB schema with `papers` table. New `data/axioms.json` (Peleg-reviewed). New `backend/api/routes/g2.py` (`POST /api/g2/explain`). MCP tool 8 (`explain_peptide`). Frontend `ExplainPanel.tsx` with cite-hover (NotebookLM-style). G2 MVP scope: explain one peptide at a time with PubMed citations. ~40h, target Wave 3, 4-6 weeks wall-clock. Peleg axiom review is critical-path gate.
+**Evidence**: `docs/active/RESEARCH_BRIEFS/RB-005_workflow-and-ai-platform-deep.md` §5, FutureHouse PaperQA2 [arXiv 2409.13740], Anthropic Citations API docs (Jan 2025), EU AI Act Article 12 (Aug 2026 deadline), Helmholtz Blablador (helmholtz-blablador.fz-juelich.de).
+
+---
+
 ## ADR-018 — Multi-terminal orchestration protocol (AGENTS.md + STATUS.md as canonical surfaces)
 
 **Date**: 2026-05-12 · **Status**: ACCEPTED · **Authors**: Said + T-RES (RB-004) + T1
