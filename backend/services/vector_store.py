@@ -324,6 +324,114 @@ def find_similar(
         }
 
 
+def get_peptide(accession: str) -> Optional[Dict[str, Any]]:
+    """Return the indexed row for ``accession`` (canonical PVL camelCase shape).
+
+    Used by the ``GET /api/peptides/{accession}`` route (Wave 2 §I) and by
+    the ``get_peptide_detail`` MCP tool. Returns ``None`` if the index is
+    disabled, the table doesn't exist yet, or the peptide simply isn't in
+    the index — the route layer turns ``None`` into a 404.
+
+    The returned dict mirrors the read side of the ``_to_result`` helper in
+    ``api/routes/peptides.py``: ``id`` + ``sequence`` plus whatever
+    classification / biochem fields the vector store stored for the row.
+    """
+    if not is_enabled():
+        return None
+    try:
+        table = _ensure_table()
+        if table is None:
+            return None
+        safe = accession.replace("'", "''")
+        rows = table.search().where(f"accession = '{safe}'").limit(1).to_list()
+    except Exception as exc:
+        log_warning(
+            "vector_get_peptide_failed",
+            f"Lookup failed: {exc}",
+            accession=accession,
+            error=str(exc),
+        )
+        return None
+    if not rows:
+        return None
+
+    row = rows[0]
+    peptide: Dict[str, Any] = {"id": row["accession"], "sequence": row["sequence"]}
+    # Translate the stored snake_case metadata columns back to camelCase so
+    # the response matches the PVL PeptideRow shape every other route uses.
+    for src, dst in (
+        ("organism", "species"),
+        ("length", "length"),
+        ("helix_flag", "helixFlag"),
+        ("ff_helix_flag", "ffHelixFlag"),
+        ("ssw_prediction", "sswPrediction"),
+        ("ssw_score", "sswScore"),
+        ("ff_ssw_flag", "ffSswFlag"),
+        ("s4pred_helix_prediction", "s4predHelixPrediction"),
+        ("s4pred_ssw_prediction", "s4predSswPrediction"),
+        ("tango_agg_max", "tangoAggMax"),
+        ("mu_h", "muH"),
+        ("hydrophobicity", "hydrophobicity"),
+        ("charge", "charge"),
+    ):
+        value = row.get(src)
+        if value is not None:
+            peptide[dst] = value
+    return peptide
+
+
+def list_peptides_in_dataset(dataset_id: str, *, limit: int = 10000) -> List[Dict[str, Any]]:
+    """Return every indexed peptide that was tagged with ``dataset_id``.
+
+    Used by ``POST /api/peptides/rank`` when the caller passes
+    ``dataset_id`` instead of ``sequences`` — lets clients say "rank the
+    dataset I uploaded last week" without re-sending the rows.
+
+    Same camelCase translation as ``get_peptide`` so the rank service can
+    treat these rows interchangeably with caller-supplied sequences.
+    """
+    if not is_enabled() or not dataset_id:
+        return []
+    try:
+        table = _ensure_table()
+        if table is None:
+            return []
+        safe = dataset_id.replace("'", "''")
+        raw_rows = table.search().where(f"dataset_id = '{safe}'").limit(max(1, limit)).to_list()
+    except Exception as exc:
+        log_warning(
+            "vector_list_dataset_failed",
+            f"Lookup failed: {exc}",
+            dataset_id=dataset_id,
+            error=str(exc),
+        )
+        return []
+
+    out: List[Dict[str, Any]] = []
+    for row in raw_rows:
+        peptide: Dict[str, Any] = {"id": row["accession"], "sequence": row["sequence"]}
+        for src, dst in (
+            ("organism", "species"),
+            ("length", "length"),
+            ("helix_flag", "helixFlag"),
+            ("ff_helix_flag", "ffHelixFlag"),
+            ("ssw_prediction", "sswPrediction"),
+            ("ssw_score", "sswScore"),
+            ("ff_ssw_flag", "ffSswFlag"),
+            ("s4pred_helix_prediction", "s4predHelixPrediction"),
+            ("s4pred_ssw_prediction", "s4predSswPrediction"),
+            ("tango_agg_max", "tangoAggMax"),
+            ("mu_h", "muH"),
+            ("hydrophobicity", "hydrophobicity"),
+            ("charge", "charge"),
+        ):
+            value = row.get(src)
+            if value is not None:
+                peptide[dst] = value
+        out.append(peptide)
+    return out
+
+
 def stats() -> Dict[str, Any]:
     """Return basic stats about the index — exposed by routes for diagnostics."""
     info: Dict[str, Any] = {
@@ -529,9 +637,11 @@ def _ensure_table(seed_record: Optional[Dict[str, Any]] = None) -> Optional[Any]
 __all__ = [
     "disabled_reason",
     "find_similar",
+    "get_peptide",
     "index_peptide",
     "index_rows",
     "is_enabled",
+    "list_peptides_in_dataset",
     "reset_for_tests",
     "set_embedder",
     "stats",
