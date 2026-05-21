@@ -3,10 +3,16 @@
  *
  * Tracks the currently selected peptide from chart interactions,
  * preview sheet visibility, histogram bin selection, and active tab.
- * Not persisted — resets on page reload (intentional: selection is transient).
+ *
+ * Persistence (B1, 2026-05-21): only `activeTab` survives reloads —
+ * selections / bin filters / table filters stay transient because they
+ * encode mid-interaction context that would be confusing to restore.
+ * The activeTab pick, on the other hand, is "which view did I land on" —
+ * losing it on reload was a real bug.
  */
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 
 export interface BinSelection {
   ids: string[];
@@ -50,20 +56,40 @@ interface ChartSelectionState {
   setTableFilter: (filter: TableFilter | null) => void;
 }
 
-export const useChartSelection = create<ChartSelectionState>((set) => ({
-  selectedId: null,
-  selectedFrom: null,
-  sheetOpen: false,
-  binSelection: null,
-  activeTab: "data",
-  tableFilter: null,
+export const useChartSelection = create<ChartSelectionState>()(
+  persist(
+    (set) => ({
+      selectedId: null,
+      selectedFrom: null,
+      sheetOpen: false,
+      binSelection: null,
+      activeTab: "data",
+      tableFilter: null,
 
-  select: (id, source) => set({ selectedId: id, selectedFrom: source, sheetOpen: true }),
-  clearSelection: () => set({ selectedId: null, selectedFrom: null, sheetOpen: false }),
-  setSheetOpen: (open) =>
-    set(open ? { sheetOpen: true } : { sheetOpen: false, selectedId: null, selectedFrom: null }),
-  selectBin: (bin) => set({ binSelection: bin }),
-  clearBinSelection: () => set({ binSelection: null }),
-  setActiveTab: (tab) => set({ activeTab: tab }),
-  setTableFilter: (filter) => set({ tableFilter: filter }),
-}));
+      select: (id, source) => set({ selectedId: id, selectedFrom: source, sheetOpen: true }),
+      clearSelection: () => set({ selectedId: null, selectedFrom: null, sheetOpen: false }),
+      setSheetOpen: (open) =>
+        set(
+          open
+            ? { sheetOpen: true }
+            : { sheetOpen: false, selectedId: null, selectedFrom: null }
+        ),
+      selectBin: (bin) => set({ binSelection: bin }),
+      clearBinSelection: () => set({ binSelection: null }),
+      setActiveTab: (tab) => set({ activeTab: tab }),
+      setTableFilter: (filter) => set({ tableFilter: filter }),
+    }),
+    {
+      name: "pvl-chart-selection",
+      version: 1,
+      // window.localStorage is the jsdom shim in tests + real DOM storage in
+      // prod. The bare `localStorage` identifier collides with Node 22+'s
+      // file-backed global — see jobStore.ts for the full reasoning.
+      storage: createJSONStorage(() =>
+        typeof window !== "undefined" ? window.localStorage : (undefined as never)
+      ),
+      // Only persist activeTab — selection/bin/table-filter remain transient.
+      partialize: (state) => ({ activeTab: state.activeTab }),
+    }
+  )
+);

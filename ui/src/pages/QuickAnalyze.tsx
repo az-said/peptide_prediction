@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AnalysisProgress } from "@/components/AnalysisProgress";
 import { AlertTriangle, AlertCircle } from "lucide-react";
 import {
   AlertDialog,
@@ -30,6 +31,7 @@ import { Peptide, ThresholdConfig } from "@/types/peptide";
 import { ThresholdConfigPanel } from "@/components/ThresholdConfigPanel";
 import { PeptideViewer } from "@/components/PeptideViewer";
 import { useDatasetStore } from "@/stores/datasetStore";
+import { useJobStore } from "@/stores/jobStore";
 import { BgDotGrid } from "@/components/BgDotGrid";
 import { setNavGuard } from "@/hooks/use-nav-guard";
 import AppFooter from "@/components/AppFooter";
@@ -196,6 +198,23 @@ export default function QuickAnalyze() {
     }
     setLoading(true);
     setPeptide(null);
+
+    // B4b (2026-05-21): drive AnalysisProgress stage rotation via the
+    // sync-job tracker. The existing tickSyncProgress flow walks through
+    // parsing → ff_helix → biochem → tango → s4pred → normalize based on
+    // elapsed time, which is good enough for the single-sequence wait.
+    const useTango = thresholdMode !== "default" ? true : true;
+    const useS4pred = true;
+    const syncJobId = useJobStore.getState().startSyncJob({
+      fileName: entry?.trim() || "single-sequence",
+      peptideCount: 1,
+      hasTango: useTango,
+      hasS4pred: useS4pred,
+    });
+    const tickInterval = window.setInterval(() => {
+      useJobStore.getState().tickSyncProgress(syncJobId);
+    }, 500);
+
     try {
       const thresholdConfig: ThresholdConfig = {
         mode: thresholdMode,
@@ -207,9 +226,12 @@ export default function QuickAnalyze() {
       // Store source for recalculate
       useDatasetStore.getState().setLastRun("predict", { sequence, entry }, thresholdConfig);
       toast.success("Prediction ready");
+      useJobStore.getState().completeSyncJob(syncJobId);
     } catch (err: any) {
       toast.error(err?.message || "Prediction failed");
+      useJobStore.getState().failSyncJob(syncJobId, err?.message || String(err));
     } finally {
+      window.clearInterval(tickInterval);
       setLoading(false);
     }
   };
@@ -261,6 +283,8 @@ export default function QuickAnalyze() {
         className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-8 relative"
       >
         <BgDotGrid opacity={0.02} />
+        {/* V10-3: in-page analysis progress (self-gates on jobStore) */}
+        <AnalysisProgress />
         {useDatasetStore.getState().peptides.length > 0 && (
           <button
             onClick={() => guardedNavigate("/results")}
