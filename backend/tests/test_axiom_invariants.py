@@ -23,7 +23,6 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from services.dataframe_utils import apply_ff_flags  # noqa: E402
 from services.normalize import _enforce_ff_axioms, normalize_rows_for_ui  # noqa: E402
 
-
 CUSTOM_THRESHOLDS = {
     "muHCutoff": 0.4,
     "hydroCutoff": 0.5,

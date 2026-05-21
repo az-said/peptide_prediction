@@ -62,7 +62,6 @@ from auxiliary import ff_helix_percent  # noqa: E402
 from calculations.biochem import calculate_biochemical_features as calc_biochem  # noqa: E402
 from services.dataframe_utils import ensure_computed_cols, ensure_ff_cols  # noqa: E402
 
-
 # --------------------------------------------------------------------------
 # Canary peptide registry.
 #
