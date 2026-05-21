@@ -189,9 +189,12 @@ export function DistributionChart({
   const effectiveHeight = height ?? (isPreview ? 180 : 300);
   const tickFontSize = isPreview ? 9 : 11;
   const axisLabelFontSize = isPreview ? 10 : 12;
+  // F4 (Peleg 2026-05-19): bump left margin so the Y-axis title actually
+  // renders inside the chart frame (was 24 in preview / 40 expanded — too
+  // tight for the rotated "Count" label).
   const margin = isPreview
-    ? { top: 8, right: 8, bottom: 24, left: 24 }
-    : { top: 20, right: 30, bottom: 35, left: 40 };
+    ? { top: 8, right: 8, bottom: 24, left: 40 }
+    : { top: 20, right: 30, bottom: 35, left: 56 };
   const lollipopBarSize = isPreview ? 2 : 3;
   const lollipopDotR = isPreview ? 4 : 6;
   // In preview mode we hide the summary text below the chart — the
@@ -283,9 +286,12 @@ export function DistributionChart({
                   value: yLabel,
                   angle: -90,
                   position: "insideLeft",
-                  offset: -5,
-                  fontSize: axisLabelFontSize,
-                  fill: "hsl(var(--muted-foreground))",
+                  offset: 10,
+                  style: {
+                    textAnchor: "middle",
+                    fontSize: axisLabelFontSize,
+                    fill: "hsl(var(--muted-foreground))",
+                  },
                 }}
               />
               <ChartTooltip
@@ -363,9 +369,12 @@ export function DistributionChart({
                   value: yLabel,
                   angle: -90,
                   position: "insideLeft",
-                  offset: -5,
-                  fontSize: axisLabelFontSize,
-                  fill: "hsl(var(--muted-foreground))",
+                  offset: 10,
+                  style: {
+                    textAnchor: "middle",
+                    fontSize: axisLabelFontSize,
+                    fill: "hsl(var(--muted-foreground))",
+                  },
                 }}
               />
               {threshold && thresholdBinIdx >= 0 && (

@@ -83,7 +83,14 @@ export function RankedTable({ peptides, rankings, topN, activeMetrics }: RankedT
       }),
       columnHelper.accessor((r) => r.ranking.compositeScore, {
         id: "composite",
-        header: "Score",
+        header: () => (
+          <span
+            className="cursor-help underline decoration-dotted underline-offset-2"
+            title="Percentile rank within this dataset (0-100), weighted across the selected metrics. Higher = better."
+          >
+            Score (0-100)
+          </span>
+        ),
         cell: (info) => (
           <div className="min-w-[100px]">
             <ScoreBar score={info.getValue()} size="md" />

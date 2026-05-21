@@ -9,7 +9,7 @@ import { DataPreview } from "@/components/DataPreview";
 import { FastaPreview, type FastaEntry } from "@/components/FastaPreview";
 import { useDatasetStore } from "@/stores/datasetStore";
 import { uploadCSV } from "@/lib/api";
-import { submitUploadJob, cancelSyncJob } from "@/lib/jobApi";
+import { submitUploadJob } from "@/lib/jobApi";
 import { toDatasetMetadata } from "@/lib/metaAdapter";
 import { uuid } from "@/lib/uuid";
 import { useJobStore } from "@/stores/jobStore";
@@ -106,6 +106,8 @@ export default function Upload() {
   const navigate = useNavigate();
   const abortRef = useRef<AbortController | null>(null);
   const cancelTokenRef = useRef<string | null>(null);
+  const syncJobIdRef = useRef<string | null>(null);
+  const syncTickRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [showLeaveDialog, setShowLeaveDialog] = useState(false);
   const [pendingNavPath, setPendingNavPath] = useState<string | null>(null);
   const cancelBackend = () => {
@@ -301,10 +303,42 @@ export default function Upload() {
     });
   };
 
+  /** Stop the sync-tick interval and clear refs */
+  const clearSyncTick = () => {
+    if (syncTickRef.current) {
+      clearInterval(syncTickRef.current);
+      syncTickRef.current = null;
+    }
+    syncJobIdRef.current = null;
+  };
+
+  /** Start the 500ms tick that updates sync job progress in the store */
+  const startSyncTick = (jobId: string) => {
+    syncJobIdRef.current = jobId;
+    syncTickRef.current = setInterval(() => {
+      useJobStore.getState().tickSyncProgress(jobId);
+    }, 500);
+  };
+
   const handleAnalyze = async () => {
     if (!localFile) return;
     const controller = new AbortController();
     abortRef.current = controller;
+    const peptideCount = rawData?.rowCount ?? rawData?.rows?.length ?? 0;
+
+    // Start a synthetic sync job in the store immediately (V10-3)
+    const token = uuid();
+    cancelTokenRef.current = token;
+    const syncJobId = useJobStore.getState().startSyncJob({
+      peptideCount,
+      fileName: localFile.name,
+      hasTango: true,
+      hasS4pred: true,
+      cancelToken: token,
+      abortController: controller,
+    });
+    startSyncTick(syncJobId);
+
     try {
       setIsAnalyzing(true);
 
@@ -321,8 +355,6 @@ export default function Upload() {
 
       // Try async job submission first, fall back to sync
       try {
-        const token = uuid();
-        cancelTokenRef.current = token;
         const jobResponse = await submitUploadJob(
           localFile,
           thresholdConfig,
@@ -332,15 +364,20 @@ export default function Upload() {
 
         if (jobResponse.mode === "async" && jobResponse.jobId) {
           // Async path: job dispatched to Celery worker
-          const peptideCount = jobResponse.peptideCount ?? rawData?.rowCount ?? 0;
-          useJobStore.getState().addJob(jobResponse.jobId, localFile.name, peptideCount);
+          // Clean up sync job — async takes over with its own polling
+          clearSyncTick();
+          useJobStore.getState().completeSyncJob(syncJobId);
+          const asyncCount = jobResponse.peptideCount ?? peptideCount;
+          useJobStore.getState().addJob(jobResponse.jobId, localFile.name, asyncCount);
           toast.success("Analysis started — you can navigate away safely.", {
-            description: `Processing ${peptideCount} peptides in the background`,
+            description: `Processing ${asyncCount} peptides in the background`,
           });
           // Don't navigate yet — jobStore will navigate on completion
           return;
         } else if (jobResponse.mode === "sync" && jobResponse.result) {
           // Sync fallback: result returned directly
+          clearSyncTick();
+          useJobStore.getState().completeSyncJob(syncJobId);
           const { rows, meta } = jobResponse.result;
           ingestBackendRows(rows, toDatasetMetadata(meta));
           const hits = meta?.cache_hits ?? 0;
@@ -364,6 +401,8 @@ export default function Upload() {
         thresholdConfig,
         controller.signal
       )) as any;
+      clearSyncTick();
+      useJobStore.getState().completeSyncJob(syncJobId);
       ingestBackendRows(rows, meta);
       const legacyHits = meta?.cache_hits ?? 0;
       const legacyMisses = meta?.cache_misses ?? 0;
@@ -377,9 +416,12 @@ export default function Upload() {
       }
       navigate("/results");
     } catch (e: any) {
+      clearSyncTick();
       if (e.name === "AbortError") {
+        useJobStore.getState().completeSyncJob(syncJobId);
         toast.info("Analysis cancelled");
       } else {
+        useJobStore.getState().failSyncJob(syncJobId, e.message || String(e));
         toast.error(`Analyze failed: ${e.message || e}`);
       }
     } finally {
@@ -677,10 +719,10 @@ export default function Upload() {
                         return null;
                       })()}
 
-                      {/* Peleg FIX-031: simplify length warning to single ratio line.
-                          PELEG-Q-FIX-031: 15aa cutoff citation needed or soften wording — the
-                          15-residue lower bound is an empirical default; no S4PRED paper or
-                          repo statement found documenting it as a hard threshold. */}
+                      {/* Peleg F9 (2026-05-19): single-line warning per short/long
+                          bucket. Drops the second "optimal range" info line and softens
+                          the rationale tail to "S4PRED works best on sequences ≥15 aa"
+                          (Q1 citation pending — see PELEG_REVIEW_TASKS.md). */}
                       {rawData.rows &&
                         rawData.rows.length > 0 &&
                         (() => {
@@ -700,15 +742,13 @@ export default function Upload() {
                               <AlertDescription>
                                 <div className="text-sm space-y-1">
                                   {short > 0 && (
-                                    <p>
-                                      {short}/{total} sequences are short (&lt;15 aa) — short
-                                      sequences are excluded from S4PRED by default.
+                                    <p title="The minimum-length floor is an empirical default; citation pending.">
+                                      {short}/{total} sequences too short (&lt;15 aa) — S4PRED works best on sequences ≥15 aa.
                                     </p>
                                   )}
                                   {long > 0 && (
                                     <p>
-                                      {long}/{total} sequences are long (&gt;100 aa) — TANGO
-                                      accuracy is reduced.
+                                      {long}/{total} sequences too long (&gt;100 aa) — TANGO accuracy is reduced.
                                     </p>
                                   )}
                                 </div>
@@ -764,26 +804,7 @@ export default function Upload() {
                       {isAnalyzing ? "Analyzing…" : "Analyze Dataset"}
                     </Button>
                   </div>
-                  <AnalysisProgress
-                    isActive={isAnalyzing}
-                    peptideCount={rawData?.rowCount ?? rawData?.rows?.length ?? 0}
-                    hasTango
-                    hasS4pred
-                    onCancel={() => {
-                      // Tell backend to stop processing
-                      if (cancelTokenRef.current) {
-                        cancelSyncJob(cancelTokenRef.current);
-                        cancelTokenRef.current = null;
-                      }
-                      // Abort the HTTP request
-                      if (abortRef.current) {
-                        abortRef.current.abort();
-                        abortRef.current = null;
-                      }
-                      setIsAnalyzing(false);
-                      toast("Analysis cancelled");
-                    }}
-                  />
+                  <AnalysisProgress />
                 </motion.div>
               )}
             </CardContent>
@@ -817,6 +838,11 @@ export default function Upload() {
                 if (abortRef.current) {
                   abortRef.current.abort();
                   abortRef.current = null;
+                }
+                // Clean up sync job in store (V10-3)
+                clearSyncTick();
+                if (syncJobIdRef.current) {
+                  useJobStore.getState().completeSyncJob(syncJobIdRef.current);
                 }
                 setIsAnalyzing(false);
                 setShowLeaveDialog(false);

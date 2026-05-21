@@ -139,7 +139,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
           <div>
             <div className="flex justify-between text-sm mb-1.5">
               <span>
-                <Abbr title="Hydrophobic moment">uH</Abbr> threshold
+                <Abbr title="Hydrophobic moment">uH</Abbr>
               </span>
               <span className="tabular-nums text-muted-foreground">
                 {active.muHCutoff.toFixed(2)}
@@ -155,7 +155,7 @@ export function ThresholdTuner({ peptides }: ThresholdTunerProps) {
           </div>
           <div>
             <div className="flex justify-between text-sm mb-1.5">
-              <span>Hydrophobicity threshold</span>
+              <span>Hydrophobicity</span>
               <span className="tabular-nums text-muted-foreground">
                 {active.hydroCutoff.toFixed(2)}
               </span>
