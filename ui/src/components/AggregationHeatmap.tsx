@@ -88,7 +88,7 @@ export function AggregationHeatmap({
                   : "text-green-600"
             }`}
           >
-            {maxAgg.toFixed(1)}%
+            {maxAgg.toFixed(1)}
           </span>
         </div>
         <div className="px-3 py-1.5 rounded bg-muted/50">
@@ -123,7 +123,7 @@ export function AggregationHeatmap({
               />
               <YAxis
                 label={{
-                  value: "TANGO score (%)",
+                  value: "TANGO score",
                   angle: -90,
                   position: "insideLeft",
                   fontSize: 11,
@@ -223,7 +223,7 @@ export function AggregationHeatmap({
                 />
                 <YAxis
                   tick={{ fontSize: 10 }}
-                  label={{ value: "Score (%)", angle: -90, position: "insideLeft", fontSize: 11 }}
+                  label={{ value: "TANGO score", angle: -90, position: "insideLeft", fontSize: 11 }}
                 />
                 <ReferenceLine
                   y={tangoAggThreshold}

@@ -896,6 +896,21 @@ CEO terminal (T1) plans waves; sub-terminals (T2/T3/T-PEL/Cowork) execute. T1 co
 | **J** | MCP server (G1) | T2 | Natural-language queries |
 | **T-PEL** | Peleg scientific REVIEWER role (not implementer) — reviews diffs from P0-P5 against PELEG_FEEDBACK_INSTRUCTIONS.md | T-PEL | All Peleg items verified before T1 commits |
 
+### Wave 2.5 (post-Wave-2, pre-Wave-3) — Peleg PPT response
+
+**ISSUE-032 — FF-SSW axiom violation** (T-DEBUG, P0, BLOCKS rest of Wave 2.5)
+Surfaced by Peleg 2026-05-19. Repro: P85089, P0C005 render `SSW=false` + `FF-SSW=true`. `compute_4category_flags` enforces axiom but data path bypasses it. See `T_DEBUG_DISPATCH_FFSSW_AXIOM.md` for 3-phase root-cause dispatch (UNDERSTAND → SPECULATE → FIX). Also adds API-boundary invariant assertion + axiom-violation tests. Mirror-check `FF-Helix → Helix`.
+
+**Wave 2.5 fix-pack** (T3 + Cowork, P1, dispatched AFTER ISSUE-032 closes)
+11 confirmed misses from Peleg PPT audit (see `docs/active/PELEG_REVIEW_TASKS.md` §2 and `docs/active/RESPONSES/peleg_2026_05_18_response.md` §2). Includes F1 cohort→database sweep, F2 Cutoff suffix drop, F3-F11 axis labels / histogram styling / color collisions / sequence-length warning / Beta% threshold / ranking labels. ETA 5-7 days.
+
+**Co-design items** (Said + Peleg + optionally Alex, scheduled via Zoom)
+- D1: Interpretation Notes decision tree
+- D2: 4-class labeling and ordering sign-off
+- D3: Tier 1 / 80% certainty derivation
+- D4: Smart Ranking preset weights
+- D5: SSW Score in ranking metrics — drop entirely?
+
 **Absorbed waves**:
 - ~~Wave D (chart leftovers CH1, CH3, CH4, CH5, CH7, P7, P8)~~ → absorbed into P1+P2+P3 (most overlap with Peleg's fixes)
 - ~~Wave E (ISSUE-024 non-standard AA notification)~~ → absorbed into P0 (terminology + classification touch the same files)

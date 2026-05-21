@@ -15,20 +15,46 @@
 
 ---
 
-## SSW Semantics (TANGO Predictions)
+## SSW Semantics (Unified TANGO ∪ S4PRED)
 
-The `sswPrediction` field indicates structural switch propensity:
+The `sswPrediction` field reflects the canonical SSW classification — a
+peptide is SSW-positive if **either** TANGO **or** S4PRED predicts a
+structural switch (Peleg P27: must be OR, never AND).
+
+Source column: `"SSW prediction (unified)"`, written by
+`backend/services/dataframe_utils.py:apply_ff_flags` from
+`ssw_pos_mask = (tango_ssw == 1) | (s4pred_ssw == 1)`. The schema falls
+back to the raw TANGO column `"SSW prediction"` only on code paths that
+never run `apply_ff_flags`.
 
 | Value | Meaning | When It Occurs |
 |-------|---------|----------------|
-| `1` | **Positive** — structural switch predicted | `SSW diff < avg_diff` |
-| `-1` | **Negative** — no structural switch predicted | `SSW diff >= avg_diff` |
+| `1` | **Positive** — structural switch predicted by ≥1 provider | TANGO or S4PRED says yes |
+| `-1` | **Negative** — at least one provider has data, none positive | Both providers say no |
 | `0` | **Uncertain** — algorithm couldn't determine | Rare edge case |
-| `null` | **Missing** — TANGO didn't run or failed | Provider unavailable |
+| `null` | **Missing** — no provider produced data | Both providers unavailable |
 
 **Key invariant**: `-1` is a valid prediction (not a sentinel). Only `null` means "no data".
 
 **Threshold source**: `backend/tango.py:filter_by_avg_diff()`
+
+---
+
+## FF-Classification Axioms (ISSUE-032)
+
+The 4-category classification is anchored by two contract invariants. The
+API serializer (`backend/services/normalize.py:_enforce_ff_axioms`) checks
+these on every row before emission; on violation it logs a structured
+warning and clamps the FF flag to `-1`.
+
+| Axiom | Meaning |
+|-------|---------|
+| `ffSswFlag == 1 ⇒ sswPrediction == 1` | A peptide can only be a fibril-forming-via-SSW candidate if it IS SSW. |
+| `ffHelixFlag == 1 ⇒ s4predHelixPrediction == 1` | A peptide can only be a fibril-forming-via-helix candidate if it has a predicted helix. |
+
+The axioms are scientific contracts, not implementation details — they hold
+even when upstream pipeline code regresses. Regression test:
+`backend/tests/test_axiom_invariants.py`.
 
 ### SSW Threshold: Single vs Batch
 

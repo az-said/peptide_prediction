@@ -257,17 +257,18 @@ export function ResultsCharts({ peptides, providerStatus }: ResultsChartsProps) 
             description="How peptides distribute across peak TANGO aggregation values"
             peptides={peptides}
           >
+            {/* F5 (Peleg 2026-05-19): re-style as a histogram to match the
+                other distributions in this row. Also drops the "%" unit since
+                TANGO score is not a percentage (F3). */}
             <DistributionChart
               data={aggData.values}
               peptideValues={aggData.peptideValues}
               metric={{
                 id: "tangoAggMax",
                 label: "Peak TANGO aggregation",
-                unit: "%",
                 axisX: "Peak TANGO aggregation",
                 axisY: "Count",
               }}
-              style="lollipop"
               mode="preview"
               onBinClick={(ids, label) =>
                 selectBin({

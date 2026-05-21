@@ -332,8 +332,11 @@ export function WeightBar({ weights, activeMetrics, onChange, disabled }: Weight
             </button>
           </div>
         ) : (
-          <span className="text-[11px] text-muted-foreground ml-auto">
-            Total: {Math.round(segments.reduce((s, seg) => s + seg.weight, 0))}%
+          <span
+            className="text-[11px] text-muted-foreground ml-auto cursor-help underline decoration-dotted underline-offset-2"
+            title="Weights are relative — each shows the metric's share out of 100. Edit any value to redistribute."
+          >
+            Total weight: {Math.round(segments.reduce((s, seg) => s + seg.weight, 0))} / 100
           </span>
         )}
       </div>

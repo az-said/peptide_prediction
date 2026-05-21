@@ -567,3 +567,79 @@ These are questions that MUST be answered before implementation begins. Claude C
 6. The current ranking system — are there documented weights/formulas, or do I need to reverse-engineer them from code?
 7. For terminology changes: Should "organisms" replace "species" everywhere including API response fields, or only in UI labels?
 8. The Venn diagram (Chunk 4.3): How many peptides are we typically visualizing? This affects which library/approach works best.
+
+---
+
+# Round 2 — 2026-05-18 PowerPoint (Likoiim)
+
+Source: `New_Feedback/Peleg note (1).pptx` (41 slides) — Peleg's follow-up review after Wave 0 PELEG-CRITICAL-001 closed. Trigger Slack message:
+> "@Said Azaizah, if you can answer some of the questions I asked in the PowerPoint I sent you with corrections, then it will be great. Because I still see some issues with the helix%, which still seems weird to me." (ליקויים = defects)
+
+Audit completed 2026-05-18 via Explore agent + targeted grep verification against current `origin/main` (commit `4534033`, post-Wave-2 merge).
+
+**Full written response**: `docs/active/RESPONSES/peleg_2026_05_18_response.md`
+
+**Summary**: of 38 audited items, 24 are already fixed in current main (Cowork + Wave 0/2 work between 2026-05-12 and 2026-05-18), 11 are confirmed misses scheduled as a Wave 2.5 fix-pack, 5 are co-design items needing discussion with Peleg, 4 are direct questions back to her, 5 need live-URL verification.
+
+## §1 — Already fixed in current live build (24 items)
+
+See `docs/active/RESPONSES/peleg_2026_05_18_response.md` §1 for the verbatim quote + file/line evidence per item.
+
+Highlights:
+- Fauchère-Pliska correctly attributed as hydrophobicity scale (6 files)
+- All CD spectroscopy mentions removed
+- Aggregation ≠ fibrillation conflation removed
+- 4-class scheme surfaced (Helix, FF-Helix, SSW, FF-SSW)
+- Venn subset axiom enforced in code (FF-Helix ⊆ Helix; FF-SSW ⊆ SSW)
+- "Pipeline" → "Results" everywhere
+- KPI title format "% FF-Helix" with proper casing and Greek µ
+- Threshold panel restructured into 4 sections
+- TANGO Agg Max removed from default ranking metrics
+- "Helix Focus" preset added
+
+## §2 — Wave 2.5 fix-pack (11 confirmed misses)
+
+| # | Slide | Issue | Fix | Owner | ETA |
+|---|---|---|---|---|---|
+| F1 | 15, 16, 23, 29, 34 | "cohort" still in EvidencePanel.tsx (48 instances UI-wide) | Sweep replace → "database" | T3/Cowork | 2 days |
+| F2 | 7 | "Cutoff" suffix on µH/Hydrophobicity threshold labels | Drop suffix in label rendering only (keep internal var names) | T3/Cowork | 1 day |
+| F3 | 19 | "TANGO score (%)" Y-axis label should not have % | Drop % from TANGO Profile Y-axis | T3 | 1 day |
+| F4 | 33, 35, 36 | Missing Y-axis titles on multiple distribution charts | Add axis titles | T3 | 2 days |
+| F5 | 37 | Aggregation Propensity Distribution is lollipop, should be histogram | Re-style for consistency | T3/Cowork | 1 day |
+| F6 | 31 | Venn diagram visual rendering of FF-SSW positioning | Verify rendering matches data axiom | T3 | 1 day |
+| F7 | 16 | "Above median" badge gold-brown → green | Color-token swap | T3 | 30 min |
+| F8 | 12, 13 | Purple color collision (TANGO:OK badge vs SSW pill) | Reassign distinct colors | T3 | 1 day |
+| F9 | 28 | Sequence length warning two-line → single "X/Y sequences too short" | Rewrite warning text | T3 | 30 min |
+| F10 | 18 | Beta % calculation logic too aggressive (2-3 residues at <0.25 confidence ≠ beta strand) | Adjust threshold or drop Beta % display | T2 | 1 day |
+| F11 | 39 | "% mean" ambiguity in Smart Candidate Ranking labels | Rename sliders to "Weight (/100)" and score to "Score (0-100)" | T3 | 1 day |
+
+**Total Wave 2.5 effort**: ≈5-7 working days.
+
+## §3 — Co-design items (5)
+
+| # | Slide | Topic | Resolution path |
+|---|---|---|---|
+| D1 | 24 | Interpretation Notes decision tree | 30-min co-design call; hide block in meantime |
+| D2 | 27 | 4-class labeling + ordering (verbose vs short labels, show Helix base class as KPI?) | Email + Peleg sign-off |
+| D3 | 22 | Tier 1 / 80% certainty derivation | Recommend dropping; await confirmation |
+| D4 | 39 | Smart Ranking preset weights (Equal / Helix Focus / Switch Focus / Amyloid Focus) | Email with proposed weights, Peleg validates |
+| D5 | 29 | Drop SSW Score from ranking metrics entirely? | Email decision |
+
+## §4 — Direct questions back to Peleg (4)
+
+| # | Slide | Question | Status |
+|---|---|---|---|
+| Q1 | 9 | S4PRED <15aa length limit — citation source? | Awaiting Peleg |
+| Q2 | 14 | PeptideDetail dual helix % — which two values is she pointing at? | Awaiting Peleg |
+| Q3 | 39 | "What does the % mean?" in Smart Ranking | Awaiting Peleg |
+| Q4 | 23, 30 | Modern alternative to Chou-Fasman for helix propensity? | Awaiting Peleg |
+
+## §5 — Live URL verification needed (5)
+
+| # | Slide | Item |
+|---|---|---|
+| V1 | 8 | Threshold panel header expands SSW acronym? |
+| V2 | 11 | UniProt upload column drift still present? |
+| V3 | 14 | PeptideDetail Sequence & Structure dual-helix display |
+| V4 | 26 | SSW Prediction interpretation: one option per line? |
+| V5 | 28 | Aggregation Propensity Distribution: histogram-style? |

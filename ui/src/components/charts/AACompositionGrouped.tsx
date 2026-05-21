@@ -201,7 +201,19 @@ export function AACompositionGrouped({ peptides }: AACompositionGroupedProps) {
                 textAnchor="end"
                 height={50}
               />
-              <YAxis tickFormatter={(v: number) => `${v.toFixed(0)}%`} />
+              <YAxis
+                tickFormatter={(v: number) => `${v.toFixed(0)}%`}
+                label={{
+                  value: "Mean composition (%)",
+                  angle: -90,
+                  position: "insideLeft",
+                  offset: -5,
+                  style: {
+                    fontSize: 11,
+                    fill: "hsl(var(--muted-foreground))",
+                  },
+                }}
+              />
               <ChartTooltip
                 content={({ payload, label }) => {
                   if (!payload?.length) return null;

@@ -43,6 +43,12 @@ export function ExportFigurePackButton({
         thresholds,
         stats,
         title: "PVL Figure Pack",
+        // Capture current URL as the reproducibility permalink. The Results
+        // page encodes active filters + thresholds + selection into the URL
+        // hash via the permalink system, so this single string regenerates
+        // the same view for a paper reviewer.
+        permalinkURL: typeof window !== "undefined" ? window.location.href : undefined,
+        version: "0.1.0",
       };
 
       const [panels, coverSvg] = await Promise.all([

@@ -13,6 +13,12 @@ import { AlertTriangle, Copy, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import type { Peptide } from "@/types/peptide";
 import { TangoBadge } from "@/components/TangoBadge";
@@ -71,14 +77,63 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
               <CardDescription>{p.length ?? "?"} amino acids</CardDescription>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
-              <TangoBadge
-                providerStatus={p.providerStatus?.tango}
-                sswPrediction={p.sswPrediction}
-                hasTangoData={p.tangoHasData ?? false}
-                showIcon
-                sswContext={{ sswHelixPercentage: p.sswHelixPct, sswDiff: p.sswDiff }}
-              />
-              {/* S4PRED Helix value moved to BiochemComparison to avoid header duplication */}
+              {/* B3 (Said decided 2026-05-21, option 3): show all four
+                  classification pills symmetrically. Base classes (Helix /
+                  SSW) render whenever the provider ran. FF-* badges always
+                  render but carry a tooltip explaining that without an
+                  uploaded cohort the literature-default thresholds are used. */}
+              <TooltipProvider delayDuration={150}>
+                {p.s4predHelixPrediction === 1 && (
+                  <Badge className="bg-helix text-helix-foreground hover:bg-helix/90 text-xs">
+                    Helix
+                  </Badge>
+                )}
+                <TangoBadge
+                  providerStatus={p.providerStatus?.tango}
+                  sswPrediction={p.sswPrediction}
+                  hasTangoData={p.tangoHasData ?? false}
+                  showIcon
+                  sswContext={{ sswHelixPercentage: p.sswHelixPct, sswDiff: p.sswDiff }}
+                />
+                {p.ffHelixFlag === 1 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        className="bg-ff-helix text-ff-helix-foreground hover:bg-ff-helix/90 text-xs cursor-help"
+                        data-testid="quick-analyze-ff-helix-badge"
+                      >
+                        FF-Helix
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[260px]">
+                      <p className="text-xs leading-relaxed">
+                        Computed using literature-default thresholds (μH &gt; 0.5,
+                        hydrophobicity &gt; 0.5). Upload a cohort dataset for
+                        data-derived thresholds.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {p.ffSswFlag === 1 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        className="bg-ff-ssw text-ff-ssw-foreground hover:bg-ff-ssw/90 text-xs cursor-help"
+                        data-testid="quick-analyze-ff-ssw-badge"
+                      >
+                        FF-SSW
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-[260px]">
+                      <p className="text-xs leading-relaxed">
+                        Computed using literature-default thresholds (μH &gt; 0.5,
+                        hydrophobicity &gt; 0.5). Upload a cohort dataset for
+                        data-derived thresholds.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </TooltipProvider>
               <Button variant="outline" size="sm" onClick={handleCopySequence}>
                 <Copy className="w-4 h-4 mr-1" />
                 Copy

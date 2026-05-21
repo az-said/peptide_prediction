@@ -211,16 +211,11 @@ export function BiochemComparison({
           </div>
         )}
 
-        {/* Wave Q.1: single-peptide empty state — replaces both the radar and
-            percentile sub-panels when there's no database to compare against. */}
-        {isSinglePeptide && (
-          <div className="rounded-lg border border-dashed border-[hsl(var(--border))] bg-muted/30 p-4 text-center">
-            <p className="text-sm text-foreground font-medium">No database comparison available</p>
-            <p className="text-xs text-muted-foreground mt-1">
-              Compare with a database — upload a CSV or run a UniProt query.
-            </p>
-          </div>
-        )}
+        {/* B3 (Said decided 2026-05-21, option 3): drop the "No database
+            comparison available" empty state — it adds noise without info.
+            In single-peptide mode we simply show the absolute-value stat
+            cards above and stop. The radar + percentile sub-panels below
+            stay gated on the dataset-mode branch. */}
 
         {/* Sub-panel 2: Radar chart placeholder (full mode only) */}
         {!isSinglePeptide && radarMetrics.length >= 3 && (

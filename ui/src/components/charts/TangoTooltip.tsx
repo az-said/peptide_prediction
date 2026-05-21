@@ -38,7 +38,7 @@ export function TangoTooltip({ payload, label }: TangoTooltipProps) {
             : entry.value;
         return (
           <p key={String(entry.dataKey)} style={{ color: entry.color }}>
-            {entry.name}: {v}%
+            {entry.name}: {v}
           </p>
         );
       })}

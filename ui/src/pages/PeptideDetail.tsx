@@ -421,27 +421,18 @@ export default function PeptideDetail() {
             <CardHeader className="pb-2">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                 <CardTitle className="text-h3">Sequence & Structure</CardTitle>
-                {/* S4PRED composition legend — segment-based Helix % only.
-                    Hidden when S4PRED data is unavailable (no silent 0%). */}
+                {/* F10 (Said decided 2026-05-21, Peleg slide 18): drop the
+                    Beta % and Coil % numerical subcards. The S4PRED
+                    probability curves still render in <S4PredChart/> below —
+                    Peleg's position is "showing the graph is enough". The
+                    segment-based Helix % stays because it's used as a
+                    classification anchor in FIX-013. */}
                 {peptide.s4predHelixPercent != null && (
                   <div className="flex items-center gap-4 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <span className="w-2.5 h-2.5 rounded-sm bg-helix inline-block" />
                       Helix ({peptide.s4predHelixPercent.toFixed(0)}%)
                     </span>
-                    {peptide.betaPercent != null && (
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-sm bg-beta inline-block" />
-                        Beta ({peptide.betaPercent.toFixed(0)}%)
-                      </span>
-                    )}
-                    {peptide.betaPercent != null && (
-                      <span className="flex items-center gap-1">
-                        <span className="w-2.5 h-2.5 rounded-sm bg-coil inline-block" />
-                        Coil ({(100 - peptide.s4predHelixPercent - peptide.betaPercent).toFixed(0)}
-                        %)
-                      </span>
-                    )}
                   </div>
                 )}
               </div>

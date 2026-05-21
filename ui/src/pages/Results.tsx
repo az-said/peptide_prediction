@@ -1,6 +1,14 @@
 // src/pages/Results.tsx
 import { motion } from "framer-motion";
-import { Download, ArrowUp, ArrowDown, ChevronDown, FileText, FileDown, BookOpen } from "lucide-react";
+import {
+  Download,
+  ArrowUp,
+  ArrowDown,
+  ChevronDown,
+  FileText,
+  FileDown,
+  BookOpen,
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
@@ -39,9 +47,20 @@ import {
   type RankingPreset,
 } from "@/lib/ranking";
 import { useThresholdStore } from "@/stores/thresholdStore";
+import {
+  decodePermalink,
+  encodePermalink,
+  PERMALINK_VERSION,
+} from "@/lib/permalink";
+import {
+  useReproducibilityStore,
+  PVL_VERSION,
+} from "@/stores/reproducibilityStore";
 import { BgDotGrid } from "@/components/BgDotGrid";
+import { AnalysisProgress } from "@/components/AnalysisProgress";
 import { exportShortlistPDF } from "@/lib/report";
 import { downloadBibtex } from "@/lib/exportBibtex";
+import { generateFigurePack, generateCoverPage, downloadFigurePackAsHTML } from "@/lib/figurePack";
 import { DEFAULT_THRESHOLDS, type ResolvedThresholds } from "@/lib/thresholds";
 import { uploadCSV, predictOne } from "@/lib/api";
 import { RotateCcw, FlaskConical, Info, AlertTriangle, XCircle, X } from "lucide-react";
@@ -181,6 +200,45 @@ export default function Results() {
     }
   }, [meta?.thresholds, initFromMeta]);
 
+  // ── B2 (2026-05-21): permalink → state ─────────────────────────────────
+  // Reproducibility-by-URL. On mount, if the page was opened with a permalink
+  // query string, restore the encoded thresholds + activeTab so the view
+  // matches what the URL claims. Cohort identity is not re-fetched here —
+  // the dataset is whatever the user already has loaded.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!peptides.length) return;
+    const params = new URLSearchParams(window.location.search);
+    const decoded = decodePermalink(params);
+    if (!decoded) return;
+    initFromMeta(decoded.thresholds);
+    // activeTab is not part of PermalinkState today; persist middleware (B1)
+    // handles its cross-reload survival via localStorage.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peptides.length]);
+
+  // ── B2 (2026-05-21): state → permalink (live URL) ──────────────────────
+  // Mirror the active threshold snapshot into ?pv=...&t=... whenever it
+  // changes, so the address bar IS the citation. Uses history.replaceState
+  // so the back-button stack stays clean.
+  const queryMeta = useReproducibilityStore((s) => s.queryMeta);
+  const datasetHash = useReproducibilityStore((s) => s.datasetHash);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!queryMeta || !datasetHash) return;
+    const params = encodePermalink({
+      pv: PERMALINK_VERSION,
+      datasetHash,
+      query: queryMeta,
+      thresholds: resolvedThresholds,
+      pvlVersion: PVL_VERSION,
+    });
+    const next = `${window.location.pathname}?${params.toString()}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(window.history.state, "", next);
+    }
+  }, [resolvedThresholds, queryMeta, datasetHash]);
+
   // Don't redirect to /upload while the demo dataset is mid-load on first
   // visit — that flashes the upload screen and breaks the auto-load UX.
   const isDemoLoading = useDemoStore((s) => s.isDemoLoading);
@@ -318,6 +376,9 @@ export default function Results() {
           transition={{ duration: 0.5, ease: smoothEase }}
           className="space-y-8"
         >
+          {/* ── In-page analysis progress (V10-3: self-gates on jobStore) ── */}
+          <AnalysisProgress />
+
           {/* ── Header ── */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -409,6 +470,35 @@ export default function Results() {
                   >
                     <FileDown className="w-4 h-4 mr-2" />
                     PDF Report
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    disabled={!stats || peptidesTyped.length === 0}
+                    onClick={async () => {
+                      if (!stats || peptidesTyped.length === 0) return;
+                      // A6: Publication-ready multi-panel figure pack. Uses the
+                      // currently filtered peptides as the selection; embeds the
+                      // live URL as the reproducibility permalink so a reviewer
+                      // can regenerate the same view.
+                      const options = {
+                        peptides: peptidesTyped,
+                        allPeptides: peptidesTyped,
+                        thresholds: resolvedThresholds,
+                        stats,
+                        title: "PVL Figure Pack",
+                        permalinkURL:
+                          typeof window !== "undefined" ? window.location.href : undefined,
+                        version: "0.1.0",
+                      };
+                      const [panels, coverSvg] = await Promise.all([
+                        generateFigurePack(options),
+                        Promise.resolve(generateCoverPage(options)),
+                      ]);
+                      downloadFigurePackAsHTML(panels, coverSvg, "PVL_Figure_Pack");
+                    }}
+                  >
+                    <FileDown className="w-4 h-4 mr-2" />
+                    Figure Pack (HTML/SVG)
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => downloadBibtex()}>

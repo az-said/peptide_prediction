@@ -450,7 +450,11 @@ function computeLayout(data: ComputedData, W: number, H: number): CircleLayout[]
     isSubset: false,
   });
 
-  // Position subsets inside their parent circle, offset from center
+  // Position subsets inside their parent circle. F6 (Peleg 2026-05-19):
+  // when a subset's members are predominantly in the SSW ∩ Helix intersection,
+  // slide the subset circle TOWARD that intersection so the geometry mirrors
+  // the data axiom (e.g., FF-SSW ⊆ SSW ∩ Helix). Subsets whose members live
+  // mostly in the parent-only lobe stay on the outer side (legacy behavior).
   for (const s of subsets) {
     const parentLayout = layouts.find((l) => l.id === s.parentId);
     if (!parentLayout) continue;
@@ -459,9 +463,17 @@ function computeLayout(data: ComputedData, W: number, H: number): CircleLayout[]
     const ratio = Math.max(0.15, Math.min(0.65, s.memberSet.size / Math.max(1, parentSize)));
     const sr = parentLayout.r * ratio * 0.7;
 
-    // Position subset on the outer side of parent (away from center)
-    const awayDir = parentLayout.cx < midX ? -1 : 1;
-    const offsetX = parentLayout.r * 0.35 * awayDir;
+    // Share of this subset's members that fall inside the SSW ∩ Helix lobe.
+    const inBoth = intersect(s.memberSet, intersection);
+    const intersectionShare =
+      s.memberSet.size > 0 ? inBoth.size / s.memberSet.size : 0;
+
+    // Direction: positive = toward the other primary (into the overlap);
+    //            negative = away (outer lobe of the parent).
+    // intersectionShare ∈ [0,1] → biasFactor ∈ [-1,1].
+    const biasFactor = intersectionShare * 2 - 1;
+    const towardMidDir = parentLayout.cx < midX ? 1 : -1;
+    const offsetX = parentLayout.r * 0.35 * biasFactor * towardMidDir;
     const offsetY = parentLayout.r * 0.15;
 
     layouts.push({

@@ -36,17 +36,62 @@
 | ISSUE-016 | **P1** | S4PRED availability check case sensitivity | `backend/server.py` | HIGH | — | ✅ FIXED |
 | ISSUE-017 | **P1** | Non-standard amino acid crashes | `backend/biochem_calculation.py` | MEDIUM | `test_nonstandard_aa.py` | ✅ FIXED |
 | ISSUE-024 | **P1** | No notification on non-standard AA substitutions | `backend/auxiliary.py`, UI | MEDIUM | — | 🟡 OPEN |
-| ISSUE-025 | **P0** | Backend test failures: `test_trace_id.py` (2 tests) | `backend/tests/test_trace_id.py` | LOW | already exists | 🔴 OPEN (Wave 0) |
-| ISSUE-026 | **P0** | Frontend type errors: 8 in stores (Zustand storage drift + Meta↔DatasetMetadata) | `ui/src/stores/datasetStore.ts`, `ui/src/stores/jobStore.ts` | LOW | tsc clean | 🔴 OPEN (Wave 0) |
+| ISSUE-025 | **P0** | Backend test failures: `test_trace_id.py` (2 tests) | `backend/tests/test_trace_id.py` | LOW | already exists | ✅ FIXED — 7/7 tests pass (verified 2026-05-19); doc was stale |
+| ISSUE-026 | **P0** | Frontend type errors: 8 in stores (Zustand storage drift + Meta↔DatasetMetadata) | `ui/src/stores/datasetStore.ts`, `ui/src/stores/jobStore.ts` | LOW | tsc clean | ✅ FIXED — store errors gone; 2 unrelated Cowork V10-3 leftovers (UniProtQueryInput AnalysisProgress props + MetricDetail chart data narrowing) cleaned up 2026-05-19. `npx tsc --noEmit` clean. |
 | ISSUE-027 | **P1** | `crypto.randomUUID is not a function` on Safari at `/quick` and `/database-search` (HTTP, older Safari) | `ui/src/components/UniProtQueryInput.tsx`, `ui/src/pages/Upload.tsx` | MEDIUM | jsdom test | 🟠 OPEN (Wave A) |
 | ISSUE-028 | **P2** | TANGO profile tooltip MISSING in Quick Analyze (present elsewhere). T3 to verify all TANGO charts | `ui/src/pages/QuickAnalyze.tsx` and TANGO chart components | LOW | manual | 🟠 OPEN (Wave B) |
 | ISSUE-029 | **P2** | Dark menu component shows in light mode (theme leak) | TBD via grep | LOW | manual | ✅ FIXED (2026-04-26) |
 | ISSUE-030 | **P1** | Sentry session-replay quota burn (sample rate at 1.0) | `ui/src/main.tsx` | LOW | — | ✅ FIXED (2026-04-26, replay rate → 0, error replay kept at 1.0) |
 | ISSUE-031 | **P2** | Stale Sentry errors: `HTTPException: No active job with this cancel token` (11/18 errors/month) | `backend/api/routes/jobs.py` | LOW | — | ✅ FIXED (commit 2ed386d 2026-04-03 — returns 200 ALREADY_COMPLETE; old VPS builds will stop firing after next deploy) |
+| ISSUE-032 | **P0** | FF-SSW axiom violation: peptides display `FF-SSW=true` while `SSW=false` (P85089, P0C005). Root cause: dual-source desync — `sswPrediction` shipped TANGO-only column; `ffSswFlag` used TANGO ∪ S4PRED mask. | `backend/services/dataframe_utils.py:apply_ff_flags`, `backend/schemas/peptide.py`, `backend/services/normalize.py` | **HIGH** — affects scientific integrity of 4-class classification | `backend/tests/test_axiom_invariants.py` | ✅ FIXED (2026-05-19) |
+| ISSUE-033 | **P1** | Perf regression — 12 peptides ≈ 1 min (Alex flag 2026-05-19). Root cause: Wave 2 §D added `vector_store.index_peptide` (ESM-2 8M CPU forward pass) inline-synchronous in the predict pipeline, adding 3-5s per peptide. | `backend/services/predict_service.py:330`, `backend/services/vector_store.py` | **MEDIUM** — degrades UX, makes paper-push demos slow | `backend/tests/test_vector_store.py::test_submit_index_background_returns_immediately_and_indexes` | ✅ FIXED (2026-05-19) — moved to `submit_index_background` daemon-thread executor; predict no longer waits on embedding |
 
 ---
 
 # P0 — Breaks Core Workflow
+
+## ISSUE-032: FF-SSW axiom violation — `ffSswFlag=1` with `sswPrediction=-1`
+
+| Field | Value |
+|-------|-------|
+| **Priority** | P0 |
+| **Status** | ✅ **FIXED** (2026-05-19) |
+| **Surfaced by** | Peleg (Slack 2026-05-19): "How is it possible that the peptide is predicted to be FF-SSW, but not predicted to be SSW?" |
+| **Reproducible peptides** | P85089 (len 14), P0C005 (len 10) |
+| **Mirror axiom** | `ffHelixFlag=1 ⇒ s4predHelixPrediction=1` — enforced by the same boundary check |
+
+### Axiom (now a contract)
+
+Per ADR-003 + Peleg P27 canonical definition:
+- **SSW** = TANGO **or** S4PRED predicts a structure-switch (canonical OR, never AND)
+- **FF-SSW** = SSW **AND** hydrophobicity ≥ threshold
+- Therefore: `ffSswFlag == 1 ⇒ sswPrediction == 1`
+- Mirror: `ffHelixFlag == 1 ⇒ s4predHelixPrediction == 1`
+
+### Root cause
+
+Dual-source desync.
+
+- `sswPrediction` was aliased to the raw `"SSW prediction"` column — **TANGO-only**.
+- `ffSswFlag` was computed in `apply_ff_flags` from `ssw_pos_mask = (tango == 1) | (s4pred == 1)` — **TANGO ∪ S4PRED**.
+- Whenever TANGO said "no SSW" but S4PRED said "SSW", and hydrophobicity met the cutoff, the API emitted `sswPrediction=-1` alongside `ffSswFlag=1`. Axiom violated.
+
+### Fix
+
+1. `backend/services/dataframe_utils.py:apply_ff_flags` now writes a new column `"SSW prediction (unified)"` from the **same** mask that drives FF-SSW. The raw TANGO column is preserved for audit and for provider-status detection.
+2. `backend/schemas/peptide.py` — `ssw_prediction` uses `AliasChoices("SSW prediction (unified)", "SSW prediction")`, preferring the unified column and falling back to TANGO-only for paths that never ran `apply_ff_flags`.
+3. `backend/services/normalize.py` — new `_enforce_ff_axioms()` runs at the serialization boundary: if a row violates the axiom (upstream bug), it logs `ff_ssw_axiom_violation` / `ff_helix_axiom_violation` and clamps the FF flag to `-1`. The API contract is honored even if upstream regresses.
+4. The fallback row constructors at `normalize.py:619` and `:790` prefer the unified column.
+
+### Regression test
+
+`backend/tests/test_axiom_invariants.py` — fails on pre-fix code, passes after. Covers:
+- P85089/P0C005 scenario (S4PRED-only SSW + hydro above threshold)
+- TANGO-only SSW
+- Both providers negative
+- SSW positive but hydro below threshold (axiom holds: SSW=1, FF-SSW=-1)
+- Batch with mixed provider signals — axiom per row
+- Defense-layer (`_enforce_ff_axioms`) zeros out violating FF flags
 
 ## ISSUE-001: Missing `await` on `parse_uniprot_query_service`
 
