@@ -271,21 +271,21 @@ export const useDatasetStore = create<DatasetState>()(
 
         const totalPeptides = peptides.length;
 
-        // Check provider status: if TANGO is OFF or UNAVAILABLE, SSW KPI should be N/A
+        // Provider status — used downstream for `sswAvailable` and `tangoDataPeptides`.
+        // Per ISSUE-032 canonical OR definition (SSW = TANGO ∪ S4PRED), `sswPrediction` and
+        // `ffSswFlag` are valid whenever EITHER provider has data, so the KPI no longer
+        // gates on TANGO availability alone. The valid-row filter below handles emptiness.
         const tangoStatus = meta?.provider_status?.tango?.status;
         const tangoUnavailable = tangoStatus === "OFF" || tangoStatus === "UNAVAILABLE";
 
-        // Count SSW positives (prediction === 1) - gate: only count rows with valid TANGO metrics (sswPrediction !== null/undefined)
-        // Denominator: rows with sswPrediction !== null/undefined
-        // Numerator: rows with sswPrediction === 1
-        // If provider is OFF/UNAVAILABLE, denominator will be 0 → return null
+        // Count SSW positives (prediction === 1) across all rows with a non-null unified
+        // SSW value. Backend writes null when neither provider produced data for the row,
+        // so the filter naturally returns 0 when both providers are off.
         const sswValidPeptides = peptides.filter((p) => {
           const sswVal = p.sswPrediction;
-          // Only include rows with valid TANGO metrics (not null, not undefined, not NaN)
           if (sswVal === null || sswVal === undefined) {
             return false;
           }
-          // Also exclude NaN (shouldn't happen after backend fix, but defensive)
           if (typeof sswVal === "number" && (isNaN(sswVal) || !isFinite(sswVal))) {
             return false;
           }
@@ -295,13 +295,8 @@ export const useDatasetStore = create<DatasetState>()(
           const sswVal = p.sswPrediction;
           return typeof sswVal === "number" && sswVal === 1;
         }).length;
-        // Only compute percent if we have valid TANGO data (denominator > 0)
-        // If denominator == 0 → return null (UI will show N/A)
-        // Also return null if provider is OFF/UNAVAILABLE
         const sswPositivePercent =
-          !tangoUnavailable && sswValidPeptides.length > 0
-            ? (sswPositive / sswValidPeptides.length) * 100
-            : null;
+          sswValidPeptides.length > 0 ? (sswPositive / sswValidPeptides.length) * 100 : null;
 
         // Helper for means (returns null if no valid values)
         const mean = (arr: number[]): number | null => {
@@ -389,10 +384,11 @@ export const useDatasetStore = create<DatasetState>()(
         const ffHelixCandidatePercent =
           totalPeptides > 0 ? (ffHelixCandidates / totalPeptides) * 100 : null;
 
-        // FF-SSW candidate count: ffSswFlag === 1 (gated on TANGO availability)
+        // FF-SSW candidate count: ffSswFlag === 1. After ISSUE-032 canonical OR definition,
+        // FF-SSW can be S4PRED-only-derived, so the KPI is valid whenever totalPeptides > 0.
         const ffSswCandidates = peptides.filter((p) => p.ffSswFlag === 1).length;
         const ffSswCandidatePercent =
-          !tangoUnavailable && totalPeptides > 0 ? (ffSswCandidates / totalPeptides) * 100 : null;
+          totalPeptides > 0 ? (ffSswCandidates / totalPeptides) * 100 : null;
 
         const stats: DatasetStats = {
           totalPeptides,
@@ -572,13 +568,11 @@ export const useDatasetStore = create<DatasetState>()(
           try {
             localStorage.setItem(name, serialized);
           } catch (e: unknown) {
-            const isQuota =
-              e instanceof DOMException && e.name === "QuotaExceededError";
+            const isQuota = e instanceof DOMException && e.name === "QuotaExceededError";
             if (isQuota) {
               // Drop per-residue curves to fit within 5MB localStorage limit
               try {
-                const state =
-                  (value.state ?? {}) as { peptides?: Record<string, unknown>[] };
+                const state = (value.state ?? {}) as { peptides?: Record<string, unknown>[] };
                 const stripped: StorageValue<unknown> = {
                   ...value,
                   state: {

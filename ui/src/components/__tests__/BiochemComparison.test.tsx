@@ -212,8 +212,13 @@ describe("BiochemComparison", () => {
       expect(container.textContent).toContain("Hydrophobicity");
       expect(container.textContent).toContain("Hydrophobic moment");
 
-      // Radar + percentile bars are replaced with the empty-state message
-      expect(container.textContent).toContain(
+      // B3 (Said decided 2026-05-21): the "No database comparison available"
+      // empty-state was removed. Single-peptide mode just hides the radar +
+      // percentile sub-panels — no replacement copy.
+      expect(container.textContent).not.toContain(
+        "No database comparison available"
+      );
+      expect(container.textContent).not.toContain(
         "Compare with a database — upload a CSV or run a UniProt query."
       );
 
@@ -237,9 +242,13 @@ describe("BiochemComparison", () => {
           mode="single-peptide"
         />
       );
-      expect(container.textContent).toContain(
+      // B3: empty-state copy removed; the radar + percentile sub-panels
+      // simply don't render in single-peptide mode.
+      expect(container.textContent).not.toContain(
         "Compare with a database — upload a CSV or run a UniProt query."
       );
+      expect(container.textContent).not.toContain("Percentile ranking");
+      expect(container.textContent).not.toContain("Radar comparison");
     });
 
     it("explicit mode='full' overrides single-peptide auto-detect", () => {

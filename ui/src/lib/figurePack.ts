@@ -25,6 +25,11 @@ export interface FigurePackOptions {
   stats: DatasetStats;
   /** Optional title for the cover page */
   title?: string;
+  /** Reproducibility permalink — embedded in the methods panel + cover page so
+   * a paper reviewer can regenerate the same figure from the same state. */
+  permalinkURL?: string;
+  /** PVL version string (e.g. "0.1.0") — embedded in the methods panel. */
+  version?: string;
 }
 
 export interface FigurePanel {
@@ -52,13 +57,13 @@ export function generateCoverPage(options: FigurePackOptions): string {
 
   // Title
   lines.push(
-    `<text x="400" y="${y}" font-family="${FONT}" font-size="20" font-weight="bold" fill="#222" text-anchor="middle">${escapeXml(displayTitle)}</text>`,
+    `<text x="400" y="${y}" font-family="${FONT}" font-size="20" font-weight="bold" fill="#222" text-anchor="middle">${escapeXml(displayTitle)}</text>`
   );
   y += 30;
 
   // Subtitle
   lines.push(
-    `<text x="400" y="${y}" font-family="${FONT}" font-size="12" fill="#666" text-anchor="middle">Peptide Visual Lab — Publication Figure Set</text>`,
+    `<text x="400" y="${y}" font-family="${FONT}" font-size="12" fill="#666" text-anchor="middle">Peptide Visual Lab — Publication Figure Set</text>`
   );
   y += 40;
 
@@ -82,7 +87,7 @@ export function generateCoverPage(options: FigurePackOptions): string {
 
   for (const line of summaryLines) {
     lines.push(
-      `<text x="120" y="${y}" font-family="${FONT}" font-size="11" fill="#444">${escapeXml(line)}</text>`,
+      `<text x="120" y="${y}" font-family="${FONT}" font-size="11" fill="#444">${escapeXml(line)}</text>`
     );
     y += 20;
   }
@@ -91,7 +96,7 @@ export function generateCoverPage(options: FigurePackOptions): string {
 
   // Panel index
   lines.push(
-    `<text x="120" y="${y}" font-family="${FONT}" font-size="12" font-weight="bold" fill="#333">Panels</text>`,
+    `<text x="120" y="${y}" font-family="${FONT}" font-size="12" font-weight="bold" fill="#333">Panels</text>`
   );
   y += 22;
 
@@ -103,7 +108,7 @@ export function generateCoverPage(options: FigurePackOptions): string {
   ];
   for (const entry of panelIndex) {
     lines.push(
-      `<text x="130" y="${y}" font-family="${FONT}" font-size="10" fill="#555">${entry}</text>`,
+      `<text x="130" y="${y}" font-family="${FONT}" font-size="10" fill="#555">${entry}</text>`
     );
     y += 18;
   }
@@ -112,7 +117,7 @@ export function generateCoverPage(options: FigurePackOptions): string {
 
   // Footer
   lines.push(
-    `<text x="400" y="${y}" font-family="${FONT}" font-size="9" fill="#999" text-anchor="middle">Generated ${date} by PVL (Peptide Visual Lab) v0.1</text>`,
+    `<text x="400" y="${y}" font-family="${FONT}" font-size="9" fill="#999" text-anchor="middle">Generated ${date} by PVL (Peptide Visual Lab) v0.1</text>`
   );
 
   return [
@@ -124,9 +129,7 @@ export function generateCoverPage(options: FigurePackOptions): string {
 }
 
 /** Generate all panels for the figure pack */
-export async function generateFigurePack(
-  options: FigurePackOptions,
-): Promise<FigurePanel[]> {
+export async function generateFigurePack(options: FigurePackOptions): Promise<FigurePanel[]> {
   const { peptides, stats, thresholds } = options;
 
   const panels: FigurePanel[] = [
@@ -150,8 +153,7 @@ export async function generateFigurePack(
       id: "panel-c-aggregation",
       label: "Panel C",
       title: "Aggregation Propensity Profile",
-      description:
-        "Per-residue TANGO aggregation propensity overlay for selected peptides.",
+      description: "Per-residue TANGO aggregation propensity overlay for selected peptides.",
       svg: generateAggregationProfileSVG(peptides),
     },
     {
@@ -159,8 +161,11 @@ export async function generateFigurePack(
       label: "Panel D",
       title: "Methods & Thresholds",
       description:
-        "Auto-generated methods text with active thresholds, analysis date, and citation.",
-      svg: generateMethodsSVG(thresholds, peptides.length),
+        "Auto-generated methods text with active thresholds, analysis date, citation, and reproducibility permalink.",
+      svg: generateMethodsSVG(thresholds, peptides.length, {
+        permalinkURL: options.permalinkURL,
+        version: options.version,
+      }),
     },
   ];
 
@@ -174,7 +179,7 @@ export async function generateFigurePack(
 export function downloadFigurePackAsHTML(
   panels: FigurePanel[],
   coverSvg: string,
-  title: string,
+  title: string
 ): void {
   const panelSections = panels
     .map(
@@ -183,7 +188,7 @@ export function downloadFigurePackAsHTML(
       <h2 style="font-family:Arial,sans-serif;color:#333;margin-bottom:8px;">${p.label} — ${p.title}</h2>
       <p style="font-family:Arial,sans-serif;font-size:12px;color:#666;margin-bottom:12px;">${p.description}</p>
       ${p.svg}
-    </section>`,
+    </section>`
     )
     .join("\n");
 
@@ -222,10 +227,7 @@ export function downloadFigurePackAsHTML(
  * Download individual SVG files via sequential anchor clicks.
  * Used as a final fallback.
  */
-export function downloadSVGFiles(
-  panels: FigurePanel[],
-  coverSvg: string,
-): void {
+export function downloadSVGFiles(panels: FigurePanel[], coverSvg: string): void {
   const downloadBlob = (content: string, filename: string) => {
     const blob = new Blob([content], { type: "image/svg+xml;charset=utf-8" });
     const url = URL.createObjectURL(blob);

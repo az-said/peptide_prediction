@@ -14,9 +14,9 @@ import { Switch } from "@/components/ui/switch";
 import { Search, Loader2, Info, ChevronDown, ExternalLink, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 import { API_BASE, executeUniProtQuery } from "@/lib/api";
-import { cancelSyncJob } from "@/lib/jobApi";
 import { uuid } from "@/lib/uuid";
 import { AnalysisProgress } from "@/components/AnalysisProgress";
+import { useJobStore } from "@/stores/jobStore";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 
 type QueryMode = "auto" | "accession" | "keyword" | "organism" | "keyword_organism";
@@ -77,6 +77,11 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
   const [showAdvanced, setShowAdvanced] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const cancelTokenRef = useRef<string | null>(null);
+  // V10-3 sync-job pattern: track the active jobStore id + its tick interval so
+  // AnalysisProgress (which now reads from the store) and the sidebar pill both
+  // surface UniProt-execute progress consistently with Upload's CSV path.
+  const syncJobIdRef = useRef<string | null>(null);
+  const tickIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Cancel backend job + abort fetch on unmount (navigation) or tab close
   useEffect(() => {
@@ -177,6 +182,24 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
       const token = uuid();
       cancelTokenRef.current = token;
 
+      // V10-3: push a sync job into jobStore so AnalysisProgress + sidebar pill
+      // render unified progress for UniProt execute (matches Upload's CSV path).
+      // The store-side cancelJob uses cancelToken + abortController to tear
+      // everything down, so the inline cancel button works without bespoke
+      // wiring here.
+      const jobId = useJobStore.getState().startSyncJob({
+        peptideCount: controls.size,
+        fileName: `uniprot:${query.trim().slice(0, 40)}`,
+        hasTango: controls.runTango,
+        hasS4pred: controls.runS4pred,
+        cancelToken: token,
+        abortController,
+      });
+      syncJobIdRef.current = jobId;
+      tickIntervalRef.current = setInterval(() => {
+        useJobStore.getState().tickSyncProgress(jobId);
+      }, 500);
+
       // Timeout — UniProt returns FULL proteins (some 1000+ aa).
       // S4PRED LSTM on CPU: ~30-60s per large protein on a laptop.
       // With cancel button users can abort early — so be very generous here.
@@ -249,6 +272,16 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
             toast("Adjusted query. Retrying...");
             setIsExecuting(false);
             onLoadingChange?.(false);
+            // Clean up the current sync job before recursing — otherwise the
+            // recursive call overwrites the ref and the tick interval leaks.
+            if (tickIntervalRef.current) {
+              clearInterval(tickIntervalRef.current);
+              tickIntervalRef.current = null;
+            }
+            if (syncJobIdRef.current) {
+              useJobStore.getState().completeSyncJob(syncJobIdRef.current);
+              syncJobIdRef.current = null;
+            }
             return handleExecute(true, true);
           }
           if (error.name === "AbortError") {
@@ -266,6 +299,14 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
         abortRef.current = null;
         setIsExecuting(false);
         onLoadingChange?.(false);
+        if (tickIntervalRef.current) {
+          clearInterval(tickIntervalRef.current);
+          tickIntervalRef.current = null;
+        }
+        if (syncJobIdRef.current) {
+          useJobStore.getState().completeSyncJob(syncJobIdRef.current);
+          syncJobIdRef.current = null;
+        }
       }
     },
     [query, selectedMode, controls, parsedQuery, onQueryExecuted, onLoadingChange]
@@ -558,28 +599,9 @@ export function UniProtQueryInput({ onQueryExecuted, onLoadingChange }: UniProtQ
         </div>
       )}
 
-      {/* ── Loading state ── */}
-      <AnalysisProgress
-        isActive={isExecuting}
-        peptideCount={controls.size}
-        hasS4pred={controls.runS4pred}
-        hasTango={controls.runTango}
-        onCancel={() => {
-          // Tell backend to stop processing
-          if (cancelTokenRef.current) {
-            cancelSyncJob(cancelTokenRef.current);
-            cancelTokenRef.current = null;
-          }
-          // Abort the HTTP request
-          if (abortRef.current) {
-            abortRef.current.abort();
-            abortRef.current = null;
-          }
-          setIsExecuting(false);
-          onLoadingChange?.(false);
-          toast("Analysis cancelled");
-        }}
-      />
+      {/* ── Loading state ── V10-3: self-gating on jobStore.activeJob; cancel
+          tears down the sync job via jobStore.cancelJob (token + abort). */}
+      <AnalysisProgress />
     </div>
   );
 }
