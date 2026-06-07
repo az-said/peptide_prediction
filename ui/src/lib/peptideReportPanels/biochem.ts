@@ -22,7 +22,7 @@ function drawBiochemContent(
   doc: jsPDF,
   peptide: Peptide,
   _data: ReportData,
-  ctx: RenderContext,
+  ctx: RenderContext
 ): void {
   let y = ctx.contentTop;
 
@@ -30,7 +30,10 @@ function drawBiochemContent(
   y = drawSectionHeading(doc, "Biophysical Properties", y);
 
   const biophysRows: Array<[string, string]> = [
-    ["Hydrophobicity (Fauchere–Pliska)", peptide.hydrophobicity != null ? peptide.hydrophobicity.toFixed(3) : "—"],
+    [
+      "Hydrophobicity (Fauchere–Pliska)",
+      peptide.hydrophobicity != null ? peptide.hydrophobicity.toFixed(3) : "—",
+    ],
     ["Charge (pH 7.4)", peptide.charge != null ? peptide.charge.toFixed(2) : "—"],
     ["Hydrophobic Moment (μH)", peptide.muH != null ? peptide.muH.toFixed(3) : "—"],
     ["Sequence Length", `${peptide.length ?? peptide.sequence.length} aa`],
@@ -42,10 +45,23 @@ function drawBiochemContent(
   // ── FF-Helix classification ────────────────────────────────────
   y = drawSectionHeading(doc, "FF-Helix Classification", y);
 
+  // Per Peleg Drive 2026-06-03: "There should be only two terms: Helix and
+  // FF-Helix. The % should be a feature, not a class." The FF-Helix sliding-
+  // window propensity value is exposed as "FF-Helix score" (no percent suffix)
+  // so it reads as a continuous feature rather than a class-membership ratio.
   const ffHelixRows: Array<[string, string]> = [
-    ["FF-Helix Flag", peptide.ffHelixFlag === 1 ? "Candidate" : peptide.ffHelixFlag === -1 ? "Not candidate" : "—"],
-    ["FF-Helix %", peptide.ffHelixPercent != null ? `${peptide.ffHelixPercent.toFixed(1)}%` : "—"],
-    ["FF-Helix Score", peptide.ffHelixScore != null ? peptide.ffHelixScore.toFixed(3) : "—"],
+    [
+      "FF-Helix Flag",
+      peptide.ffHelixFlag === 1 ? "Candidate" : peptide.ffHelixFlag === -1 ? "Not candidate" : "—",
+    ],
+    [
+      "FF-Helix score (sliding-window propensity)",
+      peptide.ffHelixPercent != null ? peptide.ffHelixPercent.toFixed(1) : "—",
+    ],
+    [
+      "FF-Helix Score (composite)",
+      peptide.ffHelixScore != null ? peptide.ffHelixScore.toFixed(3) : "—",
+    ],
   ];
 
   if (peptide.ffHelixFragments && peptide.ffHelixFragments.length > 0) {
@@ -66,9 +82,21 @@ function drawBiochemContent(
   y = drawSectionHeading(doc, "FF-SSW Classification", y);
 
   const ffSswRows: Array<[string, string]> = [
-    ["FF-SSW Flag", peptide.ffSswFlag === 1 ? "Candidate" : peptide.ffSswFlag === -1 ? "Not candidate" : "—"],
+    [
+      "FF-SSW Flag",
+      peptide.ffSswFlag === 1 ? "Candidate" : peptide.ffSswFlag === -1 ? "Not candidate" : "—",
+    ],
     ["FF-SSW Score", peptide.ffSswScore != null ? peptide.ffSswScore.toFixed(3) : "—"],
-    ["SSW Prediction", peptide.sswPrediction === 1 ? "Positive" : peptide.sswPrediction === -1 ? "Negative" : peptide.sswPrediction === 0 ? "Uncertain" : "—"],
+    [
+      "SSW Prediction",
+      peptide.sswPrediction === 1
+        ? "Positive"
+        : peptide.sswPrediction === -1
+          ? "Negative"
+          : peptide.sswPrediction === 0
+            ? "Uncertain"
+            : "—",
+    ],
     ["SSW Score", peptide.sswScore != null ? peptide.sswScore.toFixed(3) : "—"],
     ["SSW Diff", peptide.sswDiff != null ? peptide.sswDiff.toFixed(3) : "—"],
   ];
@@ -123,7 +151,7 @@ function drawBiochemContent(
       y = drawParagraph(
         doc,
         "No aggregation hotspots detected (threshold: 5% aggregation propensity).",
-        y,
+        y
       );
     }
   }
