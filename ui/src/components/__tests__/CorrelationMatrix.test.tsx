@@ -413,7 +413,20 @@ describe("DEFAULT_CORRELATION_METRICS", () => {
   });
 
   it("has the expected short labels", () => {
+    // 2026-06-07 (Peleg Zoom 2026-06-04): metrics updated — S4PRED helix score
+    // replaces helix %, TANGO H/β/agg added, FF flags added as binary targets.
     const shortLabels = DEFAULT_CORRELATION_METRICS.map((m) => m.shortLabel);
-    expect(shortLabels).toEqual(["Hydro", "μH", "Charge", "Length", "Helix"]);
+    expect(shortLabels).toEqual([
+      "Hydro",
+      "μH",
+      "Charge",
+      "Length",
+      "Helix sc.",
+      "TANGO H",
+      "TANGO β",
+      "TANGO agg",
+      "FF-Helix",
+      "FF-SSW",
+    ]);
   });
 });

@@ -614,11 +614,15 @@ export default function PeptideDetail() {
                         <XAxis
                           type="number"
                           dataKey="x"
-                          name="FF-Helix %"
-                          tickFormatter={(v) => `${v}%`}
+                          name="FF-Helix score"
+                          tickFormatter={(v) => `${v}`}
                           domain={[0, 100]}
                           label={{
-                            value: "FF-Helix % (helix content × μH threshold)",
+                            // 2026-06-07 (CodeRabbit PR #80): axis label + tooltip
+                            // were inconsistent ("FF-Helix score" axis vs
+                            // "FF-Helix: X%" tooltip). Drop the percent suffix
+                            // from both per Peleg's "% is a feature, not a class".
+                            value: "FF-Helix score (sliding-window propensity)",
                             position: "insideBottom",
                             offset: -10,
                             fontSize: 12,
@@ -645,7 +649,7 @@ export default function PeptideDetail() {
                             return (
                               <div className="bg-background border border-border rounded p-2 text-xs">
                                 <p className="font-medium">{item.id}</p>
-                                <p>FF-Helix: {Number(item.x).toFixed(1)}%</p>
+                                <p>FF-Helix score: {Number(item.x).toFixed(1)}</p>
                                 <p>Aggregation Max: {Number(item.y).toFixed(2)}</p>
                               </div>
                             );

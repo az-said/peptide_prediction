@@ -38,25 +38,46 @@ const metrics = [
     // biological information. Discussion needed before changing presentation.
     color: "text-amber-600",
   },
+  // 2026-06-07 (Peleg Drive 2026-05-22 + Zoom 2026-06-04): the 4 classification
+  // sections below use her VERBATIM text. Ordering Helix → FF-Helix → SSW →
+  // FF-SSW mirrors the KPI card row and the symmetry-of-treatment rule.
+  // Two minor open confirmations in V2 doc Q2 (whether SSW references both gap
+  // and min-SS-content thresholds; whether FF-SSW gate is hydrophobicity not μH)
+  // — text below is shipped as Peleg wrote it; tweak only after she confirms.
   {
     icon: Layers,
-    name: "FF-Helix (Fibril-Forming alpha helix)",
-    // Peleg FIX-027 verbatim: removes Fauchere-Pliska + CD spectroscopy framing.
-    description:
-      "Determined by the uH threshold. If a peptide is predicted to be helical and its uH is higher than the threshold, it is predicted as a potential alpha-helical fibril-forming peptide.",
+    name: "Alpha-helix secondary structure (Helix)",
+    description: "Determined by s4pred predictions and threshold.",
     interpretation:
-      "Classification is binary: candidate or not. Adjust the uH threshold to make the classification more or less strict.",
-    color: "text-purple-600",
+      "Base class for FF-Helix. Classification is binary: helix-positive (at least one detected helix segment from Peleg's gap-smoothed segment finder applied to S4PRED) or helix-negative.",
+    color: "text-helix",
+  },
+  {
+    icon: Layers,
+    name: "Fibril-forming alpha helix (FF-Helix)",
+    description:
+      "Determined by the uH threshold. If a peptide is predicted to be helical (as described above) and its uH is higher than the threshold uH, it will be predicted as a potential alpha-helical fibril-forming peptide.",
+    interpretation:
+      "Classification is binary: candidate or not. The μH threshold is dataset-derived (mean μH over helix-positive peptides in your batch). Single-sequence mode falls back to the Ragonis-Bachar / Rayan reference value 0.388.",
+    color: "text-ff-helix",
   },
   {
     icon: BarChart3,
-    name: "SSW Prediction",
+    name: "Secondary structure switch (SSW)",
     description:
-      "Secondary Structure Switch prediction from TANGO and/or S4PRED analysis. Indicates whether the peptide may undergo a conformational switch between helix and beta-sheet.",
-    // Peleg FIX-027 verbatim: positive/negative/N/A on separate lines, no amyloid framing.
+      "Determined by Tango and/or s4pred. Peptide will be predicted as secondary structure switch if the difference between averaged scores of helicity and extended beta are lower than the maximum gap threshold. Meaning, for these sequences the secondary structure prediction tools were indecisive or predicted scores similar for both secondary structures.",
     interpretation:
       "Positive — predicted to undergo a structural switch.\nNegative — predicted stable (no switch).\nN/A — provider not available or sequence too short.\n\nThere is no connection between the SSW prediction and the fibril-forming potential. Only after taking hydrophobicity into account.",
-    color: "text-chameleon-positive",
+    color: "text-ssw",
+  },
+  {
+    icon: BarChart3,
+    name: "Fibril-forming secondary structure switch (FF-SSW)",
+    description:
+      "Determined by the hydrophobicity threshold. If a peptide is predicted to be a secondary structure switch (as described above) and its hydrophobicity is higher than the threshold hydrophobicity, it will be predicted as a potential secondary structure switch fibril-forming.",
+    interpretation:
+      "Classification is binary: candidate or not. The hydrophobicity threshold is dataset-derived (mean hydrophobicity over SSW-positive peptides in your batch). Single-sequence mode falls back to the Ragonis-Bachar / Rayan reference value 0.417.",
+    color: "text-ff-ssw",
   },
 ];
 
@@ -379,8 +400,8 @@ export default function Help() {
                   <strong className="text-foreground">
                     Ragonis-Bachar et al., in preparation (2026)
                   </strong>
-                  . The minimum continuous-residue threshold for an S4PRED helix segment
-                  (default &ge;15&nbsp;aa) follows{" "}
+                  . The minimum continuous-residue threshold for an S4PRED helix segment (default
+                  &ge;15&nbsp;aa) follows{" "}
                   <em className="text-foreground">[citation pending — Peleg]</em>. Both references
                   will be replaced with full bibliographic entries once the source publications are
                   finalized; the values themselves are stable and documented here for

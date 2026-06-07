@@ -65,10 +65,15 @@ export const OPTIONAL_METRICS: RankingMetric[] = [
 
 export const ALL_METRICS: RankingMetric[] = [...DEFAULT_METRICS, ...OPTIONAL_METRICS];
 
+// 2026-06-07 (Peleg Drive 2026-05-22): "% is a feature, not a class." The
+// FF-Helix sliding-window propensity is exposed as "FF-Helix score" (no %
+// suffix) so it reads as a continuous feature rather than a class-membership
+// ratio. S4PRED Helix % stays as a labelled percent because that one IS a
+// per-sequence coverage percentage (S4PRED's residues-predicted-helical / total).
 export const METRIC_LABELS: Record<RankingMetric, string> = {
   tangoAggMax: "TANGO Aggregation Max",
   s4predHelixPercent: "S4PRED Helix %",
-  ffHelixPercent: "FF-Helix %",
+  ffHelixPercent: "FF-Helix score",
   muH: "uH",
   sswScore: "SSW Score",
   hydrophobicity: "Hydrophobicity",

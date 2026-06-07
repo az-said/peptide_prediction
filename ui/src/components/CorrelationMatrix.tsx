@@ -51,17 +51,40 @@ export interface CorrelationMatrixProps {
 // PELEG-Q-FIX-022: Charge handling — current implementation uses signed charge.
 // Verify with Peleg whether |Charge| or signed is preferred for correlation purposes.
 
+// 2026-06-07 (Peleg Zoom 2026-06-04): correlation matrix updated.
+//   - Replace S4PRED helix PERCENT with S4PRED helix SCORE (raw probability from
+//     S4PRED). Peleg: "use the score not the %; the % is a feature we display
+//     elsewhere; correlation against the score is the canonical one."
+//   - Add TANGO helix max, TANGO beta max, TANGO aggregation max as metrics.
+//   - Add FF-Helix flag and FF-SSW flag as BINARY correlation TARGETS — researchers
+//     see "which features correlate with being an FF candidate" (Peleg's
+//     "something we are testing" framing).
+//   - TANGO agg max was previously EXCLUDED per FIX-023, but Peleg re-included
+//     it in the Zoom — the matrix should expose TANGO's actual output so
+//     researchers see the gap between TANGO's raw aggregation signal and PVL's
+//     re-interpreted fibril-formation flags.
 export const DEFAULT_CORRELATION_METRICS: CorrelationMetric[] = [
   { id: "hydrophobicity", label: "Hydrophobicity", shortLabel: "Hydro", getValue: (p) => p.hydrophobicity },
   { id: "muH", label: "μH", shortLabel: "μH", getValue: (p) => p.muH },
   { id: "charge", label: "Charge", shortLabel: "Charge", getValue: (p) => p.charge },
   { id: "length", label: "Length", shortLabel: "Length", getValue: (p) => p.length },
-  { id: "s4predHelixPct", label: "S4PRED helix", shortLabel: "Helix", getValue: (p) => p.s4predHelixPercent },
+  // 2026-06-07: switched from s4predHelixPercent to s4predHelixScore per Peleg.
+  // The "score" is the raw S4PRED probability (average helix probability over
+  // detected segments); the "percent" was a derived sequence-coverage ratio
+  // that obscured the underlying prediction confidence.
+  { id: "s4predHelixScore", label: "S4PRED helix score", shortLabel: "Helix sc.", getValue: (p) => p.s4predHelixScore },
+  { id: "tangoHelixMax", label: "TANGO helix max", shortLabel: "TANGO H", getValue: (p) => p.tangoHelixMax },
+  { id: "tangoBetaMax", label: "TANGO β max", shortLabel: "TANGO β", getValue: (p) => p.tangoBetaMax },
+  { id: "tangoAggMax", label: "TANGO aggregation max", shortLabel: "TANGO agg", getValue: (p) => p.tangoAggMax },
+  // FF flags as binary correlation targets — researchers see "which features
+  // correlate with being an FF candidate" (Peleg "as something we are testing").
+  // Render as 0/1 numeric so Pearson correlation is meaningful.
+  { id: "ffHelixFlag", label: "FF-Helix candidate", shortLabel: "FF-Helix", getValue: (p) => (p.ffHelixFlag === 1 ? 1 : p.ffHelixFlag === -1 ? 0 : null) },
+  { id: "ffSswFlag", label: "FF-SSW candidate", shortLabel: "FF-SSW", getValue: (p) => (p.ffSswFlag === 1 ? 1 : p.ffSswFlag === -1 ? 0 : null) },
 ];
-// EXCLUDED per Peleg FIX-023:
+// EXCLUDED per Peleg FIX-023 (still excluded):
 //   - SSW score (no real meaning, threshold-bound)
 //   - SSW diff (no real meaning, threshold-bound)
-//   - Agg Max (Peleg flagged as not appropriate for matrix)
 //   - FF-Helix % removed from label (no "%" suffix — Peleg FIX-023)
 
 // ── Correlation computation ──
