@@ -736,20 +736,24 @@ export default function Results() {
                   {/* Row 1: Preset buttons */}
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium mr-1">Presets:</span>
-                    {(["equal", "amyloid", "helix", "switch"] as RankingPreset[]).map((p) => (
+                    {(
+                      ["fibril", "equal", "amyloid", "helix", "switch"] as RankingPreset[]
+                    ).map((p) => (
                       <Button
                         key={p}
                         variant={preset === p ? "default" : "outline"}
                         size="sm"
                         onClick={() => applyPreset(p)}
                       >
-                        {p === "equal"
-                          ? "Equal"
-                          : p === "amyloid"
-                            ? "Fibril-formation Focus"
-                            : p === "helix"
-                              ? "Helix Focus"
-                              : "Switch Focus"}
+                        {p === "fibril"
+                          ? "Fibril-Formation"
+                          : p === "equal"
+                            ? "Equal"
+                            : p === "amyloid"
+                              ? "Fibril-formation Focus"
+                              : p === "helix"
+                                ? "Helix Focus"
+                                : "Switch Focus"}
                       </Button>
                     ))}
                     {preset === "custom" && (

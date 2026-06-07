@@ -37,17 +37,18 @@ interface RankingStoreState {
   applyPreset: (preset: RankingPreset) => void;
 }
 
-// 2026-06-07 (Peleg Zoom 2026-06-04): default ranking preset switched from
-// "equal" to "amyloid" (UI label "Fibril-Formation Focus"). Peleg's point:
-// fibril-formation is the core thing researchers come for. The Equal preset
-// is still available as an alternative; users who want a balanced metric
-// distribution can switch.
+// 2026-06-07 (Peleg Zoom 2026-06-04): default ranking preset is now "fibril"
+// (UI label "Fibril-Formation Focus"). Peleg: fibril-formation is the core
+// thing researchers come for; Equal preset stays as alternative for users who
+// want a balanced metric distribution.
 export const useRankingStore = create<RankingStoreState>((set, get) => ({
-  activeMetrics: [...DEFAULT_METRICS],
-  weights: { ...PRESETS.amyloid.weights },
+  // activeMetrics derives from non-zero weight keys so the binary class-flag
+  // metrics show up in the ranking UI without being added to DEFAULT_METRICS.
+  activeMetrics: ALL_METRICS.filter((m) => (PRESETS.fibril.weights[m] ?? 0) > 0),
+  weights: { ...PRESETS.fibril.weights },
   directions: { ...DEFAULT_DIRECTIONS },
   topN: 10,
-  preset: "amyloid",
+  preset: "fibril",
 
   toggleOptionalMetric: (metric) => {
     const state = get();

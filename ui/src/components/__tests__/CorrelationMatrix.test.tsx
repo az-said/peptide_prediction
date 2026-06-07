@@ -412,21 +412,38 @@ describe("DEFAULT_CORRELATION_METRICS", () => {
     }
   });
 
-  it("has the expected short labels", () => {
-    // 2026-06-07 (Peleg Zoom 2026-06-04): metrics updated — S4PRED helix score
-    // replaces helix %, TANGO H/β/agg added, FF flags added as binary targets.
+  it("has the expected short labels (Peleg 2026-06-07: + TANGO metrics + FF flag targets)", () => {
     const shortLabels = DEFAULT_CORRELATION_METRICS.map((m) => m.shortLabel);
     expect(shortLabels).toEqual([
       "Hydro",
       "μH",
       "Charge",
       "Length",
-      "Helix sc.",
-      "TANGO H",
-      "TANGO β",
-      "TANGO agg",
+      "Helix score",
+      "T helix",
+      "T beta",
+      "T agg max",
       "FF-Helix",
       "FF-SSW",
     ]);
+  });
+
+  // Peleg 2026-06-07 — % is a feature not a class. The matrix surfaces the raw
+  // S4PRED helix score (mean P(helix)), NOT the helix percentage column.
+  it("uses s4predHelixScore (not s4predHelixPercent) for the helix metric", () => {
+    const helixMetric = DEFAULT_CORRELATION_METRICS.find((m) => m.id === "s4predHelixScore");
+    expect(helixMetric).toBeDefined();
+    const percentMetric = DEFAULT_CORRELATION_METRICS.find((m) => m.id === "s4predHelixPct");
+    expect(percentMetric).toBeUndefined();
+  });
+
+  // FF candidate flags are binary correlation TARGETS — answers "which raw
+  // feature correlates with being an FF candidate?"
+  it("emits 1/0/null for FF flag metrics (binary class targets)", () => {
+    const ffHelix = DEFAULT_CORRELATION_METRICS.find((m) => m.id === "ffHelixFlag")!;
+    expect(ffHelix.getValue({ ffHelixFlag: 1 } as any)).toBe(1);
+    expect(ffHelix.getValue({ ffHelixFlag: -1 } as any)).toBe(0);
+    expect(ffHelix.getValue({ ffHelixFlag: null } as any)).toBeNull();
+    expect(ffHelix.getValue({} as any)).toBeNull();
   });
 });

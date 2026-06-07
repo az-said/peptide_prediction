@@ -66,6 +66,63 @@ describe("SequenceTrack legend", () => {
     expect(container.textContent).not.toContain("(0%)");
   });
 
+  // 2026-06-07 regression — black-G bug. A residue that S4PRED's per-residue
+  // argmax calls "C" (coil) but that sits INSIDE a helix fragment range
+  // (Peleg's gap-smoothed `Helix fragments (S4PRED)`) MUST render as helix.
+  // Driver: residue colour ought to derive from fragment ranges first, raw
+  // per-residue argmax only as a fallback for residues outside any fragment.
+  it("residue inside a helix fragment renders helix even when ssPrediction says coil", () => {
+    // Sequence GIGAVLKVLT — 10 aa, S4PRED says C for the G at index 5 (1-indexed:6)
+    // but Peleg's gap-smoothed helix fragment spans 1-10 covering it.
+    const p = makePeptide({
+      sequence: "GIGAVLKVLT",
+      length: 10,
+      s4predHelixPercent: 90,
+      betaPercent: 0,
+      s4pred: {
+        ssPrediction: ["H", "H", "H", "H", "H", "C", "H", "H", "H", "H"],
+        helixSegments: [[1, 10]],
+      },
+    });
+    const { container } = render(<SequenceTrack peptide={p} />);
+    // 2026-06-07 (CodeRabbit PR #80 J): tightened selector + exact count.
+    // Previously `span[style*='helix']` would also match unrelated tooltip
+    // children with "helix" anywhere in style; now we filter to the actual
+    // residue spans (the cursor-default ones that SequenceTrack emits per
+    // residue) and assert all 10 carry the helix colour.
+    const residueSpans = container.querySelectorAll<HTMLSpanElement>("span.cursor-default");
+    expect(residueSpans).toHaveLength(10);
+    residueSpans.forEach((span) => {
+      expect(span.style.color).toContain("hsl(var(--helix))");
+    });
+  });
+
+  it("residue outside any fragment falls back to per-residue argmax", () => {
+    // Helix fragment covers 1-5 only. Residues at 1-indexed:8-10 have
+    // ssPrediction "E" and no fragment owns them — should render beta colour
+    // from the fallback path.
+    const p = makePeptide({
+      sequence: "AAAAAAEEEE",
+      length: 10,
+      s4predHelixPercent: 50,
+      betaPercent: 40,
+      s4pred: {
+        ssPrediction: ["H", "H", "H", "H", "H", "C", "C", "E", "E", "E"],
+        helixSegments: [[1, 5]],
+      },
+    });
+    const { container } = render(<SequenceTrack peptide={p} />);
+    // 2026-06-07 (CodeRabbit PR #80 K): tightened selector + exact count.
+    // Three E residues at indices 7-9 must be coloured beta via the
+    // ssPrediction fallback path; anything else means the fallback misfired.
+    const residueSpans = container.querySelectorAll<HTMLSpanElement>("span.cursor-default");
+    expect(residueSpans).toHaveLength(10);
+    const betaResidues = Array.from(residueSpans).filter((span) =>
+      span.style.color.includes("hsl(var(--beta))")
+    );
+    expect(betaResidues).toHaveLength(3);
+  });
+
   // Q.2 — parity test against the canonical s4predHelixPercent.
   // Said's screenshot showed Amyloid-β(25-35) "AIKKYEEKNKKSSRLFIFRK"
   // with Helix (30%). Lock that the rendered legend % equals
@@ -89,8 +146,26 @@ describe("SequenceTrack legend", () => {
           // Deliberately mostly-coil ssPrediction — proves the legend does
           // NOT re-compute from this array (it would render ~5%, not 30).
           ssPrediction: [
-            "C", "C", "C", "C", "C", "C", "C", "C", "C", "H",
-            "C", "C", "C", "C", "C", "C", "C", "C", "C", "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "H",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
+            "C",
           ],
         },
       });

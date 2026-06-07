@@ -1,17 +1,24 @@
 /**
- * HowItWorks — 4-step visual walkthrough for the landing page.
+ * HowItWorks — visual walkthrough for the landing page.
  *
- * Each card: icon, step number, title, 1-sentence description.
+ * Each card: icon, step label, title, 1-sentence description.
  * Designed for the "How it works" section below the hero.
  *
- * Steps:
- * 1. Paste / upload sequences (CSV, FASTA, UniProt query)
- * 2. PVL runs TANGO + S4PRED + biochem + flags
- * 3. Interactive dashboard: classifications, distributions, 3D overlay, drill-down
- * 4. Export figure pack or copy permalink for your paper
+ * Steps (Peleg 2026-06-07 — step 2 split):
+ * 1.  Paste / upload sequences (CSV, FASTA, UniProt query)
+ * 2a. Run S4PRED + TANGO + biochem in parallel — raw inputs only
+ * 2b. Apply dataset-derived gates to classify FF candidates (downstream of 2a)
+ * 3.  Interactive dashboard: classifications, distributions, 3D overlay, drill-down
+ * 4.  Export figure pack or copy permalink for your paper
  */
 
-import { Upload, Cpu, BarChart3, FileDown } from "lucide-react";
+import {
+  Upload,
+  Cpu,
+  Filter,
+  BarChart3,
+  FileDown,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HowItWorksProps {
@@ -20,7 +27,7 @@ interface HowItWorksProps {
 
 const STEPS = [
   {
-    step: 1,
+    step: "1",
     icon: Upload,
     title: "Paste or Upload",
     description:
@@ -28,35 +35,33 @@ const STEPS = [
     accent: "from-primary/20 to-primary/5",
     iconBg: "bg-primary/10",
     iconColor: "text-primary",
+    tooltip: null as string | null,
   },
-  // 2026-06-07 (Peleg Zoom 2026-06-04): step 2 split into 2a (parallel raw
-  // predictors run) and 2b (Peleg's downstream classification rules applied
-  // to their outputs). The old single step mistakenly listed FF-Helix as a
-  // predictor running in parallel with TANGO/S4PRED; it's actually a
-  // downstream classification derived from S4PRED helix segments + dataset-
-  // derived μH threshold — exactly what Peleg flagged on the call.
   {
     step: "2a",
     icon: Cpu,
-    title: "Run S4PRED + TANGO + biochem",
+    title: "Run Predictors",
     description:
-      "Three independent inputs run in parallel: S4PRED secondary-structure prediction (per-residue helix/β/coil), TANGO β-strand aggregation propensity, and biochemical features (Fauchère-Pliska hydrophobicity, charge at pH 7.4, μH).",
+      "S4PRED secondary structure, TANGO aggregation, and biochemical metrics run in parallel — raw inputs only.",
     accent: "from-purple-500/20 to-purple-500/5",
     iconBg: "bg-purple-500/10",
     iconColor: "text-purple-500",
+    tooltip: null,
   },
   {
     step: "2b",
-    icon: Cpu,
-    title: "Apply Ragonis-Bachar / Rayan classification rules",
+    icon: Filter,
+    title: "Classify FF Candidates",
     description:
-      "Peleg's gap-smoothed segment finder (MIN_SEGMENT_LENGTH=5, MAX_GAP=3) re-interprets the raw predictor outputs. Dataset-derived thresholds — the mean μH over helix-positive peptides and the mean hydrophobicity over SSW-positive peptides in your batch — gate the FF-Helix and FF-SSW candidate flags.",
+      "Apply dataset-derived gates (μH for FF-Helix, hydrophobicity for FF-SSW) over the 2a outputs. Downstream of the raw predictors, not parallel to them.",
     accent: "from-fuchsia-500/20 to-fuchsia-500/5",
     iconBg: "bg-fuchsia-500/10",
     iconColor: "text-fuchsia-500",
+    tooltip:
+      "Thresholds derive from the dataset mean of the class-positive metric (e.g. mean μH over helix-positive rows), not from a fixed constant.",
   },
   {
-    step: 3,
+    step: "3",
     icon: BarChart3,
     title: "Interactive Dashboard",
     description:
@@ -64,9 +69,10 @@ const STEPS = [
     accent: "from-green-500/20 to-green-500/5",
     iconBg: "bg-green-500/10",
     iconColor: "text-green-500",
+    tooltip: null,
   },
   {
-    step: 4,
+    step: "4",
     icon: FileDown,
     title: "Export & Cite",
     description:
@@ -74,6 +80,7 @@ const STEPS = [
     accent: "from-amber-500/20 to-amber-500/5",
     iconBg: "bg-amber-500/10",
     iconColor: "text-amber-500",
+    tooltip: null,
   },
 ] as const;
 
@@ -86,23 +93,25 @@ export function HowItWorks({ className }: HowItWorksProps) {
           How It Works
         </h2>
         <p className="text-lg text-muted-foreground leading-relaxed">
-          From sequence to publication in four steps.
+          From sequence to publication, step by step.
         </p>
       </div>
 
-      {/* Step cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {STEPS.map(({ step, icon: Icon, title, description, accent, iconBg, iconColor }) => (
+      {/* Step cards — Peleg 2026-06-07: step 2 split into 2a (raw predictors)
+          and 2b (downstream FF gates), so 5 cards total. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
+        {STEPS.map(({ step, icon: Icon, title, description, accent, iconBg, iconColor, tooltip }) => (
           <div
             key={step}
             className="relative rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 group hover:border-border transition-colors"
             data-testid={`how-step-${step}`}
+            title={tooltip ?? undefined}
           >
             {/* Gradient accent top */}
             <div
               className={cn(
                 "absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-gradient-to-r",
-                accent
+                accent,
               )}
             />
 
@@ -113,14 +122,21 @@ export function HowItWorks({ className }: HowItWorksProps) {
 
             {/* Icon */}
             <div
-              className={cn("h-12 w-12 rounded-xl flex items-center justify-center mb-4", iconBg)}
+              className={cn(
+                "h-12 w-12 rounded-xl flex items-center justify-center mb-4",
+                iconBg,
+              )}
             >
               <Icon className={cn("h-6 w-6", iconColor)} />
             </div>
 
             {/* Content */}
-            <h3 className="text-base font-semibold text-foreground mb-2">{title}</h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
+            <h3 className="text-base font-semibold text-foreground mb-2">
+              {title}
+            </h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {description}
+            </p>
           </div>
         ))}
       </div>

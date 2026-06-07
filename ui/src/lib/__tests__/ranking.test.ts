@@ -321,6 +321,19 @@ describe("presets v2", () => {
     expect(sum).toBe(100);
   });
 
+  // Peleg 2026-06-07 — fibril preset locks the published weights so the
+  // "Recommended" default behaviour stays as Peleg described it.
+  it("fibril preset matches the Peleg 2026-06-07 spec", () => {
+    const w = PRESETS.fibril.weights;
+    expect(w.ffHelixFlag).toBe(30);
+    expect(w.ffSswFlag).toBe(30);
+    expect(w.sswPrediction).toBe(20);
+    expect(w.muH).toBe(10);
+    expect(w.s4predHelixScore).toBe(10);
+    const sum = Object.values(w).reduce((s, v) => s + (v ?? 0), 0);
+    expect(sum).toBe(100);
+  });
+
   it("amyloid (Fibril-formation Focus) preset emphasises uH and hydrophobicity", () => {
     // PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED: ffHelixPercent + sswScore
     // dropped from default presets; rebalanced across the 3 default metrics + S4PRED.
@@ -353,11 +366,13 @@ describe("presets v2", () => {
     }
   });
 
-  it("DEFAULT_METRICS has 3 entries, OPTIONAL_METRICS has 4", () => {
-    // PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED: ffHelixPercent + sswScore
-    // moved from default → optional (2026-05-06).
+  it("DEFAULT_METRICS has 3 entries, OPTIONAL_METRICS has 8 (incl. fibril-preset metrics)", () => {
+    // PELEG-Q1-RESOLVED + PELEG-SSW-SCORE-RESOLVED (2026-05-06): ffHelixPercent
+    // + sswScore moved from default → optional.
+    // Peleg 2026-06-07: ffHelixFlag, ffSswFlag, sswPrediction, s4predHelixScore
+    // added to optional to back the new Fibril-Formation preset.
     expect(DEFAULT_METRICS).toHaveLength(3);
-    expect(OPTIONAL_METRICS).toHaveLength(4);
-    expect(ALL_METRICS).toHaveLength(7);
+    expect(OPTIONAL_METRICS).toHaveLength(8);
+    expect(ALL_METRICS).toHaveLength(11);
   });
 });
