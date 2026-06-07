@@ -30,7 +30,19 @@ type FragmentInput = FragmentRange | { start: number; end: number } | null | und
 
 function readRange(r: FragmentInput): [number, number] | null {
   if (!r) return null;
-  if (Array.isArray(r)) return [r[0], r[1]];
+  // 2026-06-07 (CodeRabbit PR #77): array bounds + numeric type guards. A
+  // malformed tuple (length 0/1, or non-numeric entries from a JSON parse
+  // that smuggled in a NaN sentinel) would previously return [undefined, x]
+  // and silently mis-classify residues. Reject and return null so the
+  // caller skips the fragment instead of producing garbage downstream.
+  if (Array.isArray(r)) {
+    const [start, end] = r;
+    if (typeof start !== "number" || typeof end !== "number") return null;
+    if (!Number.isFinite(start) || !Number.isFinite(end)) return null;
+    return [start, end];
+  }
+  if (typeof r.start !== "number" || typeof r.end !== "number") return null;
+  if (!Number.isFinite(r.start) || !Number.isFinite(r.end)) return null;
   return [r.start, r.end];
 }
 
