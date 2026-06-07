@@ -11,12 +11,7 @@
  * 4. Export figure pack or copy permalink for your paper
  */
 
-import {
-  Upload,
-  Cpu,
-  BarChart3,
-  FileDown,
-} from "lucide-react";
+import { Upload, Cpu, BarChart3, FileDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface HowItWorksProps {
@@ -34,15 +29,31 @@ const STEPS = [
     iconBg: "bg-primary/10",
     iconColor: "text-primary",
   },
+  // 2026-06-07 (Peleg Zoom 2026-06-04): step 2 split into 2a (parallel raw
+  // predictors run) and 2b (Peleg's downstream classification rules applied
+  // to their outputs). The old single step mistakenly listed FF-Helix as a
+  // predictor running in parallel with TANGO/S4PRED; it's actually a
+  // downstream classification derived from S4PRED helix segments + dataset-
+  // derived μH threshold — exactly what Peleg flagged on the call.
   {
-    step: 2,
+    step: "2a",
     icon: Cpu,
-    title: "Multi-Algorithm Analysis",
+    title: "Run S4PRED + TANGO + biochem",
     description:
-      "PVL runs TANGO aggregation, S4PRED secondary structure, FF-Helix detection, and biochemical metrics simultaneously.",
+      "Three independent inputs run in parallel: S4PRED secondary-structure prediction (per-residue helix/β/coil), TANGO β-strand aggregation propensity, and biochemical features (Fauchère-Pliska hydrophobicity, charge at pH 7.4, μH).",
     accent: "from-purple-500/20 to-purple-500/5",
     iconBg: "bg-purple-500/10",
     iconColor: "text-purple-500",
+  },
+  {
+    step: "2b",
+    icon: Cpu,
+    title: "Apply Ragonis-Bachar / Rayan classification rules",
+    description:
+      "Peleg's gap-smoothed segment finder (MIN_SEGMENT_LENGTH=5, MAX_GAP=3) re-interprets the raw predictor outputs. Dataset-derived thresholds — the mean μH over helix-positive peptides and the mean hydrophobicity over SSW-positive peptides in your batch — gate the FF-Helix and FF-SSW candidate flags.",
+    accent: "from-fuchsia-500/20 to-fuchsia-500/5",
+    iconBg: "bg-fuchsia-500/10",
+    iconColor: "text-fuchsia-500",
   },
   {
     step: 3,
@@ -91,7 +102,7 @@ export function HowItWorks({ className }: HowItWorksProps) {
             <div
               className={cn(
                 "absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-gradient-to-r",
-                accent,
+                accent
               )}
             />
 
@@ -102,21 +113,14 @@ export function HowItWorks({ className }: HowItWorksProps) {
 
             {/* Icon */}
             <div
-              className={cn(
-                "h-12 w-12 rounded-xl flex items-center justify-center mb-4",
-                iconBg,
-              )}
+              className={cn("h-12 w-12 rounded-xl flex items-center justify-center mb-4", iconBg)}
             >
               <Icon className={cn("h-6 w-6", iconColor)} />
             </div>
 
             {/* Content */}
-            <h3 className="text-base font-semibold text-foreground mb-2">
-              {title}
-            </h3>
-            <p className="text-sm text-muted-foreground leading-relaxed">
-              {description}
-            </p>
+            <h3 className="text-base font-semibold text-foreground mb-2">{title}</h3>
+            <p className="text-sm text-muted-foreground leading-relaxed">{description}</p>
           </div>
         ))}
       </div>

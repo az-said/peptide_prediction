@@ -13,10 +13,13 @@ describe("HowItWorks", () => {
     ).toBeInTheDocument();
   });
 
-  it("renders all 4 step cards", () => {
+  // 2026-06-07: step 2 split into 2a + 2b per Peleg's Zoom comment that
+  // FF-Helix is downstream of S4PRED + TANGO outputs (not parallel).
+  it("renders all step cards including split 2a + 2b", () => {
     render(<HowItWorks />);
     expect(screen.getByTestId("how-step-1")).toBeInTheDocument();
-    expect(screen.getByTestId("how-step-2")).toBeInTheDocument();
+    expect(screen.getByTestId("how-step-2a")).toBeInTheDocument();
+    expect(screen.getByTestId("how-step-2b")).toBeInTheDocument();
     expect(screen.getByTestId("how-step-3")).toBeInTheDocument();
     expect(screen.getByTestId("how-step-4")).toBeInTheDocument();
   });
@@ -24,7 +27,10 @@ describe("HowItWorks", () => {
   it("renders step titles", () => {
     render(<HowItWorks />);
     expect(screen.getByText("Paste or Upload")).toBeInTheDocument();
-    expect(screen.getByText("Multi-Algorithm Analysis")).toBeInTheDocument();
+    expect(screen.getByText(/Run S4PRED \+ TANGO \+ biochem/)).toBeInTheDocument();
+    expect(
+      screen.getByText(/Apply Ragonis-Bachar \/ Rayan classification rules/),
+    ).toBeInTheDocument();
     expect(screen.getByText("Interactive Dashboard")).toBeInTheDocument();
     expect(screen.getByText("Export & Cite")).toBeInTheDocument();
   });
@@ -32,7 +38,8 @@ describe("HowItWorks", () => {
   it("renders step numbers", () => {
     render(<HowItWorks />);
     expect(screen.getByText("Step 1")).toBeInTheDocument();
-    expect(screen.getByText("Step 2")).toBeInTheDocument();
+    expect(screen.getByText("Step 2a")).toBeInTheDocument();
+    expect(screen.getByText("Step 2b")).toBeInTheDocument();
     expect(screen.getByText("Step 3")).toBeInTheDocument();
     expect(screen.getByText("Step 4")).toBeInTheDocument();
   });
@@ -40,7 +47,8 @@ describe("HowItWorks", () => {
   it("renders step descriptions", () => {
     render(<HowItWorks />);
     expect(screen.getByText(/Single sequence, CSV batch/)).toBeInTheDocument();
-    expect(screen.getByText(/TANGO aggregation/)).toBeInTheDocument();
+    expect(screen.getByText(/Three independent inputs run in parallel/)).toBeInTheDocument();
+    expect(screen.getByText(/Peleg's gap-smoothed segment finder/)).toBeInTheDocument();
     expect(screen.getByText(/Classification sets/)).toBeInTheDocument();
     expect(screen.getByText(/publication-ready figure pack/)).toBeInTheDocument();
   });
