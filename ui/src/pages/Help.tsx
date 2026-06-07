@@ -81,6 +81,41 @@ const metrics = [
   },
 ];
 
+/**
+ * Peleg-verbatim classification definitions (2026-06-07).
+ *
+ * Order mirrors the KPI card row: Helix → FF-Helix → SSW → FF-SSW.
+ * Body text is COPIED VERBATIM from Peleg — do not rephrase. The short
+ * `name` is the class label; `subtitle` is the long form; `accentVar`
+ * is the CSS custom property used for the left-border accent.
+ */
+const classificationDefinitions = [
+  {
+    name: "Helix",
+    subtitle: "Alpha-helix secondary structure",
+    body: "Determined by s4pred predictions and threshold.",
+    accentVar: "--helix",
+  },
+  {
+    name: "FF-Helix",
+    subtitle: "Fibril-forming alpha helix",
+    body: "Determined by the uH threshold. If a peptide is predicted to be helical (as described above) and its uH is higher than the threshold uH, it will be predicted as a potential alpha-helical fibril-forming peptide.",
+    accentVar: "--ff-helix",
+  },
+  {
+    name: "SSW",
+    subtitle: "Secondary structure switch",
+    body: "Determined by Tango and/or s4pred. Peptide will be predicted as secondary structure switch if the difference between averaged scores of helicity and extended beta are lower than the maximum gap threshold. Meaning, for these sequences the secondary structure prediction tools were indecisive or predicted scores similar for both secondary structures.",
+    accentVar: "--ssw",
+  },
+  {
+    name: "FF-SSW",
+    subtitle: "Fibril-forming secondary structure switch",
+    body: "Determined by the hydrophobicity threshold. If a peptide is predicted to be a secondary structure switch (as described above) and its hydrophobicity is higher than the threshold hydrophobicity, it will be predicted as a potential secondary structure switch fibril-forming.",
+    accentVar: "--ff-ssw",
+  },
+];
+
 const chartTypes = [
   {
     name: "Scatter Plot",
@@ -172,6 +207,37 @@ export default function Help() {
                   </motion.div>
                 );
               })}
+            </CardContent>
+          </Card>
+
+          {/* Classification Definitions — Peleg verbatim (2026-06-07).
+              Ordering matches the KPI cards: Helix → FF-Helix → SSW → FF-SSW. */}
+          <Card className="shadow-soft border-[hsl(var(--border))] rounded-xl">
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Layers className="w-5 h-5 mr-2 text-primary" />
+                Classification Definitions
+              </CardTitle>
+              <CardDescription>
+                The four classes PVL surfaces, defined verbatim from Peleg's notes.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {classificationDefinitions.map((cls, index) => (
+                <motion.section
+                  key={cls.name}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="rounded-lg border border-[hsl(var(--border))] bg-card p-4"
+                  style={{ borderLeft: `4px solid hsl(var(${cls.accentVar}))` }}
+                  data-testid={`classification-section-${cls.name.toLowerCase()}`}
+                >
+                  <h3 className="font-semibold text-foreground">{cls.name}</h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">{cls.subtitle}</p>
+                  <p className="text-sm text-foreground/90 mt-2 leading-relaxed">{cls.body}</p>
+                </motion.section>
+              ))}
             </CardContent>
           </Card>
 

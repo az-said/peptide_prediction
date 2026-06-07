@@ -42,12 +42,17 @@ interface RankingStoreState {
 // fibril-formation is the core thing researchers come for. The Equal preset
 // is still available as an alternative; users who want a balanced metric
 // distribution can switch.
-export const useRankingStore = create<RankingStoreState>((set, get) => ({
-  activeMetrics: [...DEFAULT_METRICS],
-  weights: { ...PRESETS.amyloid.weights },
+  // Peleg 2026-06-07 — Fibril-Formation is the default "Recommended" preset.
+  // activeMetrics derives from non-zero weight keys so the binary class-flag
+  // metrics show up in the ranking UI without being added to DEFAULT_METRICS.
+  // Replaces the prior `amyloid` default that landed on main via PR #82 — same
+  // intent, but the new `fibril` preset uses Peleg's terminology + her exact
+  // FF flag weights instead of approximating with hydro/μH heuristics.
+  activeMetrics: ALL_METRICS.filter((m) => (PRESETS.fibril.weights[m] ?? 0) > 0),
+  weights: { ...PRESETS.fibril.weights },
   directions: { ...DEFAULT_DIRECTIONS },
   topN: 10,
-  preset: "amyloid",
+  preset: "fibril",
 
   toggleOptionalMetric: (metric) => {
     const state = get();

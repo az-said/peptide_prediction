@@ -25,7 +25,11 @@ import type { Peptide } from "@/types/peptide";
 export type RankingMetric =
   | "tangoAggMax"
   | "s4predHelixPercent"
+  | "s4predHelixScore"
   | "ffHelixPercent"
+  | "ffHelixFlag"
+  | "ffSswFlag"
+  | "sswPrediction"
   | "muH"
   | "sswScore"
   | "hydrophobicity"
@@ -48,7 +52,7 @@ export interface RankingOptions {
   directions?: MetricDirections;
 }
 
-export type RankingPreset = "equal" | "amyloid" | "helix" | "switch";
+export type RankingPreset = "fibril" | "equal" | "amyloid" | "helix" | "switch";
 
 // ---- Constants ----
 
@@ -61,6 +65,11 @@ export const OPTIONAL_METRICS: RankingMetric[] = [
   "absCharge",
   "ffHelixPercent",
   "sswScore",
+  // Fibril-formation preset metrics — surfaced via the new "fibril" preset only.
+  "ffHelixFlag",
+  "ffSswFlag",
+  "sswPrediction",
+  "s4predHelixScore",
 ];
 
 export const ALL_METRICS: RankingMetric[] = [...DEFAULT_METRICS, ...OPTIONAL_METRICS];
@@ -73,9 +82,13 @@ export const ALL_METRICS: RankingMetric[] = [...DEFAULT_METRICS, ...OPTIONAL_MET
 export const METRIC_LABELS: Record<RankingMetric, string> = {
   tangoAggMax: "TANGO Aggregation Max",
   s4predHelixPercent: "S4PRED Helix %",
+  s4predHelixScore: "S4PRED Helix score",
   // Peleg 2026-06-07: % is a feature, not a class — label as a raw score.
   // Data field name (ffHelixPercent) retained for back-compat.
   ffHelixPercent: "FF-Helix score",
+  ffHelixFlag: "FF-Helix candidate",
+  ffSswFlag: "FF-SSW candidate",
+  sswPrediction: "SSW positive",
   muH: "uH",
   sswScore: "SSW Score",
   hydrophobicity: "Hydrophobicity",
@@ -91,8 +104,16 @@ export const METRIC_DESCRIPTIONS: Record<RankingMetric, string> = {
     "Peak per-residue TANGO aggregation propensity (column: tangoAggMax). Higher weight emphasises peptides with strong aggregation-prone regions.",
   s4predHelixPercent:
     "Percentage of residues S4PRED predicts as helical (column: s4predHelixPercent). Higher weight emphasises helix content.",
+  s4predHelixScore:
+    "Mean S4PRED P(helix) across the sequence (column: s4predHelixScore). Raw probability, not a percentage.",
   ffHelixPercent:
     "FF-Helix score — sliding-window helix-propensity (column: ffHelixPercent). Higher weight emphasises intrinsic helix tendency.",
+  ffHelixFlag:
+    "Binary FF-Helix candidate flag (column: ffHelixFlag). Higher weight pushes Peleg-classified FF-Helix candidates to the top.",
+  ffSswFlag:
+    "Binary FF-SSW candidate flag (column: ffSswFlag). Higher weight pushes Peleg-classified FF-SSW candidates to the top.",
+  sswPrediction:
+    "Binary SSW positive flag (column: sswPrediction). Higher weight emphasises peptides flagged as structure-switch positive.",
   muH: "Hydrophobic moment uH (column: muH). Higher weight emphasises amphipathic peptides — used in fibril-formation classification.",
   sswScore:
     "TANGO secondary-structure-switch score (column: sswScore). Higher weight emphasises peptides with structural-switch potential.",
@@ -105,7 +126,11 @@ export const METRIC_DESCRIPTIONS: Record<RankingMetric, string> = {
 export const METRIC_COLORS: Record<RankingMetric, string> = {
   tangoAggMax: "bg-red-500",
   s4predHelixPercent: "bg-violet-500",
+  s4predHelixScore: "bg-violet-400",
   ffHelixPercent: "bg-purple-500",
+  ffHelixFlag: "bg-green-500",
+  ffSswFlag: "bg-emerald-600",
+  sswPrediction: "bg-blue-500",
   muH: "bg-blue-500",
   sswScore: "bg-amber-500",
   hydrophobicity: "bg-cyan-500",
@@ -115,7 +140,11 @@ export const METRIC_COLORS: Record<RankingMetric, string> = {
 export const METRIC_COLORS_HEX: Record<RankingMetric, string> = {
   tangoAggMax: "#ef4444",
   s4predHelixPercent: "#8b5cf6",
+  s4predHelixScore: "#a78bfa",
   ffHelixPercent: "#a855f7",
+  ffHelixFlag: "#22c55e",
+  ffSswFlag: "#059669",
+  sswPrediction: "#3b82f6",
   muH: "#3b82f6",
   sswScore: "#f59e0b",
   hydrophobicity: "#06b6d4",
@@ -126,7 +155,11 @@ export const METRIC_COLORS_HEX: Record<RankingMetric, string> = {
 export const DEFAULT_DIRECTIONS: MetricDirections = {
   tangoAggMax: "high",
   s4predHelixPercent: "high",
+  s4predHelixScore: "high",
   ffHelixPercent: "high",
+  ffHelixFlag: "high",
+  ffSswFlag: "high",
+  sswPrediction: "high",
   muH: "high",
   sswScore: "high",
   hydrophobicity: "high",
@@ -159,6 +192,18 @@ export const PRESETS: Record<
   RankingPreset,
   { weights: ProportionalWeights; directions: MetricDirections }
 > = {
+  // Default "Recommended" preset (Peleg 2026-06-07). Fibril formation is what
+  // researchers actually come to PVL for — surface candidates first.
+  fibril: {
+    weights: {
+      ffHelixFlag: 30,
+      ffSswFlag: 30,
+      sswPrediction: 20,
+      muH: 10,
+      s4predHelixScore: 10,
+    },
+    directions: { ...DEFAULT_DIRECTIONS },
+  },
   equal: {
     weights: equalWeights(),
     directions: { ...DEFAULT_DIRECTIONS },
@@ -200,6 +245,12 @@ const TANGO_GATED: RankingMetric[] = ["sswScore", "tangoAggMax"];
 
 // ---- Core Functions ----
 
+/** Map a class-flag value to a binary 0/1 (or null when missing). */
+function binaryFlag(v: number | null | undefined): number | null {
+  if (v == null) return null;
+  return v === 1 ? 1 : 0;
+}
+
 /** Extract a numeric metric value from a peptide, returning null if unavailable. */
 function extractMetric(p: Peptide, metric: RankingMetric): number | null {
   switch (metric) {
@@ -211,12 +262,20 @@ function extractMetric(p: Peptide, metric: RankingMetric): number | null {
       return p.muH ?? null;
     case "ffHelixPercent":
       return p.ffHelixPercent ?? null;
+    case "ffHelixFlag":
+      return binaryFlag(p.ffHelixFlag);
+    case "ffSswFlag":
+      return binaryFlag(p.ffSswFlag);
+    case "sswPrediction":
+      return binaryFlag(p.sswPrediction as number | null | undefined);
     case "sswScore":
       return p.sswScore ?? null;
     case "tangoAggMax":
       return p.tangoAggMax ?? null;
     case "s4predHelixPercent":
       return p.s4predHelixPercent ?? null;
+    case "s4predHelixScore":
+      return p.s4predHelixScore ?? null;
   }
 }
 
