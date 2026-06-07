@@ -158,16 +158,20 @@ Type: `User manual` + `Quick start`
 
 ## Authors
 
-1. **Said Azaizah** — Lead developer, Co-founder
-   - Email: az.said2007@gmail.com
+1. **Dr. Peleg Ragonis-Bachar** — Algorithmic foundation, scientific co-author
+   - Affiliation: Technion — Israel Institute of Technology, Department of Biology
+   - ORCID: 0000-0002-0979-8165
+2. **Said Azaizah** — Lead developer
+   - Email: az_said@mit.edu
    - ORCID: 0009-0002-3596-5358
-   - Affiliation: Technion — Israel Institute of Technology + DESY
-2. **Dr. Peleg Ragonis-Bachar** — Algorithms, scientific reviewer
-   - Affiliation: Technion — Israel Institute of Technology
-   - ORCID: PENDING (ask Peleg before submission)
-3. **Dr. Aleksandr Golubev** — Scientific advisor, deployment infra
+   - Affiliation: Massachusetts Institute of Technology + DESY
+3. **Dr. Aleksandr Golubev** — Scientific advisor, deployment infrastructure
    - Affiliation: DESY (Deutsches Elektronen-Synchrotron) + Technion
-   - ORCID: PENDING (ask Alex before submission)
+   - ORCID: PENDING (ask Alex — single remaining gap)
+4. **Prof. Meytal Landau** — Principal investigator (Ragonis-Bachar 2022 foundation paper), corresponding
+   - Affiliation: Technion — Israel Institute of Technology + EMBL Hamburg + Centre for Structural Systems Biology, Germany
+   - Email: mlandau@technion.ac.il
+   - ORCID: 0000-0002-1743-3430
 
 ---
 

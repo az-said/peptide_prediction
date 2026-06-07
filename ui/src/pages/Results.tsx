@@ -47,15 +47,8 @@ import {
   type RankingPreset,
 } from "@/lib/ranking";
 import { useThresholdStore } from "@/stores/thresholdStore";
-import {
-  decodePermalink,
-  encodePermalink,
-  PERMALINK_VERSION,
-} from "@/lib/permalink";
-import {
-  useReproducibilityStore,
-  PVL_VERSION,
-} from "@/stores/reproducibilityStore";
+import { decodePermalink, encodePermalink, PERMALINK_VERSION } from "@/lib/permalink";
+import { useReproducibilityStore, PVL_VERSION } from "@/stores/reproducibilityStore";
 import { BgDotGrid } from "@/components/BgDotGrid";
 import { AnalysisProgress } from "@/components/AnalysisProgress";
 import { exportShortlistPDF } from "@/lib/report";
@@ -401,15 +394,39 @@ export default function Results() {
                   {meta.provider_status?.tango ? (
                     <ProviderBadge name="TANGO" status={meta.provider_status.tango as any} />
                   ) : (
-                    <Badge variant="outline" className="text-xs font-normal">
-                      TANGO: {meta.use_tango ? "ON" : "OFF"}
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal"
+                      title={
+                        meta.use_tango
+                          ? "TANGO is available on the server but was not requested for this analysis"
+                          : "TANGO is disabled on this server"
+                      }
+                    >
+                      TANGO: {meta.use_tango ? "Available" : "OFF"}
                     </Badge>
                   )}
                   {meta.provider_status?.s4pred ? (
                     <ProviderBadge name="S4PRED" status={meta.provider_status.s4pred as any} />
                   ) : (
-                    <Badge variant="outline" className="text-xs font-normal">
-                      S4PRED: OFF
+                    /*
+                     * 2026-06-07 bug fix: S4PRED status was hardcoded "OFF" in this
+                     * fallback even when the server had S4PRED enabled — Peleg flagged
+                     * it on a UniProt single-entry analysis where the request didn't
+                     * carry run_s4pred=true. Read meta.use_s4pred like TANGO does so
+                     * the badge correctly distinguishes "server has S4PRED but you
+                     * didn't request it" from "server has S4PRED disabled".
+                     */
+                    <Badge
+                      variant="outline"
+                      className="text-xs font-normal"
+                      title={
+                        meta.use_s4pred
+                          ? "S4PRED is available on the server but was not requested for this analysis"
+                          : "S4PRED is disabled on this server"
+                      }
+                    >
+                      S4PRED: {meta.use_s4pred ? "Available" : "OFF"}
                     </Badge>
                   )}
                   {thresholdsModified && (

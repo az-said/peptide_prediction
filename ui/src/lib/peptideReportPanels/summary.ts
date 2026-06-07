@@ -10,11 +10,7 @@
 import type { jsPDF } from "jspdf";
 import type { Peptide } from "@/types/peptide";
 import type { ReportData, ReportPanel, RenderContext } from "../peptideReport";
-import {
-  drawSectionHeading,
-  drawKeyValueTable,
-  drawDataTable,
-} from "../peptideReport";
+import { drawSectionHeading, drawKeyValueTable, drawDataTable } from "../peptideReport";
 
 const MARGIN = 20;
 
@@ -22,7 +18,7 @@ function drawSummaryContent(
   doc: jsPDF,
   peptide: Peptide,
   _data: ReportData,
-  ctx: RenderContext,
+  ctx: RenderContext
 ): void {
   let y = ctx.contentTop;
 
@@ -34,7 +30,10 @@ function drawSummaryContent(
     ["Protein Name", peptide.name ?? "—"],
     ["Organism", peptide.species ?? "—"],
     ["Gene", peptide.geneName ?? "—"],
-    ["Sequence", peptide.sequence.length > 50 ? peptide.sequence.slice(0, 50) + "..." : peptide.sequence],
+    [
+      "Sequence",
+      peptide.sequence.length > 50 ? peptide.sequence.slice(0, 50) + "..." : peptide.sequence,
+    ],
     ["Length", `${peptide.length ?? peptide.sequence.length} aa`],
   ];
 
@@ -79,9 +78,22 @@ function drawSummaryContent(
     y = drawSectionHeading(doc, "S4PRED Secondary Structure Summary", y);
 
     const s4rows: Array<[string, string]> = [
-      ["Helix Prediction", peptide.s4predHelixPrediction === 1 ? "Yes" : peptide.s4predHelixPrediction === -1 ? "No" : "—"],
-      ["Helix %", peptide.s4predHelixPercent != null ? `${peptide.s4predHelixPercent.toFixed(1)}%` : "—"],
-      ["SSW Prediction", peptide.s4predSswPrediction === 1 ? "Yes" : peptide.s4predSswPrediction === -1 ? "No" : "—"],
+      [
+        "Helix Prediction",
+        peptide.s4predHelixPrediction === 1
+          ? "Yes"
+          : peptide.s4predHelixPrediction === -1
+            ? "No"
+            : "—",
+      ],
+      [
+        "Helix %",
+        peptide.s4predHelixPercent != null ? `${peptide.s4predHelixPercent.toFixed(1)}%` : "—",
+      ],
+      [
+        "SSW Prediction",
+        peptide.s4predSswPrediction === 1 ? "Yes" : peptide.s4predSswPrediction === -1 ? "No" : "—",
+      ],
       ["SSW Diff", peptide.s4predSswDiff != null ? peptide.s4predSswDiff.toFixed(3) : "—"],
     ];
 
@@ -128,12 +140,27 @@ function drawSummaryContent(
     y = drawSectionHeading(doc, "Biochemical Properties", y);
 
     const biochemRows: Array<[string, string]> = [
-      ["Hydrophobicity (FP)", peptide.hydrophobicity != null ? peptide.hydrophobicity.toFixed(3) : "—"],
+      [
+        "Hydrophobicity (FP)",
+        peptide.hydrophobicity != null ? peptide.hydrophobicity.toFixed(3) : "—",
+      ],
       ["Charge (pH 7.4)", peptide.charge != null ? peptide.charge.toFixed(2) : "—"],
       ["μH", peptide.muH != null ? peptide.muH.toFixed(3) : "—"],
-      ["FF-Helix %", peptide.ffHelixPercent != null ? `${peptide.ffHelixPercent.toFixed(1)}%` : "—"],
-      ["FF-Helix Flag", peptide.ffHelixFlag === 1 ? "Candidate" : peptide.ffHelixFlag === -1 ? "Not candidate" : "—"],
-      ["FF-SSW Flag", peptide.ffSswFlag === 1 ? "Candidate" : peptide.ffSswFlag === -1 ? "Not candidate" : "—"],
+      // 2026-06-07 (Peleg Drive): "% is a feature, not a class" — render the
+      // sliding-window propensity as a score, not a percentage.
+      ["FF-Helix score", peptide.ffHelixPercent != null ? peptide.ffHelixPercent.toFixed(1) : "—"],
+      [
+        "FF-Helix Flag",
+        peptide.ffHelixFlag === 1
+          ? "Candidate"
+          : peptide.ffHelixFlag === -1
+            ? "Not candidate"
+            : "—",
+      ],
+      [
+        "FF-SSW Flag",
+        peptide.ffSswFlag === 1 ? "Candidate" : peptide.ffSswFlag === -1 ? "Not candidate" : "—",
+      ],
     ];
 
     y = drawKeyValueTable(doc, biochemRows, y, 45);
