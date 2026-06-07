@@ -30,8 +30,8 @@ Ragonis-Bachar 26-peptide cohort. Run overnight on a laptop.
 """
 
 import argparse
-import json
 import hashlib
+import json
 import logging
 import pathlib
 import sys
