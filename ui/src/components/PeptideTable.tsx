@@ -847,14 +847,20 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
                 .getAllLeafColumns()
                 .filter((col) => col.getCanHide())
                 .map((col) => {
+                  // 2026-06-07 (CodeRabbit PR #80): sequence, tangoAggMax,
+                  // and s4predHelixScore columns were rendering with raw field
+                  // names in the Columns dropdown. Labels added.
                   const labels: Record<string, string> = {
                     id: "ID",
+                    sequence: "Sequence",
                     length: "Length",
                     helixBinary: "Helix",
                     sswPrediction: "SSW",
                     ffHelixFlag: "FF-Helix",
                     ffSswFlag: "FF-SSW",
                     s4predHelixPercent: "Helix %",
+                    tangoAggMax: "TANGO Aggregation Max",
+                    s4predHelixScore: "S4PRED Helix Score",
                     charge: "Charge",
                     hydrophobicity: "Hydrophobicity",
                     muH: "μH",
