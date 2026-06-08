@@ -220,7 +220,7 @@ curl -sS -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
 
 ## §7 What's done this session vs what's queued
 
-**Done 2026-06-08**:
+**Done 2026-06-08** (initial pass):
 - ✅ Triaged all 5 unresolved Sentry issues; resolved 4; 1 left open for investigation
 - ✅ Enabled browser-extensions + web-crawlers + legacy-browsers filters on both projects
 - ✅ Corrected frontend DSN to point at the right project (was hitting a dead project ID)
@@ -228,10 +228,21 @@ curl -sS -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
 - ✅ Saved auth token + client secret to gitignored `backend/.env`
 - ✅ This strategy doc
 
-**Queued (post-publish; week or two of work total)**:
-- Source maps upload on Vite build (§4.B)
-- Release-tagging in `.github/workflows/release.yml` (§4.A)
-- Sentry Slack integration (§4.H) + spike-detection alert (§4.E)
+**Done 2026-06-08** (deep pass — PR #96 + #97):
+- ✅ §4.J PII scrubbing — `sendDefaultPii: false` (frontend + backend already had it)
+- ✅ §4.I Session replay tuning — frontend `replaysSessionSampleRate: 0 → 0.01`; replay integration `maskAllText: true, blockAllMedia: true` (PII protection on replay pipeline)
+- ✅ Backend + frontend traces + profiles sample rate dropped from `1.0 → 0.1` (10% sampling, scales post-publish)
+- ✅ §4.A Release tagging automation — `.github/workflows/release.yml` fires on `gh release create`, verifies CITATION.cff matches tag, finalizes Sentry releases on both projects with `--set-commits --auto`
+- ✅ §4.B Source maps upload — Sentry Vite plugin was wired but with WRONG slugs (`org: pvl` / `project: pvl-frontend`). Fixed to `org: desycssb` / `project: pvl_frontend` + EU region + release tag. `build.sourcemap: true` made explicit. Post-publish stack traces will be readable TypeScript instead of minified blobs.
+- ✅ Publish-day script `scripts/publish_v0_3_0.sh` — 9 pre-flight checks, gh release create, Zenodo wait, sed CITATION + README, push, open bio.tools + JOSS pages. Locks in the ~15-min publish window.
+
+**Queued (need Said action OR post-publish)**:
+- §4.E Alert rules — spike detection, first-seen-on-prod, 24h unresolved. The Sentry API needs member IDs we couldn't pull with this token's scopes; configure these via the Sentry UI: Project → Alerts → New Alert Rule.
+- §4.G Sentry GitHub integration — UI configuration at sentry.io → Settings → Integrations → GitHub. Lets Sentry comment on PRs when bugs get fixed.
+- §4.H Sentry Slack integration — UI configuration; needs a PVL Slack channel first.
+- §4.D Custom dashboards — UI-only setup, see §4.D for the 5 dashboards to build.
+- Add `SENTRY_AUTH_TOKEN` to **GitHub repository secrets** so the new `.github/workflows/release.yml` can finalize releases (currently only in `backend/.env`)
+- One open issue: `PVL_BACKEND-3E Rendered more hooks than during previous render` — waiting for Sentry to catch again with breadcrumb context.
 - Sentry GitHub integration for PR comments (§4.G)
 - Custom dashboards (§4.D): error rate by release, TANGO failures, UniProt 429s, chunk-load freq, provider availability
 - PII scrubbing explicit flag (§4.J)
