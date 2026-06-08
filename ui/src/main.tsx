@@ -40,25 +40,37 @@ if (SENTRY_DSN) {
     Sentry.init({
       dsn: SENTRY_DSN,
       release: buildSentryRelease(__APP_VERSION__, __BUILD_SHA__),
-      // Setting this option to true will send default PII data to Sentry
-      // For example, automatic IP address collection on events
-      sendDefaultPii: true,
-      // Free tier: 100% sampling OK for low-traffic research tool
-      tracesSampleRate: 1.0,
-      profilesSampleRate: 1.0,
-      // Session Replay: rely on error-triggered replays only.
-      // Recording 100% of sessions burns quota with active users on VPS.
-      replaysSessionSampleRate: 0,
+      // 2026-06-08 (SENTRY_OBSERVABILITY_STRATEGY §4.J): explicit PII OFF.
+      // PVL is a research tool. We don't need IP addresses, user-agent
+      // fingerprints, or cookie data to triage bugs — the breadcrumb +
+      // stack trace + release tag are enough. Explicit `false` here also
+      // signals intent to anyone touching this file later.
+      sendDefaultPii: false,
+      // 2026-06-08: dropped traces + profiles from 1.0 → 0.1 (10%). At 1.0
+      // every page nav sent a full performance trace, which would scale
+      // poorly post-publish. 10% gives sufficient signal for latency
+      // hunting; bump back up if a specific debugging window needs it.
+      tracesSampleRate: 0.1,
+      profilesSampleRate: 0.1,
+      // 2026-06-08 (SENTRY_OBSERVABILITY_STRATEGY §4.I): session replay
+      // tuning. Was 0% session + 100% error. Bumped session to 1% so we
+      // get ~10 replays/day at the projected adoption — useful for UX
+      // research (where users hesitate, mis-click, drop off) without
+      // burning the replay quota at higher rates.
+      replaysSessionSampleRate: 0.01,
       replaysOnErrorSampleRate: 1.0,
       environment: import.meta.env.MODE || "development",
       // Enable debug mode to see Sentry activity in console (disable in production)
       debug: import.meta.env.VITE_SENTRY_DEBUG === "true",
-      // Enable React Router integration for better error tracking
+      // 2026-06-08: replay integration now masks text + blocks media by
+      // default for the rare cases researchers paste sequences or
+      // sensitive metadata into the page. PII protection on the replay
+      // pipeline matches the new sendDefaultPii: false posture above.
       integrations: [
         Sentry.browserTracingIntegration(),
         Sentry.replayIntegration({
-          maskAllText: false,
-          blockAllMedia: false,
+          maskAllText: true,
+          blockAllMedia: true,
         }),
         feedbackIntegration,
       ],
