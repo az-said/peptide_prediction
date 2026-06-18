@@ -24,6 +24,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 # Import routers
 from api.routes import (
+    cohorts,
     example,
     feedback,
     health,
@@ -243,6 +244,7 @@ app.include_router(uniprot.router)
 app.include_router(feedback.router)
 app.include_router(jobs.router)
 app.include_router(peptides.router)
+app.include_router(cohorts.router)
 
 
 # Configure thread pool for asyncio.to_thread() — allows concurrent analysis requests.

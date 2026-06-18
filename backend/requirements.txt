@@ -6,6 +6,10 @@ gunicorn>=26.0.0,<27.0
 # Data processing
 pandas>=2.3,<3.0
 numpy>=2.4.5,<3.0
+# scipy: Welch's t-test for cohort comparison (B19) + statistical primitives.
+# Pinned to the same major as numpy to avoid the npy_intp ABI drift seen on
+# 2.x bumps. Adds ~50MB but every downstream stats endpoint can use it.
+scipy>=1.14,<2.0
 openpyxl>=3.1.5,<4.0
 
 # HTTP & middleware
