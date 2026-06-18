@@ -270,6 +270,9 @@ The doc tree splits into three buckets per the project's [clean-push policy](doc
 | [`UNIPROT_ENRICHMENT_SPEC.md`](docs/active/UNIPROT_ENRICHMENT_SPEC.md) | UniProt integration spec |
 | [`VECTOR_SEARCH_SPEC.md`](docs/active/VECTOR_SEARCH_SPEC.md) | LanceDB + ESM-2 vector search architecture |
 | [`ECOSYSTEM_GUIDE.md`](docs/active/ECOSYSTEM_GUIDE.md) | 5-surface reference (web · Python · CLI · MCP · self-host) |
+| [`PAPER_METHODS_REFERENCE.md`](docs/active/PAPER_METHODS_REFERENCE.md) | Methods-section-ready algorithm + dataset + tooling reference for the paper |
+| [`HANDOFF.md`](docs/active/HANDOFF.md) | One-page next-developer on-ramp |
+| Reference datasets | [`backend/data/reference_datasets/`](backend/data/reference_datasets/) — **Peleg-118** fibril-forming peptides ≤40 aa (curated 2026-06; UniProt + AmyPro + literature) + schema docs |
 | [`DESIGN_SYSTEM.md`](docs/active/DESIGN_SYSTEM.md) | Tailwind + shadcn conventions |
 | [`A4_BIO_TOOLS_SUBMISSION.md`](docs/active/A4_BIO_TOOLS_SUBMISSION.md) | bio.tools submission packet |
 | [`A5_ZENODO_RELEASE.md`](docs/active/A5_ZENODO_RELEASE.md) | Zenodo release procedure |
