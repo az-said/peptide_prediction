@@ -1,19 +1,179 @@
 """Single + batch prediction endpoints."""
 
 import asyncio
-from typing import Optional
+import json
+from typing import Any, Dict, List, Optional
 
+import anyio
 from fastapi import APIRouter, Form, HTTPException, Query, Request
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 
 from schemas.api_models import PredictResponse, RowsResponse
 from services.dataframe_utils import parse_fasta, read_any_table, require_cols
-from services.logger import log_info
+from services.logger import log_info, log_warning
 from services.normalize import create_single_sequence_df, normalize_cols
 from services.predict_service import process_single_sequence
 from services.thresholds import parse_threshold_config
 from services.upload_service import UploadProcessingError, process_upload_dataframe
 
 router = APIRouter()
+
+
+# ---------------------------------------------------------------------------
+# B7 — NDJSON streaming endpoint
+# ---------------------------------------------------------------------------
+# Per WAVE_2_8_DISPATCH_2026_06_18.md §6.1, large batches stream peptide
+# results back as newline-delimited JSON so the UI can render progressively
+# instead of waiting on a single multi-minute POST. The non-streaming
+# /api/predict (single) and /api/predict/batch (small batch) routes stay
+# unchanged — only this new route emits NDJSON.
+
+
+class PredictStreamPeptide(BaseModel):
+    """One peptide in a stream request."""
+
+    id: str = Field(..., min_length=1, max_length=128)
+    sequence: str = Field(..., min_length=1, max_length=4096)
+
+
+class PredictStreamRequest(BaseModel):
+    """Body for ``POST /api/predict/stream``.
+
+    Shape is intentionally aligned with the Cowork frontend hook
+    (``useStreamingPredict``) — peptide list + optional threshold config.
+    """
+
+    peptides: List[PredictStreamPeptide] = Field(..., min_length=1, max_length=5000)
+    config: Optional[Dict[str, Any]] = None
+
+
+def _predict_one_for_stream(
+    peptide_id: str,
+    sequence: str,
+    threshold_config_requested: Optional[Dict[str, Any]],
+    threshold_config_resolved: Dict[str, Any],
+) -> Dict[str, Any]:
+    """Run the single-sequence predict pipeline for one peptide.
+
+    Runs in a worker thread (via ``anyio.to_thread.run_sync``) so the event
+    loop stays free to flush bytes to the client between peptides. Returns
+    the normalized peptide row dict — meta is discarded; the stream's
+    footer event is the only per-stream metadata we emit.
+    """
+    df = create_single_sequence_df(sequence, peptide_id)
+    result = process_single_sequence(
+        df=df,
+        threshold_config_requested=threshold_config_requested,
+        threshold_config_resolved=threshold_config_resolved,
+    )
+    return result.get("row", {})
+
+
+async def _stream_predict_events(req: PredictStreamRequest):
+    """Async generator that yields one NDJSON event per line.
+
+    Event types:
+      - ``header`` — first event, carries ``total``.
+      - ``row``    — per successful peptide, carries the normalized entry.
+      - ``error``  — per failed peptide, carries the error message.
+      - ``footer`` — last event, ``done: true``.
+
+    Cancellation: the ``await anyio.sleep(0)`` between peptides gives the
+    asyncio scheduler a chance to deliver a client disconnect as a
+    ``CancelledError``; we swallow it and stop emitting.
+    """
+    # Parse threshold config once for the whole stream — the same config is
+    # applied to every peptide so the response is deterministic vs the
+    # single-shot /api/predict route.
+    config_json = json.dumps(req.config) if req.config is not None else None
+    threshold_config_requested, threshold_config_resolved = parse_threshold_config(config_json)
+
+    total = len(req.peptides)
+    log_info(
+        "predict_stream_start",
+        f"peptides={total}",
+        stage="stream",
+        peptide_count=total,
+    )
+
+    yield json.dumps({"type": "header", "total": total}) + "\n"
+
+    try:
+        for index, pep in enumerate(req.peptides):
+            try:
+                entry = await anyio.to_thread.run_sync(
+                    _predict_one_for_stream,
+                    pep.id,
+                    pep.sequence,
+                    threshold_config_requested,
+                    threshold_config_resolved,
+                )
+                yield (
+                    json.dumps({"type": "row", "index": index, "id": pep.id, "entry": entry}) + "\n"
+                )
+            except Exception as exc:  # noqa: BLE001 — per-peptide isolation by design
+                log_warning(
+                    "predict_stream_row_error",
+                    f"Peptide {pep.id} failed: {exc}",
+                    peptide_id=pep.id,
+                    index=index,
+                    error=str(exc),
+                )
+                yield (
+                    json.dumps(
+                        {
+                            "type": "error",
+                            "index": index,
+                            "id": pep.id,
+                            "message": str(exc),
+                        }
+                    )
+                    + "\n"
+                )
+            # Cooperative cancellation hand-off — gives the loop a chance to
+            # detect client disconnect between peptides without blocking.
+            await anyio.sleep(0)
+
+        yield json.dumps({"type": "footer", "done": True}) + "\n"
+        log_info(
+            "predict_stream_done",
+            f"peptides={total}",
+            stage="stream",
+            peptide_count=total,
+        )
+    except anyio.get_cancelled_exc_class():
+        # Client disconnected mid-stream. Don't yield a footer — the
+        # connection is already torn down — but DO re-raise so anyio's
+        # task tree sees the cancellation.
+        log_info(
+            "predict_stream_cancelled",
+            "Client disconnected during stream",
+            stage="stream",
+        )
+        raise
+
+
+@router.post("/api/predict/stream")
+async def predict_stream(req: PredictStreamRequest):
+    """Stream per-peptide predictions as NDJSON.
+
+    Returns ``application/x-ndjson`` — one JSON object per line. See
+    ``_stream_predict_events`` for the event grammar.
+
+    The ``X-Accel-Buffering: no`` header is critical for nginx reverse
+    proxies (Hetzner CX33 prod): without it nginx buffers the whole
+    response and the stream arrives all at once, defeating progressive
+    rendering on the UI side.
+    """
+    return StreamingResponse(
+        _stream_predict_events(req),
+        media_type="application/x-ndjson",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.post("/api/predict", response_model=PredictResponse)
