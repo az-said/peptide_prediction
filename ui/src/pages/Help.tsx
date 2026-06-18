@@ -454,25 +454,44 @@ export default function Help() {
                 </p>
               </div>
               <Separator />
-              {/* T11 / Q-FIX-031 (2026-05-07): citation block — reference values
-                  pending Peleg sign-off. The placeholders unblock the v0.1 push
-                  without overstating provenance; the Wave-C email asks Peleg to
-                  confirm the exact source publications. */}
+              {/* E1/E2/E3 (Peleg 2026-06-18): primary scientific references for
+                  the metrics PVL surfaces. Bibliographic entries kept short so
+                  the Help page stays scannable. */}
               <div className="space-y-2">
                 <h4 className="font-medium">References &amp; thresholds</h4>
-                <p className="text-sm text-muted-foreground">
-                  Default threshold values (FF-Helix μH cutoff, FF-SSW hydrophobicity cutoff, TANGO
-                  per-residue 5% aggregation cutoff) are taken from{" "}
-                  <strong className="text-foreground">
-                    Ragonis-Bachar et al., in preparation (2026)
-                  </strong>
-                  . The minimum continuous-residue threshold for an S4PRED helix segment (default
-                  &ge;15&nbsp;aa) follows{" "}
-                  <em className="text-foreground">[citation pending — Peleg]</em>. Both references
-                  will be replaced with full bibliographic entries once the source publications are
-                  finalized; the values themselves are stable and documented here for
-                  reproducibility.
-                </p>
+                <ul className="text-sm text-muted-foreground list-disc list-outside ml-5 space-y-1">
+                  <li>
+                    <strong className="text-foreground">Hydrophobicity scale.</strong> Fauchère, J.
+                    &amp; Pliska, V. (1983). <em>Eur. J. Med. Chem.</em> 18, 369–375. Octanol/water
+                    partition coefficients used both for the FF-Helix µH gate and the FF-SSW
+                    hydrophobicity gate.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Hydrophobic moment (µH).</strong> Eisenberg,
+                    D., Weiss, R. M. &amp; Terwilliger, T. C. (1982). <em>Nature</em> 299, 371–374.
+                    Helical-wheel vector sum with periodicity 100°.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">FF-Helix framing.</strong> Hamodrakas, S. J.
+                    (2007). <em>FEBS J.</em> 274, 6107–6122. "Concentric model" for amphipathic
+                    α-helices and fibril formation; PVL's FF-Helix definition builds on this.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">S4PRED secondary structure.</strong> Moffat,
+                    L. &amp; Jones, D. T. (2021). <em>Bioinformatics</em> 37, 3744–3751. Ensemble
+                    BiLSTM single-sequence 3-state predictor.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">TANGO β-aggregation.</strong>{" "}
+                    Fernandez-Escamilla, A.-M. et al. (2004). <em>Nat. Biotechnol.</em> 22,
+                    1302–1306.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">PVL default thresholds.</strong>{" "}
+                    Ragonis-Bachar et al., in preparation (2026). Used for the µH and hydrophobicity
+                    gates when no batch is available for auto-tuning.
+                  </li>
+                </ul>
               </div>
               <Separator />
               {/* Dataset attribution — referenced by the upcoming gold-standard

@@ -103,7 +103,33 @@ export function AggregationHeatmap({
         </div>
       </div>
 
-      {/* Aggregation bar chart (primary) */}
+      {/* Q12 (Peleg 2026-06-18 PDF1 p21): secondary structure FIRST,
+          aggregation SECOND. */}
+      {showAll && (betaCurve?.length || helixCurve?.length) ? (
+        <div className="space-y-2" data-chart-export>
+          <h3 className="text-sm font-semibold">TANGO Secondary Structure (Helix + Beta)</h3>
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={data} barGap={0} barCategoryGap={0}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="pos"
+                  tickCount={Math.min(data.length, 20)}
+                  tick={{ fontSize: 10 }}
+                />
+                <YAxis tick={{ fontSize: 10 }} domain={[0, 100]} />
+                <Tooltip content={<TangoTooltip />} />
+                <Legend />
+                <Bar dataKey="Helix" fill="hsl(var(--helix, 0 80% 50%))" opacity={0.7} />
+                <Bar dataKey="Beta" fill="hsl(var(--beta, 210 80% 50%))" opacity={0.7} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+          <ChartExportButtons filename={`${peptideId}-tango-secondary-structure`} />
+        </div>
+      ) : null}
+
+      {/* Aggregation bar chart */}
       <div className="space-y-2" data-chart-export>
         <h3 className="text-sm font-semibold">Per-Residue Aggregation Propensity</h3>
         <div className="h-52">
@@ -129,6 +155,7 @@ export function AggregationHeatmap({
                   fontSize: 11,
                 }}
                 tick={{ fontSize: 10 }}
+                domain={[0, 100]}
               />
               <Tooltip content={<TangoTooltip />} />
               <Bar dataKey="Aggregation" opacity={0.85}>
@@ -141,31 +168,6 @@ export function AggregationHeatmap({
         </div>
         <ChartExportButtons filename={`${peptideId}-tango-aggregation`} />
       </div>
-
-      {/* Optional: Beta + Helix overlay */}
-      {showAll && (betaCurve?.length || helixCurve?.length) ? (
-        <div className="space-y-2" data-chart-export>
-          <h3 className="text-sm font-semibold">TANGO Beta & Helix Propensity</h3>
-          <div className="h-52">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={data} barGap={0} barCategoryGap={0}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                <XAxis
-                  dataKey="pos"
-                  tickCount={Math.min(data.length, 20)}
-                  tick={{ fontSize: 10 }}
-                />
-                <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip content={<TangoTooltip />} />
-                <Legend />
-                <Bar dataKey="Beta" fill="hsl(var(--beta, 210 80% 50%))" opacity={0.7} />
-                <Bar dataKey="Helix" fill="hsl(var(--helix, 0 80% 50%))" opacity={0.7} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <ChartExportButtons filename={`${peptideId}-tango-beta-helix`} />
-        </div>
-      ) : null}
 
       {/* Toggle links */}
       <div className="flex flex-wrap gap-x-4 gap-y-1">

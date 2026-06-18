@@ -13,12 +13,7 @@ import { AlertTriangle, Copy, Download } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import type { Peptide } from "@/types/peptide";
 import { TangoBadge } from "@/components/TangoBadge";
@@ -107,9 +102,8 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[260px]">
                       <p className="text-xs leading-relaxed">
-                        Computed using literature-default thresholds (μH &gt; 0.5,
-                        hydrophobicity &gt; 0.5). Upload a cohort dataset for
-                        data-derived thresholds.
+                        Computed using literature-default thresholds (μH &gt; 0.5, hydrophobicity
+                        &gt; 0.5). Upload a cohort dataset for data-derived thresholds.
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -126,9 +120,8 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[260px]">
                       <p className="text-xs leading-relaxed">
-                        Computed using literature-default thresholds (μH &gt; 0.5,
-                        hydrophobicity &gt; 0.5). Upload a cohort dataset for
-                        data-derived thresholds.
+                        Computed using literature-default thresholds (μH &gt; 0.5, hydrophobicity
+                        &gt; 0.5). Upload a cohort dataset for data-derived thresholds.
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -194,14 +187,18 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
       {/* ── S4PRED Per-Residue Probabilities ── */}
       <S4PredChart peptide={p} />
 
-      {/* ── TANGO Aggregation Heatmap ── */}
+      {/* ── TANGO Secondary Structure + Aggregation ──
+          Q12 (Peleg 2026-06-18 PDF1 p21): renamed from "TANGO Aggregation
+          Profile" to surface TANGO's secondary structure probabilities first,
+          with aggregation second. Subtitle uses the H/E/C terminology Peleg
+          asked for. */}
       {p.tango?.agg && p.tango.agg.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>TANGO Aggregation Profile</CardTitle>
+            <CardTitle>Tango Secondary Structure and Aggregation Probabilities</CardTitle>
             <CardDescription>
-              Per-residue aggregation propensity. Higher scores indicate regions with higher
-              aggregation propensity.
+              Per-residue helix (H), beta (E), coil (C), and aggregation probabilities from Tango
+              prediction. Higher scores indicate regions with stronger propensity.
             </CardDescription>
           </CardHeader>
           <CardContent>

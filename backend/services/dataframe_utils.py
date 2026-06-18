@@ -614,6 +614,81 @@ def parse_fasta(raw: bytes, filename: str) -> pd.DataFrame:
     return pd.DataFrame(entries, columns=["Entry", "Sequence", "Length"])
 
 
+_SEQUENCE_COLUMN_ALIASES: List[str] = [
+    "sequence",
+    "seq",
+    "peptide",
+    "peptide sequence",
+    "aa sequence",
+    "amino acid sequence",
+]
+
+# Valid amino-acid letters (1-letter codes). 'B', 'J', 'O', 'U', 'X', 'Z' are
+# accepted as ambiguous/unknown markers — they show up in Peleg-118 and other
+# curated sets. Lowercase normalized before testing.
+_VALID_AA_LETTERS = set("ACDEFGHIKLMNPQRSTVWYBJOUXZ")
+
+
+def _canonicalize_sequence_column(df: pd.DataFrame) -> pd.DataFrame:
+    """B3 (Peleg 2026-06-18 PDF2): detect a sequence column case-insensitively
+    and rename it to the canonical "Sequence" so downstream code can rely on
+    `df["Sequence"]`.
+
+    Picks the first match in the alias list. If "Sequence" already exists, no-op.
+    """
+    if "Sequence" in df.columns:
+        return df
+    lower_map = {str(c).strip().lower(): c for c in df.columns}
+    for alias in _SEQUENCE_COLUMN_ALIASES:
+        if alias in lower_map and lower_map[alias] != "Sequence":
+            return df.rename(columns={lower_map[alias]: "Sequence"})
+    return df
+
+
+def _looks_like_header_row(row_values: Any) -> bool:
+    """B4 (Peleg 2026-06-18 PDF2): True if a row's value in the Sequence column
+    is not a valid amino-acid sequence — i.e. likely a header repeated as data.
+
+    Examples that return True:
+    - "Sequence"  (header word, matches an alias)
+    - ""          (blank)
+    - "Sequence " (with trailing whitespace)
+    - "1234"      (numeric)
+    - "ASDF QWERT" (contains whitespace)
+    """
+    if row_values is None:
+        return True
+    s = str(row_values).strip()
+    if not s:
+        return True
+    # Direct match against known header aliases — short-circuits for things
+    # like "Sequence" / "Peptide" where every letter is a valid AA code.
+    if s.lower() in _SEQUENCE_COLUMN_ALIASES:
+        return True
+    # Any non-AA character (digits, whitespace, punctuation) → header-ish.
+    upper = s.upper()
+    if not all(ch in _VALID_AA_LETTERS for ch in upper):
+        return True
+    # Very short "sequences" (1-2 letters) are usually category codes, not data.
+    if len(upper) < 3:
+        return True
+    return False
+
+
+def _drop_header_repeat(df: pd.DataFrame) -> pd.DataFrame:
+    """B4: drop the first row if its Sequence cell isn't a valid peptide.
+    XLSX exports from some curated datasets (e.g. Peleg-118) keep the header
+    label as a sheet row; pandas reads it correctly but a second header-like
+    row sometimes sneaks in.
+    """
+    if "Sequence" not in df.columns or df.empty:
+        return df
+    first_seq = df.iloc[0]["Sequence"]
+    if _looks_like_header_row(first_seq):
+        return df.iloc[1:].reset_index(drop=True)
+    return df
+
+
 def read_any_table(raw: bytes, filename: str) -> pd.DataFrame:
     """
     Read CSV/TSV/XLS(X) with intelligent delimiter detection and BOM handling.
@@ -627,6 +702,10 @@ def read_any_table(raw: bytes, filename: str) -> pd.DataFrame:
     - Strips UTF-8 BOM if present (utf-8-sig encoding)
     - Normalizes line endings (handled by pandas)
     - Auto-detects delimiter when file extension is ambiguous
+    - B3: case-insensitive sequence-column detection (aliases: sequence, seq,
+      peptide, peptide sequence, aa sequence, amino acid sequence)
+    - B4: drops a repeated-header first row when the Sequence cell isn't a
+      valid amino-acid sequence
 
     Args:
         raw: File contents as bytes
@@ -638,6 +717,15 @@ def read_any_table(raw: bytes, filename: str) -> pd.DataFrame:
     Raises:
         ValueError: If file format is not supported or parsing fails
     """
+    df = _read_any_table_raw(raw, filename)
+    df = _canonicalize_sequence_column(df)
+    df = _drop_header_repeat(df)
+    return df
+
+
+def _read_any_table_raw(raw: bytes, filename: str) -> pd.DataFrame:
+    """Original read_any_table body. Kept separate so the public
+    `read_any_table` can apply post-load canonicalization."""
     fn = filename.lower() if filename else ""
 
     # FASTA files (.fasta, .fa, or .txt starting with >)

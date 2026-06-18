@@ -137,6 +137,18 @@ contract-check:
 		python3 scripts/check_contract_sync.py; \
 	fi
 
+# M2 (Peleg 2026-06-18 meeting): pre-compute the reference datasets so the
+# homepage "Try example" UX loads in <2s instead of triggering a live
+# TANGO + S4PRED run. Output: backend/data/precomputed/<dataset_id>.json
+# (same shape as POST /api/predict/batch returns).
+precompute-datasets:
+	@cd backend && \
+	if [ -f .venv/bin/python ]; then \
+		USE_TANGO=1 USE_S4PRED=1 .venv/bin/python scripts/precompute_dataset.py peleg_118; \
+	else \
+		USE_TANGO=1 USE_S4PRED=1 python3 scripts/precompute_dataset.py peleg_118; \
+	fi
+
 # =============================================================================
 # Docker Targets
 # =============================================================================
