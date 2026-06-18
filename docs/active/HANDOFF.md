@@ -138,7 +138,7 @@ If any of these are red on `main`, fix it before doing anything else.
 6. PR template is at `.github/pull_request_template.md`. Fill in scientific impact + invariants checked.
 7. CodeRabbit auto-reviews. Address comments. Merge after CI green + 1 approval.
 
-**Commit identity**: all commits must show `Said Azaizah <az.said2007@gmail.com>` as author. Never add "Claude", "AI", "assistant", or "Anthropic" anywhere in commits, code, comments, or docs.
+**Commit identity**: all commits must show `Said Azaizah <said.azaizah@cssb-hamburg.de>` as author (DESY CSSB primary). Technion `saida@technion.ac.il` and MIT `az_said@mit.edu` are also acceptable for context-specific work. Never add "Claude", "AI", "assistant", or "Anthropic" anywhere in commits, code, comments, or docs.
 
 ---
 
