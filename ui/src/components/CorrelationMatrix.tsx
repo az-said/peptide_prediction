@@ -65,33 +65,43 @@ function binaryClassValue(v: number | null | undefined): number | null {
   return v === 1 ? 1 : 0;
 }
 
+// B18 (Peleg 2026-06-18 PDF2): labels make it explicit that every metric
+// is a per-peptide scalar — none are per-residue mixed in. Where the
+// underlying signal is a per-residue curve, the per-peptide aggregator
+// (max / mean) is named in the label so users can't confuse the matrix
+// scope. The matrix correlates ACROSS peptides (one observation per row).
 export const DEFAULT_CORRELATION_METRICS: CorrelationMetric[] = [
-  { id: "hydrophobicity", label: "Hydrophobicity", shortLabel: "Hydro", getValue: (p) => p.hydrophobicity },
-  { id: "muH", label: "μH", shortLabel: "μH", getValue: (p) => p.muH },
+  {
+    id: "hydrophobicity",
+    label: "Hydrophobicity",
+    shortLabel: "Hydro",
+    getValue: (p) => p.hydrophobicity,
+  },
+  { id: "muH", label: "μH (per peptide)", shortLabel: "μH", getValue: (p) => p.muH },
   { id: "charge", label: "Charge", shortLabel: "Charge", getValue: (p) => p.charge },
   { id: "length", label: "Length", shortLabel: "Length", getValue: (p) => p.length },
   {
     id: "s4predHelixScore",
-    label: "S4PRED helix score",
+    label: "S4PRED helix score (mean reliability)",
     shortLabel: "Helix score",
     getValue: (p) => p.s4predHelixScore ?? null,
   },
   {
     id: "tangoHelixMax",
-    label: "TANGO helix score",
-    shortLabel: "T helix",
+    label: "TANGO helix (peak)",
+    shortLabel: "T helix peak",
     getValue: (p) => p.tangoHelixMax ?? null,
   },
   {
     id: "tangoBetaMax",
-    label: "TANGO beta score",
-    shortLabel: "T beta",
+    label: "TANGO β (peak)",
+    shortLabel: "T β peak",
     getValue: (p) => p.tangoBetaMax ?? null,
   },
   {
     id: "tangoAggMax",
-    label: "TANGO aggregation max",
-    shortLabel: "T agg max",
+    label: "TANGO aggregation (peak)",
+    shortLabel: "T agg peak",
     getValue: (p) => p.tangoAggMax ?? null,
   },
   {
@@ -146,7 +156,7 @@ function pearson(xs: number[], ys: number[]): number {
 export function computeCorrelationMatrix(
   peptides: Peptide[],
   metrics: CorrelationMetric[],
-  missingStrategy: MissingStrategy = "pairwise-exclude",
+  missingStrategy: MissingStrategy = "pairwise-exclude"
 ): { matrix: number[][]; sampleSizes: number[][] } {
   const k = metrics.length;
   const matrix: number[][] = Array.from({ length: k }, () => Array(k).fill(NaN));
@@ -154,7 +164,7 @@ export function computeCorrelationMatrix(
 
   // Extract raw values for each metric
   const rawValues: (number | null | undefined)[][] = metrics.map((m) =>
-    peptides.map((p) => m.getValue(p)),
+    peptides.map((p) => m.getValue(p))
   );
 
   if (missingStrategy === "listwise-exclude") {
@@ -165,9 +175,7 @@ export function computeCorrelationMatrix(
       if (allValid) validIndices.push(row);
     }
 
-    const filtered: number[][] = rawValues.map((col) =>
-      validIndices.map((i) => col[i] as number),
-    );
+    const filtered: number[][] = rawValues.map((col) => validIndices.map((i) => col[i] as number));
 
     for (let i = 0; i < k; i++) {
       for (let j = 0; j < k; j++) {
@@ -187,7 +195,7 @@ export function computeCorrelationMatrix(
       if (hasNulls) {
         console.warn(
           "[CorrelationMatrix] never-zero strategy: null values detected. " +
-            "These are excluded pairwise. No zeros were imputed.",
+            "These are excluded pairwise. No zeros were imputed."
         );
       }
     }
@@ -273,7 +281,7 @@ export function CorrelationMatrix({
 
   const { matrix, sampleSizes } = useMemo(
     () => computeCorrelationMatrix(peptides, metrics, missingStrategy),
-    [peptides, metrics, missingStrategy],
+    [peptides, metrics, missingStrategy]
   );
 
   const k = metrics.length;
@@ -295,9 +303,7 @@ export function CorrelationMatrix({
       <Card className="rounded-xl border-[hsl(var(--border))]">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg">Correlation matrix</CardTitle>
-          <CardDescription>
-            Pairwise Pearson correlations across database metrics
-          </CardDescription>
+          <CardDescription>Pairwise Pearson correlations across peptides — one observation per peptide. Per-residue curves are aggregated (max or mean) before correlation.</CardDescription>
         </CardHeader>
         <CardContent className="py-8 text-center text-muted-foreground text-sm">
           Need at least 2 peptides for correlation analysis.
@@ -333,9 +339,7 @@ export function CorrelationMatrix({
     if (cellRenderer) return cellRenderer(val, n);
 
     // Use minus sign (U+2212) for negative values
-    const formatted = val < 0
-      ? `−${Math.abs(val).toFixed(2)}`
-      : val.toFixed(2);
+    const formatted = val < 0 ? `−${Math.abs(val).toFixed(2)}` : val.toFixed(2);
     return formatted;
   }
 
@@ -384,7 +388,9 @@ export function CorrelationMatrix({
     if (n < minSampleSize) {
       return (
         <div className="space-y-0.5">
-          <div className="font-medium">{metrics[row].label} vs {metrics[col].label}</div>
+          <div className="font-medium">
+            {metrics[row].label} vs {metrics[col].label}
+          </div>
           <div className="text-muted-foreground">
             Insufficient sample size (n &lt; {minSampleSize})
           </div>
@@ -396,7 +402,9 @@ export function CorrelationMatrix({
     if (!Number.isFinite(val)) {
       return (
         <div className="space-y-0.5">
-          <div className="font-medium">{metrics[row].label} vs {metrics[col].label}</div>
+          <div className="font-medium">
+            {metrics[row].label} vs {metrics[col].label}
+          </div>
           <div className="text-muted-foreground">Cannot compute correlation</div>
         </div>
       );
@@ -404,7 +412,9 @@ export function CorrelationMatrix({
 
     return (
       <div className="space-y-0.5">
-        <div className="font-medium">{metrics[row].label} vs {metrics[col].label}</div>
+        <div className="font-medium">
+          {metrics[row].label} vs {metrics[col].label}
+        </div>
         <div className="font-mono">r = {val.toFixed(3)}</div>
         <div className="text-xs text-muted-foreground/70">N = {n}</div>
       </div>
@@ -460,9 +470,7 @@ export function CorrelationMatrix({
     <Card className="rounded-xl border-[hsl(var(--border))]">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Correlation matrix</CardTitle>
-        <CardDescription>
-          Pairwise Pearson correlations across database metrics
-        </CardDescription>
+        <CardDescription>Pairwise Pearson correlations across peptides — one observation per peptide. Per-residue curves are aggregated (max or mean) before correlation.</CardDescription>
       </CardHeader>
       <CardContent className="p-6 space-y-5">
         <TooltipProvider delayDuration={150}>
@@ -552,11 +560,7 @@ export function CorrelationMatrix({
                         !isDiagonal && (n < minSampleSize || !Number.isFinite(matrix[row][col]));
 
                       return (
-                        <td
-                          key={colMetric.id}
-                          className="p-0"
-                          style={{ minWidth: "56px" }}
-                        >
+                        <td key={colMetric.id} className="p-0" style={{ minWidth: "56px" }}>
                           <UITooltip>
                             <TooltipTrigger asChild>
                               <div
@@ -584,10 +588,7 @@ export function CorrelationMatrix({
                                 {renderCellContent(row, col)}
                               </div>
                             </TooltipTrigger>
-                            <TooltipContent
-                              side="top"
-                              className="text-xs max-w-xs"
-                            >
+                            <TooltipContent side="top" className="text-xs max-w-xs">
                               {getCellTooltipContent(row, col)}
                             </TooltipContent>
                           </UITooltip>
@@ -632,13 +633,17 @@ export function CorrelationMatrix({
             <span className="text-[10px] text-muted-foreground font-mono">+1</span>
           </div>
           {/* Tick labels */}
-          <div className="flex justify-between text-[9px] text-muted-foreground/60 font-mono" style={{ width: "200px" }}>
+          <div
+            className="flex justify-between text-[9px] text-muted-foreground/60 font-mono"
+            style={{ width: "200px" }}
+          >
             <span>{"−0.5"}</span>
             <span>0</span>
             <span>+0.5</span>
           </div>
           <p className="text-[9px] text-muted-foreground/50 text-center mt-0.5">
-            Pairwise complete observations (N shown on hover). Cells with N &lt; {minSampleSize} shown as &ldquo;&mdash;&rdquo;.
+            Pairwise complete observations (N shown on hover). Cells with N &lt; {minSampleSize}{" "}
+            shown as &ldquo;&mdash;&rdquo;.
           </p>
         </div>
       </CardContent>

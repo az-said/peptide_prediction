@@ -195,7 +195,7 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
     tangoSswResidues: false, // TANGO SSW residue overlap count — advanced
   });
   const navigate = useNavigate();
-  const { tableFilter, setTableFilter } = useChartSelection();
+  const { tableFilter, setTableFilter, binSelection, clearBinSelection } = useChartSelection();
 
   // Hide dense columns on mobile — user can re-enable via Columns dropdown
   useEffect(() => {
@@ -218,9 +218,21 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
 
   const activeFilterCount = useMemo(() => countActiveFilters(columnFilters), [columnFilters]);
 
-  // Apply column filters + KPI table filter before passing to TanStack
+  // B13 (Peleg 2026-06-18 PDF2): clicking a Venn / set-diagram region drops
+  // the selected peptide ids into chartSelectionStore.binSelection. Build
+  // a fast Set so the per-row filter below stays O(1) regardless of cohort
+  // size. Null/empty means "no Venn filter active".
+  const binIdSet = useMemo(() => {
+    if (!binSelection || !binSelection.ids || binSelection.ids.length === 0) return null;
+    return new Set(binSelection.ids);
+  }, [binSelection]);
+
+  // Apply column filters + KPI table filter + Venn bin filter before
+  // passing to TanStack.
   const filteredByColumns = useMemo(() => {
     return peptides.filter((p) => {
+      // B13: Venn region click filter
+      if (binIdSet && !binIdSet.has(p.id)) return false;
       // KPI-driven filter
       if (tableFilter) {
         const val = (p as any)[tableFilter.field];
