@@ -755,6 +755,15 @@ export function PeptideTable({ peptides }: PeptideTableProps) {
       pagination: {
         pageSize: 25,
       },
+      // B10 (Peleg 2026-06-18 PDF2): default sort surfaces candidates
+      // first. ffHelixFlag descending puts FF-Helix candidates (1) at the
+      // top, non-candidates (-1) at the bottom; ties break on µH so the
+      // strongest-amphipathicity candidates lead. Users can re-sort by
+      // clicking any header — this is just where the table opens.
+      sorting: [
+        { id: "ffHelixFlag", desc: true },
+        { id: "muH", desc: true },
+      ],
     },
   });
 
