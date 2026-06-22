@@ -40,7 +40,7 @@ function useRulerMarks(len: number) {
 }
 
 export function SequenceTrack({ peptide }: SequenceTrackProps) {
-  const { sequence, s4pred } = peptide;
+  const { sequence, s4pred, tango } = peptide;
   const len = sequence.length;
   const marks = useRulerMarks(len);
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
@@ -190,27 +190,73 @@ export function SequenceTrack({ peptide }: SequenceTrackProps) {
                                 <span className="text-muted-foreground">pos {idx + 1}</span>
                               </div>
                               {s4pred?.pH && s4pred?.pE && s4pred?.pC && (
-                                <div className="grid grid-cols-3 gap-2 pt-1 border-t border-border/50">
-                                  <div>
-                                    <span className="block" style={{ color: SS_COLORS.H }}>
-                                      {(s4pred.pH[idx] ?? 0).toFixed(3)}
-                                    </span>
-                                    <span className="text-muted-foreground">P(H)</span>
+                                <div className="space-y-1 pt-1 border-t border-border/50">
+                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                    S4PRED
                                   </div>
-                                  <div>
-                                    <span className="block" style={{ color: SS_COLORS.E }}>
-                                      {(s4pred.pE[idx] ?? 0).toFixed(3)}
-                                    </span>
-                                    <span className="text-muted-foreground">P(E)</span>
-                                  </div>
-                                  <div>
-                                    <span className="block" style={{ color: SS_COLORS.C }}>
-                                      {(s4pred.pC[idx] ?? 0).toFixed(3)}
-                                    </span>
-                                    <span className="text-muted-foreground">P(C)</span>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <div>
+                                      <span className="block" style={{ color: SS_COLORS.H }}>
+                                        {(s4pred.pH[idx] ?? 0).toFixed(3)}
+                                      </span>
+                                      <span className="text-muted-foreground">P(H)</span>
+                                    </div>
+                                    <div>
+                                      <span className="block" style={{ color: SS_COLORS.E }}>
+                                        {(s4pred.pE[idx] ?? 0).toFixed(3)}
+                                      </span>
+                                      <span className="text-muted-foreground">P(E)</span>
+                                    </div>
+                                    <div>
+                                      <span className="block" style={{ color: SS_COLORS.C }}>
+                                        {(s4pred.pC[idx] ?? 0).toFixed(3)}
+                                      </span>
+                                      <span className="text-muted-foreground">P(C)</span>
+                                    </div>
                                   </div>
                                 </div>
                               )}
+                              {/* Q8 (Peleg 2026-06-18 PDF1 p19): show TANGO
+                                  per-residue propensities alongside S4PRED so
+                                  users can spot positions where the two
+                                  predictors disagree without leaving the
+                                  sequence panel. */}
+                              {tango?.helix?.length || tango?.beta?.length || tango?.agg?.length ? (
+                                <div className="space-y-1 pt-1 border-t border-border/50">
+                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                                    Tango
+                                  </div>
+                                  <div className="grid grid-cols-3 gap-2">
+                                    <div>
+                                      <span className="block" style={{ color: SS_COLORS.H }}>
+                                        {tango.helix?.[idx] != null
+                                          ? (tango.helix[idx] as number).toFixed(2)
+                                          : "—"}
+                                      </span>
+                                      <span className="text-muted-foreground">Helix</span>
+                                    </div>
+                                    <div>
+                                      <span className="block" style={{ color: SS_COLORS.E }}>
+                                        {tango.beta?.[idx] != null
+                                          ? (tango.beta[idx] as number).toFixed(2)
+                                          : "—"}
+                                      </span>
+                                      <span className="text-muted-foreground">β</span>
+                                    </div>
+                                    <div>
+                                      <span
+                                        className="block"
+                                        style={{ color: "hsl(var(--ff-ssw))" }}
+                                      >
+                                        {tango.agg?.[idx] != null
+                                          ? (tango.agg[idx] as number).toFixed(2)
+                                          : "—"}
+                                      </span>
+                                      <span className="text-muted-foreground">Agg</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ) : null}
                             </div>
                           </TooltipContent>
                         </Tooltip>
@@ -231,7 +277,8 @@ export function SequenceTrack({ peptide }: SequenceTrackProps) {
       {/* Ruler marks annotation */}
       {marks.length > 0 && (
         <p className="text-[10px] text-muted-foreground">
-          Residue numbering starts at 1. Hover any residue for per-residue S4PRED probabilities.
+          Residue numbering starts at 1. Hover any residue for per-residue S4PRED + Tango
+          propensities.
         </p>
       )}
     </div>
