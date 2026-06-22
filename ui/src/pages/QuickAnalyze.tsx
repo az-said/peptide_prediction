@@ -30,6 +30,7 @@ import { mapApiRowToPeptide } from "@/lib/peptideMapper";
 import { Peptide, ThresholdConfig } from "@/types/peptide";
 import { ThresholdConfigPanel } from "@/components/ThresholdConfigPanel";
 import { PeptideViewer } from "@/components/PeptideViewer";
+import { QuickKpiStrip } from "@/components/QuickKpiStrip";
 import { useDatasetStore } from "@/stores/datasetStore";
 import { useJobStore } from "@/stores/jobStore";
 import { BgDotGrid } from "@/components/BgDotGrid";
@@ -467,7 +468,15 @@ export default function QuickAnalyze() {
 
         {/* ==================== RESULTS ==================== */}
         {p && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-5"
+          >
+            {/* Q6 (Peleg 2026-06-18 PDF1 p18): 4-class KPI strip above the
+                sequence display. Mirrors the batch Results dashboard for
+                single-peptide context. */}
+            <QuickKpiStrip peptide={p} />
             <PeptideViewer peptide={p} />
           </motion.div>
         )}

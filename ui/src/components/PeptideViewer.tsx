@@ -23,6 +23,7 @@ import { AggregationHeatmap } from "@/components/AggregationHeatmap";
 import { AlphaFoldViewer } from "@/components/AlphaFoldViewer";
 import { S4PredChart } from "@/components/S4PredChart";
 import { BiochemComparison, DEFAULT_PVL_METRICS } from "@/components/BiochemComparison";
+import { PerToolResultChips } from "@/components/PerToolResultChips";
 
 interface PeptideViewerProps {
   peptide: Peptide;
@@ -163,6 +164,12 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
           </div>
         </div>
       )}
+
+      {/* Q9 (Peleg 2026-06-18 PDF1 p20): per-tool result chips — one
+          horizontal row of color-coded chips, one per provider/classifier.
+          Goes between the sequence and the biochem block so users get
+          the at-a-glance summary before scrolling. */}
+      <PerToolResultChips peptide={p} />
 
       {/* Wave Q.1: KPI tile row replaced with the unified BiochemComparison.
           Quick Analyze (single sequence, no database) auto-falls back to the
