@@ -404,38 +404,73 @@
 | OQ4 | What does the y=0.5 dashed line in Aggregation-Structure Overlay represent? | PDF 1 p23 |
 | OQ5 | SSW residue color in Mol* 3D viewer (amber / other)? | meeting + PDF 2 |
 | OQ6 | "Hide-show options should be unified" — single row above both plots, or per-plot under title? | PDF 1 p23 |
+| OQ7 | F10 — Beta % calculation flagged as "too aggressive" in 2026-05-19 Likoiim review. Algorithm change requires scientific sign-off. What's the desired threshold? | Wave 2.5 |
+| OQ8 | A8 — "AlphaFold-predicted structure" title was approved 2026-06-03 Drive comment 17. 2026-06-18 meeting note says delete. Which is current? | PDF 1 + meeting |
 
 ---
 
-## Section F — Already-resolved (close-out)
+## Section F (Wave 2.5 fix-pack from Likoiim PowerPoint) — landed 2026-06-22
 
-| Item                                              | Where               |
-|---------------------------------------------------|---------------------|
-| FF-SSW axiom enforcement (ISSUE-032)              | Wave 2.5            |
-| ESM-2 hot-path perf (ISSUE-033)                   | Wave 2.5            |
-| Aggregation ≠ fibril formation (terminology pass) | Wave 2 + 2.5        |
-| CD spectroscopy mentions removed                  | Wave 2.5            |
-| µH = Fauchère-Pliska scale (not propensity)       | DECISIONS.md ADR-003|
+Items I'd missed in the original triage. Surfaced by 2026-06-23 doc audit.
+
+| ID | Item | Status | Commit / Note |
+|----|------|--------|---------------|
+| F1 | "cohort" → "database" terminology scan | ✅ shipped | `d122fe0` — PeptideViewer tooltips + About credit (rest were already migrated) |
+| F2 | "Cutoff" suffix on µH + Hydrophobicity threshold labels | ✅ shipped | `d122fe0` — ThresholdConfigPanel + ActiveThresholdsPanel |
+| F3 | TANGO Y-axis remove "%" suffix | ✅ already done | ResultsCharts comment 2026-05-19; AggregationHeatmap uses bare "TANGO score" |
+| F4 | Y-axis titles on distribution charts | ✅ shipped | `35d45e1` — Compare-page overlay histograms got "Number of peptides" |
+| F5 | Aggregation Propensity lollipop → histogram | ✅ already done | ResultsCharts L271 — re-styled 2026-05-19 |
+| F6 | Venn FF-SSW positioning verification | ✅ already done | SetDiagram L453 — 2026-05-19 layout fix |
+| F7 | "Above median" badge gold → green | ✅ already done | BiochemComparison L113 — FIX-016 |
+| F8 | Purple collision TANGO vs SSW pill | ✅ already done | 2026-05-21 decision: SSW=blue (`--ssw: 211 80% 50%`), TANGO:OK=`--primary` purple |
+| F9 | Sequence length warning simplification | ✅ shipped | `35d45e1` — bulleted, bold counts |
+| F10 | Beta % calculation "too aggressive" | ⏸ Peleg sync | OQ7 above. Scientific algorithm question. |
+| F11 | "% mean" ambiguity in Smart Ranking | ✅ shipped | `d122fe0` — RankedTable column headers get "(pctile)" suffix + tooltip |
 
 ---
 
-## Tally
+## Section R (ROADMAP audit, items not in my prior triage)
 
-| Section | Open | Severity mix |
-|---------|------|--------------|
-| A — bugs / critical | 9 | 9 × P0 |
-| H — homepage copy | 9 | mostly P1 |
-| Q — Quick Analyze | 19 | mix P0/P1 |
-| B — batch / Start Analysis | 20 | mix P0/P1 |
-| D — wording | 6 | P2 |
-| E — provenance | 4 | P1 |
-| OQ — open questions | 6 | pending Peleg |
+Items from `docs/active/ROADMAP.md` cross-checked 2026-06-23.
 
-**Total open**: 67 items + 6 open questions.
-**Already resolved**: 5.
+| ID | Item | Status |
+|----|------|--------|
+| B-CONTRACT | Pydantic `extra="forbid"` on every request schema | ✅ done — every Request class in `backend/schemas/` already has it |
+| B-COMPLEX-SEQ | Complex sequence notation (multi-chain, linker, dashes) | ⏸ deferred to v0.2; needs Alex's lab-convention survey |
+| B-S4PRED-CAP | S4PRED length cap with clear error | ✅ done — cap = 40 aa (`S4PRED_MAX_LENGTH`), banner shipped in B9 |
+| B11 | FASTA upload support | ✅ done — `parse_fasta` + dropzone accept `.fasta` + `.fa` |
+| B12 | Upload guidance & limits | 🟡 partial — 5,000-peptide line shipped (D2); "How to export from UniProt" tooltip pending |
+| B13 | 2D backbone visualization (atom2svg) | ⏸ Alex request 2026-03-28, parked v0.2+ |
+| B14 (dual) | Cohort Comparison dual upload | ⏸ Alex request, parked v0.2 |
+| B14 (tools) | "Tools" sidebar tab | ⏸ Alex request, parked v0.2 |
+| B15 | Large dataset support (>500 entries) | 🟡 partial — nginx body-size + B9 progress bar shipped; B-1 async queue still v0.2 |
+| B16 | Load testing infra (locust / k6) | ⏸ Alex request, parked v0.2 |
+
+---
+
+## Tally (revised 2026-06-23)
+
+| Section | Total | Done | Open | Blocked |
+|---------|-------|------|------|---------|
+| A — bugs / critical | 9 | 7 | 0 | 2 (A8, A9 superseded) |
+| H — homepage copy | 9 | 8 | 0 | 1 (H9 manual screenshots) |
+| Q — Quick Analyze | 19 | 13 | 3 | 3 (Q7/Q15 OQ, Q11 Cowork) |
+| B — batch / Start Analysis | 20 | 13 | 4 | 3 (B7/B16/B20 Cowork) |
+| D — wording | 6 | 6 | 0 | 0 |
+| E — provenance | 4 | 3 | 1 | 0 (E4 T3) |
+| F — Wave 2.5 fix-pack | 11 | 10 | 0 | 1 (F10 OQ) |
+| R — ROADMAP cross-check | 10 | 4 | 0 | 6 (parked v0.2) |
+| OQ — open questions | 8 | 0 | 0 | 8 (pending Peleg) |
+
+**Total open across all categories**: 8 items in active flight + 14 blocked / parked.
+**Shipped this wave**: 64 items.
 
 ---
 
 ## Next step
 
-T1 now opens GitHub Issues for every P0 (Section A) item. P1 items batched into Wave 2.8 milestone. OQ list goes to next Peleg sync.
+1. Schedule Peleg Zoom to clear OQ1–OQ8.
+2. Cowork to ship Q7, Q11, Q13–Q17, B7, B16, B20.
+3. Said to open GitHub Issues from this doc and tag with the wave.
+4. T3 to ship E4 export header.
+5. After Peleg sync — close OQ1–OQ8 and revisit any P3 items still showing red on the live VPS.
