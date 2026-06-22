@@ -225,6 +225,40 @@ export function UploadDropzone({ onFileSelected, onFileProcessed }: UploadDropzo
                   Up to 50 MB &middot; Required column:{" "}
                   <code className="bg-muted px-1 py-0.5 rounded text-[11px]">Sequence</code>
                 </p>
+                {/* B12 (ROADMAP, Alex 2026-03-25): inline tip for the most
+                    common upload source. Researchers know UniProt; PVL just
+                    needs to show them the export format that works. */}
+                <details className="mt-2 inline-block text-left cursor-pointer">
+                  <summary className="text-[11px] text-primary hover:underline list-none">
+                    How to export from UniProt →
+                  </summary>
+                  <ol className="mt-2 list-decimal list-outside ml-4 space-y-1 text-[11px] leading-snug max-w-sm">
+                    <li>
+                      Search at{" "}
+                      <a
+                        href="https://www.uniprot.org/"
+                        target="_blank"
+                        rel="noreferrer noopener"
+                        className="underline text-primary"
+                      >
+                        uniprot.org
+                      </a>{" "}
+                      and refine your hit list.
+                    </li>
+                    <li>
+                      Click <strong>Download</strong> above the table.
+                    </li>
+                    <li>
+                      Choose format <strong>TSV</strong> (or CSV) and tick the{" "}
+                      <strong>Sequence</strong> column.
+                    </li>
+                    <li>
+                      Optional columns PVL recognizes: <code>Entry</code>, <code>Organism</code>,{" "}
+                      <code>Length</code>.
+                    </li>
+                    <li>Drop the downloaded file here.</li>
+                  </ol>
+                </details>
               </div>
             )}
 
