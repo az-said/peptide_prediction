@@ -16,6 +16,7 @@ import { useMemo, useState } from "react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { isPositionInFragments, type SSClass } from "@/lib/fragmentClassification";
+import { SSW_RESIDUE_HEX, sswTint } from "@/lib/sswColor";
 import type { Peptide } from "@/types/peptide";
 
 interface SequenceTrackProps {
@@ -33,13 +34,13 @@ type PipelineClass = "helix" | "ssw" | "coiled-coil";
 
 const PIPELINE_COLORS: Record<PipelineClass, string> = {
   helix: "hsl(var(--helix))",
-  ssw: "#E040FB",
+  ssw: SSW_RESIDUE_HEX,
   "coiled-coil": "hsl(var(--muted-foreground))",
 };
 
 const PIPELINE_BG: Record<PipelineClass, string> = {
   helix: "hsl(var(--helix) / 0.15)",
-  ssw: "rgba(224, 64, 251, 0.15)",
+  ssw: sswTint(0.15),
   "coiled-coil": "transparent",
 };
 

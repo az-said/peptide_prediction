@@ -48,6 +48,7 @@ import {
   clearSswOverpaint,
   type MolstarPluginRef,
 } from "@/lib/molstarSswOverpaint";
+import { SSW_RESIDUE_HEX } from "@/lib/sswColor";
 import type { Peptide } from "@/types/peptide";
 
 interface Mol3DViewerProps {
@@ -351,101 +352,101 @@ export function Mol3DViewer({
           {entry && !loading && (
             <>
               {(overlays.length > 0 || hasSswData) && (
-              <div className="flex flex-wrap items-center gap-2" data-testid="overlay-toggles">
-                {OVERLAY_TOGGLES.filter((t) => t.type !== "ssw").map((toggle) => {
-                  const hasData = overlays.some((o) => o.type === toggle.type);
-                  const isVisible = visibility[toggle.type];
-                  return (
-                    <UITooltip key={toggle.type}>
-                      <TooltipTrigger asChild>
-                        <button
-                          type="button"
-                          onClick={() => toggleOverlay(toggle.type)}
-                          disabled={!hasData}
-                          className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-all ${
-                            hasData && isVisible
-                              ? "bg-muted/80 text-foreground border border-[hsl(var(--border))]"
-                              : hasData
-                                ? "bg-transparent text-muted-foreground border border-transparent hover:border-[hsl(var(--border))]"
-                                : "bg-transparent text-muted-foreground/40 border border-transparent cursor-not-allowed"
-                          }`}
-                          aria-label={`Toggle ${toggle.label}`}
-                          data-testid={`toggle-${toggle.type}`}
+                <div className="flex flex-wrap items-center gap-2" data-testid="overlay-toggles">
+                  {OVERLAY_TOGGLES.filter((t) => t.type !== "ssw").map((toggle) => {
+                    const hasData = overlays.some((o) => o.type === toggle.type);
+                    const isVisible = visibility[toggle.type];
+                    return (
+                      <UITooltip key={toggle.type}>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            onClick={() => toggleOverlay(toggle.type)}
+                            disabled={!hasData}
+                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-all ${
+                              hasData && isVisible
+                                ? "bg-muted/80 text-foreground border border-[hsl(var(--border))]"
+                                : hasData
+                                  ? "bg-transparent text-muted-foreground border border-transparent hover:border-[hsl(var(--border))]"
+                                  : "bg-transparent text-muted-foreground/40 border border-transparent cursor-not-allowed"
+                            }`}
+                            aria-label={`Toggle ${toggle.label}`}
+                            data-testid={`toggle-${toggle.type}`}
+                          >
+                            <span
+                              className="h-2.5 w-2.5 rounded-full shrink-0"
+                              style={{
+                                backgroundColor: hasData
+                                  ? toggle.color
+                                  : "hsl(var(--muted-foreground))",
+                                opacity: hasData && isVisible ? 1 : 0.3,
+                              }}
+                            />
+                            {hasData && isVisible ? (
+                              <Eye className="h-3 w-3" />
+                            ) : (
+                              <EyeOff className="h-3 w-3" />
+                            )}
+                            <span>{toggle.label}</span>
+                            {!hasData && (
+                              <Badge variant="secondary" className="h-3.5 px-1 text-[8px]">
+                                no data
+                              </Badge>
+                            )}
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="text-xs max-w-[200px]">
+                          {toggle.description}
+                          {!hasData && " (no data available for this peptide)"}
+                        </TooltipContent>
+                      </UITooltip>
+                    );
+                  })}
+
+                  {/* B16: separator + dedicated SSW Toggle */}
+                  <div className="h-5 w-px bg-border mx-0.5" />
+                  <UITooltip>
+                    <TooltipTrigger asChild>
+                      <span>
+                        <Toggle
+                          variant="outline"
+                          size="sm"
+                          pressed={sswOverpaintActive}
+                          onPressedChange={setSswOverpaintActive}
+                          disabled={!hasSswData}
+                          className={`text-xs h-7 px-2.5 gap-1.5 ${
+                            hasSswData && sswOverpaintActive
+                              ? "data-[state=on]:bg-ssw-residue/15 data-[state=on]:text-ssw-residue data-[state=on]:border-ssw-residue/40"
+                              : ""
+                          } ${!hasSswData ? "opacity-50 cursor-not-allowed" : ""}`}
+                          aria-label="Toggle SSW residues overlay"
+                          data-testid="toggle-ssw-overpaint"
                         >
                           <span
                             className="h-2.5 w-2.5 rounded-full shrink-0"
                             style={{
-                              backgroundColor: hasData
-                                ? toggle.color
+                              backgroundColor: hasSswData
+                                ? SSW_RESIDUE_HEX
                                 : "hsl(var(--muted-foreground))",
-                              opacity: hasData && isVisible ? 1 : 0.3,
+                              opacity: hasSswData && sswOverpaintActive ? 1 : 0.3,
                             }}
                           />
-                          {hasData && isVisible ? (
+                          {hasSswData && sswOverpaintActive ? (
                             <Eye className="h-3 w-3" />
                           ) : (
                             <EyeOff className="h-3 w-3" />
                           )}
-                          <span>{toggle.label}</span>
-                          {!hasData && (
-                            <Badge variant="secondary" className="h-3.5 px-1 text-[8px]">
-                              no data
-                            </Badge>
-                          )}
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" className="text-xs max-w-[200px]">
-                        {toggle.description}
-                        {!hasData && " (no data available for this peptide)"}
-                      </TooltipContent>
-                    </UITooltip>
-                  );
-                })}
-
-                {/* B16: separator + dedicated SSW Toggle */}
-                <div className="h-5 w-px bg-border mx-0.5" />
-                <UITooltip>
-                  <TooltipTrigger asChild>
-                    <span>
-                      <Toggle
-                        variant="outline"
-                        size="sm"
-                        pressed={sswOverpaintActive}
-                        onPressedChange={setSswOverpaintActive}
-                        disabled={!hasSswData}
-                        className={`text-xs h-7 px-2.5 gap-1.5 ${
-                          hasSswData && sswOverpaintActive
-                            ? "data-[state=on]:bg-[#E040FB]/15 data-[state=on]:text-[#E040FB] data-[state=on]:border-[#E040FB]/40"
-                            : ""
-                        } ${!hasSswData ? "opacity-50 cursor-not-allowed" : ""}`}
-                        aria-label="Toggle SSW residues overlay"
-                        data-testid="toggle-ssw-overpaint"
-                      >
-                        <span
-                          className="h-2.5 w-2.5 rounded-full shrink-0"
-                          style={{
-                            backgroundColor: hasSswData
-                              ? "#E040FB"
-                              : "hsl(var(--muted-foreground))",
-                            opacity: hasSswData && sswOverpaintActive ? 1 : 0.3,
-                          }}
-                        />
-                        {hasSswData && sswOverpaintActive ? (
-                          <Eye className="h-3 w-3" />
-                        ) : (
-                          <EyeOff className="h-3 w-3" />
-                        )}
-                        Show SSW residues
-                      </Toggle>
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" className="text-xs max-w-[220px]">
-                    {hasSswData
-                      ? "Highlight secondary structure switch zones on the 3D structure with magenta overpaint."
-                      : "No SSW residues detected for this peptide."}
-                  </TooltipContent>
-                </UITooltip>
-              </div>
+                          Show SSW residues
+                        </Toggle>
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="text-xs max-w-[220px]">
+                      {hasSswData
+                        ? "Highlight secondary structure switch zones on the 3D structure with magenta overpaint."
+                        : "No SSW residues detected for this peptide."}
+                    </TooltipContent>
+                  </UITooltip>
+                </div>
               )}
 
               {viewerLoaded ? (

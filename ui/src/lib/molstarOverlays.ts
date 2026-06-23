@@ -17,6 +17,7 @@
  *   4. Add a toggle entry in Mol3DViewer's OVERLAY_TOGGLES.
  */
 
+import { SSW_RESIDUE_HEX } from "@/lib/sswColor";
 import type { Peptide, SegmentTuple, Segment } from "@/types/peptide";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -50,11 +51,11 @@ export const OVERLAY_COLORS: Record<OverlayType, string> = {
   tango: "#ef4444", // red-500 — TANGO aggregation peaks
   "s4pred-helix": "#a855f7", // purple-500 — S4PRED helix segments
   "ff-helix": "#22c55e", // green-500 — FF-Helix candidate regions
-  // SSW: vivid magenta (purple A200, #E040FB) — chameleon-sequence convention
-  // (ChSeq database, Hauer et al.) for residues that switch between secondary
-  // structure states. Changed from amber 2026-06-18 (Peleg PDF1 p23 flagged
-  // amber/orange clash with the beta-strand series).
-  ssw: "#E040FB",
+  // SSW: chameleon-sequence convention magenta (ChSeq database, Hauer et al.)
+  // for residues that switch between secondary structure states. Single source
+  // of truth at ui/src/lib/sswColor.ts. Changed from amber 2026-06-18
+  // (Peleg PDF1 p23 flagged amber/orange clash with the beta-strand series).
+  ssw: SSW_RESIDUE_HEX,
 };
 
 export const OVERLAY_TOGGLES: OverlayToggle[] = [

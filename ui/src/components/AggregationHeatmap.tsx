@@ -35,12 +35,13 @@ import { ChartExportButtons } from "@/components/ChartExportButtons";
 import { TangoTooltip } from "@/components/charts/TangoTooltip";
 import { Toggle } from "@/components/ui/toggle";
 import { useThresholdStore } from "@/stores/thresholdStore";
+import { SSW_RESIDUE_HEX, sswTint } from "@/lib/sswColor";
 
 /** OQ3: single-hue magenta gradient (low → moderate → high). */
 function aggBarColor(score: number): string {
-  if (score < 10) return "rgba(224, 64, 251, 0.35)";
-  if (score < 30) return "rgba(224, 64, 251, 0.65)";
-  return "#E040FB";
+  if (score < 10) return sswTint(0.35);
+  if (score < 30) return sswTint(0.65);
+  return SSW_RESIDUE_HEX;
 }
 
 interface AggregationHeatmapProps {
@@ -254,7 +255,7 @@ export function AggregationHeatmap({
                   size="sm"
                   pressed={overlayAgg}
                   onPressedChange={setOverlayAgg}
-                  className="text-xs h-7 px-2.5 data-[state=on]:bg-[#E040FB]/15 data-[state=on]:text-[#E040FB] data-[state=on]:border-[#E040FB]/40"
+                  className="text-xs h-7 px-2.5 data-[state=on]:bg-ssw-residue/15 data-[state=on]:text-ssw-residue data-[state=on]:border-ssw-residue/40"
                 >
                   Aggregation
                 </Toggle>
@@ -351,7 +352,7 @@ export function AggregationHeatmap({
                       <Line
                         type="monotone"
                         dataKey="Aggregation"
-                        stroke="#E040FB"
+                        stroke={SSW_RESIDUE_HEX}
                         strokeWidth={2}
                         dot={false}
                       />

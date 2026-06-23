@@ -12,6 +12,7 @@
  * B16 (Peleg 2026-06-18): SSW residue overlay with magenta #E040FB.
  */
 
+import { SSW_RESIDUE_HEX_NUM } from "@/lib/sswColor";
 import type { StructureOverlay } from "@/lib/molstarOverlays";
 
 export type MolColor = number & { __brand: "MolColor" };
@@ -21,7 +22,7 @@ export function Color(hex: number): MolColor {
 }
 
 export const CLEAR_COLOR = Color(-1);
-export const SSW_OVERPAINT_COLOR = Color(0xe040fb);
+export const SSW_OVERPAINT_COLOR = Color(SSW_RESIDUE_HEX_NUM);
 
 /**
  * Minimal plugin interface matching what we need from PluginContext.
