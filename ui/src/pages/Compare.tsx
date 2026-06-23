@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDropzone } from "react-dropzone";
-import { Upload, ArrowRight, Info } from "lucide-react";
+import { Upload, ArrowRight, Info, Beaker, AlertTriangle as AlertTriangleIcon } from "lucide-react";
 import {
   ResponsiveContainer,
   BarChart,
@@ -26,9 +26,8 @@ import type { Peptide, DatasetStats } from "@/types/peptide";
 import { BgDotGrid } from "@/components/BgDotGrid";
 import AppFooter from "@/components/AppFooter";
 
-// Colors for the two cohorts
-const COHORT_A_COLOR = "hsl(210, 80%, 55%)"; // blue
-const COHORT_B_COLOR = "hsl(25, 85%, 55%)"; // orange
+const COHORT_A_COLOR = "hsl(210, 80%, 55%)";
+const COHORT_B_COLOR = "hsl(25, 85%, 55%)";
 
 function computeStats(peptides: Peptide[]): DatasetStats {
   const n = peptides.length;
@@ -89,7 +88,6 @@ function deltaColor(a: number | null | undefined, b: number | null | undefined):
   return diff > 0 ? "text-green-600" : "text-red-500";
 }
 
-/** Build overlay histogram data for two cohorts */
 function buildHistogram(
   valsA: number[],
   valsB: number[],
@@ -123,6 +121,9 @@ export default function Compare() {
   const [error, setError] = useState<string | null>(null);
   const [bFilename, setBFilename] = useState<string>("");
 
+  // B20 (Peleg 2026-06-18 PDF1): one-click "compare current dataset vs Peleg-118"
+  const [loadingPeleg, setLoadingPeleg] = useState(false);
+
   const cohortA = peptides;
 
   const processFile = useCallback(async (file: File) => {
@@ -155,6 +156,41 @@ export default function Compare() {
     }
   }, []);
 
+  // B20: one-click Peleg-118 loader — fetches the bundled reference CSV and
+  // runs it through the same upload pipeline as a user-uploaded file.
+  const handleLoadPeleg118 = useCallback(async () => {
+    setLoadingPeleg(true);
+    setError(null);
+    try {
+      const resp = await fetch("/example/peleg_118_fibril_forming.csv");
+      if (!resp.ok) throw new Error(`Failed to fetch Peleg-118 CSV: ${resp.status}`);
+      const blob = await resp.blob();
+      const file = new File([blob], "peleg_118_fibril_forming.csv", { type: "text/csv" });
+      setBFilename("Peleg-118 fibril-forming peptides");
+      const response = await uploadCSV(file);
+      const rows = response.rows ?? [];
+      const mapped = rows
+        .map((r: any, idx: number) => {
+          try {
+            return mapApiRowToPeptide(r, `peleg118[${idx}]`);
+          } catch {
+            return null;
+          }
+        })
+        .filter((p: any): p is Peptide => p !== null);
+
+      if (mapped.length === 0) {
+        setError("Failed to parse Peleg-118 dataset. Check backend connectivity.");
+      } else {
+        setCohortB(mapped);
+      }
+    } catch (err: any) {
+      setError(err?.message || "Failed to load Peleg-118 reference dataset.");
+    } finally {
+      setLoadingPeleg(false);
+    }
+  }, []);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (accepted) => {
       if (accepted.length > 0) processFile(accepted[0]);
@@ -166,13 +202,13 @@ export default function Compare() {
       "application/octet-stream": [".fasta", ".fa"],
     },
     multiple: false,
-    disabled: uploading,
+    disabled: uploading || loadingPeleg,
   });
 
   // Dual upload mode: allow uploading Cohort A directly from Compare page
   const [cohortALocal, setCohortALocal] = useState<Peptide[] | null>(null);
   const [uploadingA, setUploadingA] = useState(false);
-  const [aFilename, setAFilename] = useState<string>("");
+  const [, setAFilename] = useState<string>("");
 
   const processFileA = useCallback(async (file: File) => {
     setUploadingA(true);
@@ -216,14 +252,11 @@ export default function Compare() {
     disabled: uploadingA,
   });
 
-  // Use local Cohort A if uploaded here, otherwise fall back to dataset store
   const effectiveCohortA = cohortALocal ?? cohortA;
 
-  // Stats
   const statsA = useMemo(() => computeStats(effectiveCohortA), [effectiveCohortA]);
   const statsB = useMemo(() => (cohortB ? computeStats(cohortB) : null), [cohortB]);
 
-  // Histogram data (use effectiveCohortA for dual-upload support)
   const hydroHistA = useMemo(
     () =>
       effectiveCohortA
@@ -256,7 +289,6 @@ export default function Compare() {
   );
   const lenHist = useMemo(() => buildHistogram(lenHistA, lenHistB), [lenHistA, lenHistB]);
 
-  // Scatter data (H vs μH) for both cohorts
   const scatterA = useMemo(
     () =>
       effectiveCohortA
@@ -272,7 +304,6 @@ export default function Compare() {
     [cohortB]
   );
 
-  // Show dual upload mode if no primary dataset and no local Cohort A
   if (effectiveCohortA.length === 0) {
     return (
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10 space-y-6 relative">
@@ -283,8 +314,23 @@ export default function Compare() {
             Compare two datasets side by side. Upload both databases below.
           </p>
         </div>
+
+        {/* B20: gently nudge new users to Quick Analyze before forcing two uploads. */}
+        <Alert className="border-amber-300 bg-amber-50/50 dark:bg-amber-900/10 dark:border-amber-700/50">
+          <AlertTriangleIcon className="h-4 w-4 text-amber-600" />
+          <AlertDescription className="text-sm">
+            Upload a dataset first or try the{" "}
+            <button
+              onClick={() => navigate("/quick-analyze")}
+              className="text-primary hover:underline font-medium"
+            >
+              Quick Analyze
+            </button>{" "}
+            flow to get started.
+          </AlertDescription>
+        </Alert>
+
         <div className="grid md:grid-cols-2 gap-4">
-          {/* Cohort A upload */}
           <Card
             {...dropzoneA.getRootProps()}
             className={`cursor-pointer border-2 border-dashed rounded-xl transition-all ${
@@ -302,7 +348,6 @@ export default function Compare() {
               <p className="text-xs text-muted-foreground mt-1">Drop file or click to browse</p>
             </CardContent>
           </Card>
-          {/* Cohort B upload */}
           <Card
             {...getRootProps()}
             className={`cursor-pointer border-2 border-dashed rounded-xl transition-all ${
@@ -393,7 +438,6 @@ export default function Compare() {
   return (
     <div className="px-4 sm:px-6 py-8 sm:py-10 max-w-[1400px] mx-auto space-y-8 relative">
       <BgDotGrid />
-      {/* Header */}
       <div>
         <h1 className="text-h1 text-foreground page-header-title">Database Comparison</h1>
         <p className="text-body text-muted-foreground mt-1 page-header-title">
@@ -401,7 +445,25 @@ export default function Compare() {
         </p>
       </div>
 
-      {/* Upload comparison dataset (drag & drop) */}
+      {/* B20: one-click Peleg-118 chip above the upload zone. The same
+          fibril-forming reference CSV used by Quick Analyze's tabs is loaded
+          through the standard upload pipeline so the analysis path is
+          identical to a user-uploaded comparison file. */}
+      {!cohortB && (
+        <button
+          type="button"
+          onClick={handleLoadPeleg118}
+          disabled={loadingPeleg || uploading}
+          className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-4 py-2.5 text-sm font-medium text-primary hover:bg-primary/10 hover:border-primary/50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid="peleg-118-chip"
+        >
+          <Beaker className="h-4 w-4" />
+          {loadingPeleg
+            ? "Loading Peleg-118..."
+            : "Compare current dataset vs Peleg-118 fibril-forming peptides →"}
+        </button>
+      )}
+
       {!cohortB && (
         <Card
           {...getRootProps()}
@@ -409,7 +471,7 @@ export default function Compare() {
             isDragActive
               ? "border-primary bg-primary/5"
               : "border-border hover:border-primary/50 hover:bg-muted/30"
-          } ${uploading ? "pointer-events-none opacity-60" : ""}`}
+          } ${uploading || loadingPeleg ? "pointer-events-none opacity-60" : ""}`}
         >
           <input {...getInputProps()} />
           <CardContent className="flex flex-col items-center justify-center py-10 space-y-4">
@@ -433,7 +495,6 @@ export default function Compare() {
         </Card>
       )}
 
-      {/* Cohort labels */}
       {cohortB && (
         <div className="flex flex-wrap items-center gap-3 text-sm">
           <div className="flex items-center gap-2">
@@ -464,7 +525,6 @@ export default function Compare() {
         </div>
       )}
 
-      {/* Cohort size imbalance warning */}
       {cohortB &&
         statsB &&
         (() => {
@@ -485,10 +545,8 @@ export default function Compare() {
           );
         })()}
 
-      {/* Comparison table */}
       {cohortB && (
         <>
-          {/* KPI delta table */}
           <Card>
             <CardHeader>
               <CardTitle className="text-base">Summary Comparison</CardTitle>
@@ -534,9 +592,7 @@ export default function Compare() {
             </CardContent>
           </Card>
 
-          {/* Charts */}
           <div className="grid lg:grid-cols-2 gap-6">
-            {/* Hydrophobicity overlay */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Hydrophobicity Distribution</CardTitle>
@@ -560,8 +616,7 @@ export default function Compare() {
                           style: { fontSize: 11, fill: "hsl(var(--muted-foreground))" },
                         }}
                       />
-                      {/* F4 (Peleg Wave 2.5): every distribution chart gets
-                          a Y-axis title. Was bare. */}
+                      {/* F4 (Peleg Wave 2.5): Y-axis title on every distribution chart. */}
                       <YAxis
                         allowDecimals={false}
                         label={{
@@ -590,7 +645,6 @@ export default function Compare() {
               </CardContent>
             </Card>
 
-            {/* Length overlay */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Sequence Length Distribution</CardTitle>
@@ -642,7 +696,6 @@ export default function Compare() {
               </CardContent>
             </Card>
 
-            {/* H vs μH scatter overlay */}
             <Card className="lg:col-span-2">
               <CardHeader>
                 <div className="flex items-center gap-2">

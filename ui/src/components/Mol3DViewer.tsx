@@ -1,32 +1,12 @@
 /**
  * Mol3DViewer — 3D structure viewer with PVL prediction overlays.
  *
- * The killer differentiator: renders AlphaFold structures with TANGO peaks,
- * S4PRED helix segments, FF-Helix candidates, and SSW switch zones overlaid
- * directly on the 3D cartoon. No peptide tool does this.
+ * Phase 1 (current): EBI embedded Mol* via iframe + local overlay residue bar.
+ * Phase 2 (future): Programmatic Mol* plugin with overpaint/transparency.
  *
- * Architecture:
- * ─────────────────────────────────────────────────────────────────────────
- * Phase 1 (current): Uses EBI's embedded Mol* viewer via iframe for the 3D
- * rendering, with a local overlay legend + residue highlight bar showing which
- * regions carry which annotations. The iframe approach avoids bundling ~4MB of
- * Mol* core into PVL's bundle while still providing interactive 3D.
- *
- * Phase 2 (future): When molstar npm package is integrated, replace the iframe
- * with programmatic Mol* plugin, enabling true overpaint/transparency per-residue
- * and bidirectional hover sync via hoverStore.
- *
- * Overlay visualization (Phase 1):
- * Since iframe-embedded Mol* doesn't support external overpaint commands, we
- * render a "Prediction overlay map" — a horizontal residue bar below the 3D
- * viewer showing colored bands for each active overlay. This gives researchers
- * the spatial context of "which residues have which annotations" alongside the
- * 3D structure they can freely rotate.
- *
- * Toggle controls: each overlay type is independently toggleable.
- * Empty states: graceful messages for no accession, short peptides, load errors.
- * Lazy loading: Mol* iframe loads only on user click.
- * Export: PNG screenshot (Phase 2), PDB download (existing), session URL.
+ * B16: dedicated SSW residue overlay toggle using setStructureOverpaint.
+ * Toggle wired now; actual 3D overpaint activates once pluginRef is provided
+ * (Phase 2 — see ui/src/lib/molstarSswOverpaint.ts).
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -43,6 +23,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Toggle } from "@/components/ui/toggle";
 import {
   Tooltip as UITooltip,
   TooltipContent,
@@ -57,26 +38,26 @@ import {
 } from "@/lib/alphafold";
 import {
   buildDefaultOverlays,
+  extractSSWOverlay,
   OVERLAY_TOGGLES,
   type StructureOverlay,
   type OverlayType,
 } from "@/lib/molstarOverlays";
+import {
+  applySswOverpaint,
+  clearSswOverpaint,
+  type MolstarPluginRef,
+} from "@/lib/molstarSswOverpaint";
 import type { Peptide } from "@/types/peptide";
 
-// ── Props ──────────────────────────────────────────────────────────────────
-
 interface Mol3DViewerProps {
-  /** The peptide to visualize */
   peptide: Peptide;
-  /** Custom overlays (default: auto-built from peptide data) */
   overlays?: StructureOverlay[];
-  /** TANGO aggregation threshold for peak detection */
   aggThreshold?: number;
-  /** Initial collapsed state */
   defaultCollapsed?: boolean;
+  /** Phase 2: programmatic Mol* plugin context for overpaint. */
+  pluginRef?: MolstarPluginRef | null;
 }
-
-// ── Overlay toggle state ───────────────────────────────────────────────────
 
 type OverlayVisibility = Record<OverlayType, boolean>;
 
@@ -86,8 +67,6 @@ const DEFAULT_VISIBILITY: OverlayVisibility = {
   "ff-helix": true,
   ssw: true,
 };
-
-// ── Residue bar overlay visualization ──────────────────────────────────────
 
 function OverlayResidueBar({
   overlays,
@@ -143,7 +122,6 @@ function OverlayResidueBar({
           ))}
         </div>
       )}
-      {/* Residue number ticks */}
       <div className="flex justify-between text-[8px] text-muted-foreground/50 font-mono px-[104px]">
         <span>1</span>
         <span>{Math.round(sequenceLength / 2)}</span>
@@ -153,34 +131,56 @@ function OverlayResidueBar({
   );
 }
 
-// ── Main component ─────────────────────────────────────────────────────────
-
 export function Mol3DViewer({
   peptide,
   overlays: customOverlays,
   aggThreshold = 5.0,
   defaultCollapsed = false,
+  pluginRef = null,
 }: Mol3DViewerProps) {
   const [entry, setEntry] = useState<AlphaFoldEntry | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [checked, setChecked] = useState(false);
   const [viewerLoaded, setViewerLoaded] = useState(false);
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [, setCollapsed] = useState(defaultCollapsed);
   const [visibility, setVisibility] = useState<OverlayVisibility>(DEFAULT_VISIBILITY);
+
+  // B16: dedicated SSW overpaint toggle
+  const [sswOverpaintActive, setSswOverpaintActive] = useState(false);
 
   const peptideId = peptide.id;
   const isValid = isValidUniProtAccession(peptideId);
   const sequenceLength = peptide.length ?? peptide.sequence?.length ?? 0;
   const isTooShort = sequenceLength < 8;
 
-  // Build overlays
   const overlays = useMemo(
     () => customOverlays ?? buildDefaultOverlays(peptide, aggThreshold),
-    [peptide, customOverlays, aggThreshold],
+    [peptide, customOverlays, aggThreshold]
   );
 
-  // Fetch AlphaFold entry
+  // B16: extract SSW overlay for the dedicated toggle
+  const sswOverlay = useMemo(() => extractSSWOverlay(peptide), [peptide]);
+  const hasSswData = sswOverlay !== null;
+
+  // B16: apply/clear SSW overpaint when toggle changes
+  useEffect(() => {
+    if (!pluginRef) return;
+    if (sswOverpaintActive && sswOverlay) {
+      applySswOverpaint(pluginRef, sswOverlay);
+    } else {
+      clearSswOverpaint(pluginRef);
+    }
+  }, [sswOverpaintActive, sswOverlay, pluginRef]);
+
+  // B16: sync residue bar SSW visibility with overpaint toggle
+  useEffect(() => {
+    setVisibility((prev) => {
+      if (prev.ssw === sswOverpaintActive) return prev;
+      return { ...prev, ssw: sswOverpaintActive };
+    });
+  }, [sswOverpaintActive]);
+
   useEffect(() => {
     if (!isValid || isTooShort) {
       setChecked(true);
@@ -213,12 +213,14 @@ export function Mol3DViewer({
     };
   }, [peptideId, isValid, isTooShort]);
 
-  // Toggle overlay visibility
   const toggleOverlay = useCallback((type: OverlayType) => {
+    if (type === "ssw") {
+      setSswOverpaintActive((prev) => !prev);
+      return;
+    }
     setVisibility((prev) => ({ ...prev, [type]: !prev[type] }));
   }, []);
 
-  // Retry fetch
   const handleRetry = useCallback(() => {
     setChecked(false);
     setEntry(null);
@@ -239,9 +241,6 @@ export function Mol3DViewer({
       });
   }, [peptideId]);
 
-  // ── Empty states ─────────────────────────────────────────────────────────
-
-  // Not a valid UniProt accession
   if (!isValid) {
     return (
       <Card className="border-[hsl(var(--border))]" data-testid="mol3d-viewer">
@@ -253,9 +252,7 @@ export function Mol3DViewer({
         </CardHeader>
         <CardContent>
           <div className="rounded-lg border border-dashed border-[hsl(var(--border))] bg-muted/30 p-6 text-center">
-            <p className="text-sm text-foreground font-medium">
-              No AlphaFold structure available
-            </p>
+            <p className="text-sm text-foreground font-medium">No AlphaFold structure available</p>
             <p className="text-xs text-muted-foreground mt-1">
               This is expected for short or non-canonical peptides without a UniProt accession.
             </p>
@@ -265,7 +262,6 @@ export function Mol3DViewer({
     );
   }
 
-  // Too short for meaningful 3D
   if (isTooShort) {
     return (
       <Card className="border-[hsl(var(--border))]" data-testid="mol3d-viewer">
@@ -302,7 +298,8 @@ export function Mol3DViewer({
               <CardDescription>
                 AlphaFold structure · {peptideId}
                 {entry?.gene && ` (${entry.gene})`}
-                {overlays.length > 0 && ` · ${overlays.length} overlay${overlays.length > 1 ? "s" : ""}`}
+                {overlays.length > 0 &&
+                  ` · ${overlays.length} overlay${overlays.length > 1 ? "s" : ""}`}
               </CardDescription>
             </div>
             <div className="flex items-center gap-1.5">
@@ -333,90 +330,124 @@ export function Mol3DViewer({
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Loading */}
           {loading && (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-sm text-muted-foreground">
-                Checking AlphaFold DB...
-              </span>
+              <span className="ml-2 text-sm text-muted-foreground">Checking AlphaFold DB...</span>
             </div>
           )}
 
-          {/* Error with retry */}
           {error && checked && !loading && (
             <div className="rounded-lg border border-dashed border-amber-500/50 bg-amber-50 dark:bg-amber-950/20 p-6 text-center">
               <AlertTriangle className="h-5 w-5 text-amber-500 mx-auto mb-2" />
               <p className="text-sm text-foreground font-medium">{error}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-3 gap-1.5"
-                onClick={handleRetry}
-              >
+              <Button variant="outline" size="sm" className="mt-3 gap-1.5" onClick={handleRetry}>
                 <RotateCcw className="h-3 w-3" />
                 Retry
               </Button>
             </div>
           )}
 
-          {/* Structure loaded */}
           {entry && !loading && (
             <>
-              {/* Overlay toggles */}
-              {overlays.length > 0 && (
-                <div className="flex flex-wrap gap-2" data-testid="overlay-toggles">
-                  {OVERLAY_TOGGLES.map((toggle) => {
-                    const hasData = overlays.some((o) => o.type === toggle.type);
-                    const isVisible = visibility[toggle.type];
-                    return (
-                      <UITooltip key={toggle.type}>
-                        <TooltipTrigger asChild>
-                          <button
-                            type="button"
-                            onClick={() => toggleOverlay(toggle.type)}
-                            disabled={!hasData}
-                            className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-all ${
-                              hasData && isVisible
-                                ? "bg-muted/80 text-foreground border border-[hsl(var(--border))]"
-                                : hasData
-                                  ? "bg-transparent text-muted-foreground border border-transparent hover:border-[hsl(var(--border))]"
-                                  : "bg-transparent text-muted-foreground/40 border border-transparent cursor-not-allowed"
-                            }`}
-                            aria-label={`Toggle ${toggle.label}`}
-                            data-testid={`toggle-${toggle.type}`}
-                          >
-                            <span
-                              className="h-2.5 w-2.5 rounded-full shrink-0"
-                              style={{
-                                backgroundColor: hasData ? toggle.color : "hsl(var(--muted-foreground))",
-                                opacity: hasData && isVisible ? 1 : 0.3,
-                              }}
-                            />
-                            {hasData && isVisible ? (
-                              <Eye className="h-3 w-3" />
-                            ) : (
-                              <EyeOff className="h-3 w-3" />
-                            )}
-                            <span>{toggle.label}</span>
-                            {!hasData && (
-                              <Badge variant="secondary" className="h-3.5 px-1 text-[8px]">
-                                no data
-                              </Badge>
-                            )}
-                          </button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="text-xs max-w-[200px]">
-                          {toggle.description}
-                          {!hasData && " (no data available for this peptide)"}
-                        </TooltipContent>
-                      </UITooltip>
-                    );
-                  })}
-                </div>
+              {(overlays.length > 0 || hasSswData) && (
+              <div className="flex flex-wrap items-center gap-2" data-testid="overlay-toggles">
+                {OVERLAY_TOGGLES.filter((t) => t.type !== "ssw").map((toggle) => {
+                  const hasData = overlays.some((o) => o.type === toggle.type);
+                  const isVisible = visibility[toggle.type];
+                  return (
+                    <UITooltip key={toggle.type}>
+                      <TooltipTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={() => toggleOverlay(toggle.type)}
+                          disabled={!hasData}
+                          className={`inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs transition-all ${
+                            hasData && isVisible
+                              ? "bg-muted/80 text-foreground border border-[hsl(var(--border))]"
+                              : hasData
+                                ? "bg-transparent text-muted-foreground border border-transparent hover:border-[hsl(var(--border))]"
+                                : "bg-transparent text-muted-foreground/40 border border-transparent cursor-not-allowed"
+                          }`}
+                          aria-label={`Toggle ${toggle.label}`}
+                          data-testid={`toggle-${toggle.type}`}
+                        >
+                          <span
+                            className="h-2.5 w-2.5 rounded-full shrink-0"
+                            style={{
+                              backgroundColor: hasData
+                                ? toggle.color
+                                : "hsl(var(--muted-foreground))",
+                              opacity: hasData && isVisible ? 1 : 0.3,
+                            }}
+                          />
+                          {hasData && isVisible ? (
+                            <Eye className="h-3 w-3" />
+                          ) : (
+                            <EyeOff className="h-3 w-3" />
+                          )}
+                          <span>{toggle.label}</span>
+                          {!hasData && (
+                            <Badge variant="secondary" className="h-3.5 px-1 text-[8px]">
+                              no data
+                            </Badge>
+                          )}
+                        </button>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" className="text-xs max-w-[200px]">
+                        {toggle.description}
+                        {!hasData && " (no data available for this peptide)"}
+                      </TooltipContent>
+                    </UITooltip>
+                  );
+                })}
+
+                {/* B16: separator + dedicated SSW Toggle */}
+                <div className="h-5 w-px bg-border mx-0.5" />
+                <UITooltip>
+                  <TooltipTrigger asChild>
+                    <span>
+                      <Toggle
+                        variant="outline"
+                        size="sm"
+                        pressed={sswOverpaintActive}
+                        onPressedChange={setSswOverpaintActive}
+                        disabled={!hasSswData}
+                        className={`text-xs h-7 px-2.5 gap-1.5 ${
+                          hasSswData && sswOverpaintActive
+                            ? "data-[state=on]:bg-[#E040FB]/15 data-[state=on]:text-[#E040FB] data-[state=on]:border-[#E040FB]/40"
+                            : ""
+                        } ${!hasSswData ? "opacity-50 cursor-not-allowed" : ""}`}
+                        aria-label="Toggle SSW residues overlay"
+                        data-testid="toggle-ssw-overpaint"
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full shrink-0"
+                          style={{
+                            backgroundColor: hasSswData
+                              ? "#E040FB"
+                              : "hsl(var(--muted-foreground))",
+                            opacity: hasSswData && sswOverpaintActive ? 1 : 0.3,
+                          }}
+                        />
+                        {hasSswData && sswOverpaintActive ? (
+                          <Eye className="h-3 w-3" />
+                        ) : (
+                          <EyeOff className="h-3 w-3" />
+                        )}
+                        Show SSW residues
+                      </Toggle>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs max-w-[220px]">
+                    {hasSswData
+                      ? "Highlight secondary structure switch zones on the 3D structure with magenta overpaint."
+                      : "No SSW residues detected for this peptide."}
+                  </TooltipContent>
+                </UITooltip>
+              </div>
               )}
 
-              {/* 3D viewer (lazy-loaded) */}
               {viewerLoaded ? (
                 <div
                   className="rounded-lg overflow-hidden border border-[hsl(var(--border))]"
@@ -449,7 +480,6 @@ export function Mol3DViewer({
                 </button>
               )}
 
-              {/* Overlay residue bar — always visible (even before iframe loads) */}
               {overlays.length > 0 && (
                 <OverlayResidueBar
                   overlays={overlays}
@@ -458,7 +488,6 @@ export function Mol3DViewer({
                 />
               )}
 
-              {/* Confidence summary */}
               <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span>
                   pLDDT:{" "}
@@ -487,18 +516,15 @@ export function Mol3DViewer({
                 {entry.sequenceLength < 30 && (
                   <>
                     <span className="text-muted-foreground/50">|</span>
-                    <span className="text-amber-600">
-                      Short peptide — interpret with care
-                    </span>
+                    <span className="text-amber-600">Short peptide — interpret with care</span>
                   </>
                 )}
               </div>
 
-              {/* Phase note */}
               <p className="text-[9px] text-muted-foreground/50">
-                Overlay map shows prediction annotations on the residue axis.
-                Full 3D overpaint coming in Phase 2 (Mol* npm integration).
-                Structure: AlphaFold v2 (DeepMind/EMBL-EBI).
+                Overlay map shows prediction annotations on the residue axis. SSW overpaint
+                activates with Mol* Phase 2 integration. Structure: AlphaFold v2
+                (DeepMind/EMBL-EBI).
               </p>
             </>
           )}

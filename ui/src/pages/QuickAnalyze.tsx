@@ -31,6 +31,7 @@ import { Peptide, ThresholdConfig } from "@/types/peptide";
 import { ThresholdConfigPanel } from "@/components/ThresholdConfigPanel";
 import { PeptideViewer } from "@/components/PeptideViewer";
 import { QuickKpiStrip } from "@/components/QuickKpiStrip";
+import { QUICK_ANALYZE_DATASETS } from "@/lib/referenceDistributions";
 import { useDatasetStore } from "@/stores/datasetStore";
 import { useJobStore } from "@/stores/jobStore";
 import { BgDotGrid } from "@/components/BgDotGrid";
@@ -483,7 +484,7 @@ export default function QuickAnalyze() {
                 sequence display. Mirrors the batch Results dashboard for
                 single-peptide context. */}
             <QuickKpiStrip peptide={p} />
-            <PeptideViewer peptide={p} />
+            <PeptideViewer peptide={p} comparisonDatasets={QUICK_ANALYZE_DATASETS} />
           </motion.div>
         )}
         <AppFooter />

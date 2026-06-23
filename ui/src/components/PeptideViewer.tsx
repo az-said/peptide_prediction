@@ -24,12 +24,21 @@ import { AlphaFoldViewer } from "@/components/AlphaFoldViewer";
 import { S4PredChart } from "@/components/S4PredChart";
 import { BiochemComparison, DEFAULT_PVL_METRICS } from "@/components/BiochemComparison";
 import { PerToolResultChips } from "@/components/PerToolResultChips";
+import type { ReferenceDatasetConfig } from "@/lib/referenceDistributions";
 
 interface PeptideViewerProps {
   peptide: Peptide;
+  /** Q11: reference datasets for comparison tabs (forwarded to BiochemComparison) */
+  comparisonDatasets?: ReferenceDatasetConfig[];
+  /** Q11: default dataset tab id */
+  defaultDatasetId?: string;
 }
 
-export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
+export function PeptideViewer({
+  peptide: p,
+  comparisonDatasets,
+  defaultDatasetId,
+}: PeptideViewerProps) {
   const handleCopySequence = () => {
     navigator.clipboard.writeText(p.sequence);
     toast.success("Sequence copied to clipboard");
@@ -174,7 +183,14 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
       {/* Wave Q.1: KPI tile row replaced with the unified BiochemComparison.
           Quick Analyze (single sequence, no database) auto-falls back to the
           single-peptide empty-state via allPeptides.length < 2. */}
-      <BiochemComparison peptide={p} allPeptides={[p]} stats={null} metrics={DEFAULT_PVL_METRICS} />
+      <BiochemComparison
+        peptide={p}
+        allPeptides={[p]}
+        stats={null}
+        metrics={DEFAULT_PVL_METRICS}
+        comparisonDatasets={comparisonDatasets}
+        defaultDatasetId={defaultDatasetId}
+      />
 
       {/* ── Helical Wheel ── */}
       {p.length != null && p.length <= 40 && (
