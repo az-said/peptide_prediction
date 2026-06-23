@@ -34,6 +34,7 @@ import { useChartSelection } from "@/stores/chartSelectionStore";
 import { useThresholdStore } from "@/stores/thresholdStore";
 import { useDrillDown } from "@/components/drilldown/DrillDownProvider";
 import { downloadPeptideReport } from "@/lib/peptideReport";
+import { downloadReportHtml } from "@/lib/peptideHtmlReport";
 import { PVL_VERSION } from "@/stores/reproducibilityStore";
 import { cn } from "@/lib/utils";
 import { BgDotGrid } from "@/components/BgDotGrid";
@@ -203,6 +204,11 @@ export default function PeptideDetail() {
     }
   };
 
+  const handleDownloadHtmlReport = () => {
+    downloadReportHtml(peptide);
+    toast.success("HTML report downloaded");
+  };
+
   const handleFindSimilar = () => {
     openDrillDown({ peptide: peptide.id, mode: "similar" });
   };
@@ -294,6 +300,16 @@ export default function PeptideDetail() {
                 >
                   <FileText className="w-3.5 h-3.5 mr-1" />
                   PDF Report
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={handleDownloadHtmlReport}
+                  title="Self-contained HTML report — opens in any browser"
+                >
+                  <FileText className="w-3.5 h-3.5 mr-1" />
+                  Report (.html)
                 </Button>
                 <Button
                   variant="ghost"

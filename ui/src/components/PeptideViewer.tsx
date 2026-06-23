@@ -9,7 +9,7 @@
  * Peleg FIX-013: ConsensusCard tier system removed (certainty math
  * unjustified). See lib/consensus.ts header.
  */
-import { AlertTriangle, Copy, Download } from "lucide-react";
+import { AlertTriangle, Copy, Download, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,6 +25,7 @@ import { S4PredChart } from "@/components/S4PredChart";
 import { BiochemComparison, DEFAULT_PVL_METRICS } from "@/components/BiochemComparison";
 import { PerToolResultChips } from "@/components/PerToolResultChips";
 import type { ReferenceDatasetConfig } from "@/lib/referenceDistributions";
+import { downloadReportHtml } from "@/lib/peptideHtmlReport";
 
 interface PeptideViewerProps {
   peptide: Peptide;
@@ -56,6 +57,11 @@ export function PeptideViewer({
     link.click();
     URL.revokeObjectURL(url);
     toast.success("FASTA downloaded");
+  };
+
+  const handleDownloadReport = () => {
+    downloadReportHtml(p);
+    toast.success("HTML report downloaded");
   };
 
   return (
@@ -144,6 +150,10 @@ export function PeptideViewer({
               <Button variant="outline" size="sm" onClick={handleDownloadFASTA}>
                 <Download className="w-4 h-4 mr-1" />
                 FASTA
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadReport}>
+                <FileText className="w-4 h-4 mr-1" />
+                Report (.html)
               </Button>
             </div>
           </div>
