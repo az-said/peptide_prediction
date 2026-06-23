@@ -288,13 +288,19 @@ export default function QuickAnalyze() {
         <BgDotGrid opacity={0.02} />
         {/* V10-3: in-page analysis progress (self-gates on jobStore) */}
         <AnalysisProgress />
+        {/* PELEG (2026-06-23): the back-arrow used to navigate to /results,
+            but the persisted dataset is often stale or fully N/A — sending
+            users into a broken results page. Send to /upload instead so they
+            land somewhere actionable (re-upload or click into Results from
+            the standard flow). The link only renders if a dataset is loaded
+            at all. */}
         {useDatasetStore.getState().peptides.length > 0 && (
           <button
-            onClick={() => guardedNavigate("/results")}
+            onClick={() => guardedNavigate("/upload")}
             className="inline-flex items-center text-small text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to batch results
+            Back to upload
           </button>
         )}
 

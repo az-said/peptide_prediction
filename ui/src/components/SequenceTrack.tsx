@@ -10,6 +10,13 @@ import type { Peptide } from "@/types/peptide";
 
 interface SequenceTrackProps {
   peptide: Peptide;
+  /**
+   * Hide the small "Predicted Secondary Structure" h4 — for hosts that
+   * already render the same title at card-header level (PeptideDetail).
+   * Quick Analyze keeps the inline title because its card header is the
+   * peptide ID.
+   */
+  hideTitle?: boolean;
 }
 
 const SS_COLORS: Record<SSClass, string> = {
@@ -39,7 +46,7 @@ function useRulerMarks(len: number) {
   }, [len]);
 }
 
-export function SequenceTrack({ peptide }: SequenceTrackProps) {
+export function SequenceTrack({ peptide, hideTitle = false }: SequenceTrackProps) {
   const { sequence, s4pred, tango } = peptide;
   const len = sequence.length;
   const marks = useRulerMarks(len);
@@ -116,7 +123,11 @@ export function SequenceTrack({ peptide }: SequenceTrackProps) {
           ssPrediction labels). When the canonical helix value is null we hide
           the entire legend rather than rendering "(0%)". */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <h4 className="font-medium text-sm">Predicted Secondary Structure</h4>
+        {hideTitle ? (
+          <span />
+        ) : (
+          <h4 className="font-medium text-sm">Predicted Secondary Structure</h4>
+        )}
         <div className="flex items-center gap-3">
           {(["H", "E", "C"] as SSClass[]).map((cls) => {
             const pct = legendPercents ? legendPercents[cls] : null;

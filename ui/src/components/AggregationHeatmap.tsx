@@ -23,11 +23,20 @@ import {
   Cell,
 } from "recharts";
 
-/** Map a TANGO aggregation score to a proportional color. */
+/** Map a TANGO aggregation score to a proportional color.
+ *
+ *  OQ3 (Peleg confirmed 2026-06-23): aggregation is magenta. The chart used to
+ *  shade per bar (teal / amber / red) which collided with the orange used
+ *  consistently for β-strand elsewhere. Single-hue magenta gradient: faint
+ *  for low scores, saturated for the danger zone. Same #E040FB token used for
+ *  the SSW Mol* overlay — both encode "this position is doing something
+ *  interesting", just in different views, so consistent hue reinforces the
+ *  meaning.
+ */
 function aggBarColor(score: number): string {
-  if (score < 10) return "#14b8a6"; // teal-500 — low
-  if (score < 30) return "#f59e0b"; // amber-500 — moderate
-  return "#ef4444"; // red-500 — high
+  if (score < 10) return "rgba(224, 64, 251, 0.35)"; // faint magenta — low
+  if (score < 30) return "rgba(224, 64, 251, 0.65)"; // medium magenta — moderate
+  return "#E040FB"; // full magenta — high
 }
 import { ChartExportButtons } from "@/components/ChartExportButtons";
 import { TangoTooltip } from "@/components/charts/TangoTooltip";

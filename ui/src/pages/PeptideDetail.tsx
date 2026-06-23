@@ -411,21 +411,19 @@ export default function PeptideDetail() {
             <div className="border-b border-[hsl(var(--border))]" />
           </div>
 
-          {/* AlphaFold-predicted structure card. Renamed 2026-06-03 per
-              Peleg's Drive comment 17: title should make the "predicted, not
-              experimental" nature visible up front, not buried in a footnote. */}
+          {/* A8 (Said 2026-06-23): replaced 'AlphaFold-predicted structure'
+              with 'Predicted Secondary Structure' as the BIG card title
+              (Peleg's PDF1 never endorsed the old wording). The smaller h4
+              inside SequenceTrack is suppressed via hideTitle so we don't
+              show two copies of the same heading. */}
           <Card className="shadow-soft border-[hsl(var(--border))] rounded-xl overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-h3">AlphaFold-predicted structure</CardTitle>
-              {/* Helix-(X%) chip removed 2026-06-04: SequenceTrack's own legend
-                  below this header already renders Helix / Beta / Coil
-                  percentages together as part of the "Predicted Secondary
-                  Structure" row — single source of truth. The card-header
-                  chip duplicated the same number with less context. */}
+              <CardTitle className="text-h3">Predicted Secondary Structure</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Sequence with S4PRED coloring */}
-              <SequenceTrack peptide={peptide} />
+              {/* Sequence with S4PRED coloring — inner h4 suppressed because
+                  the card header now carries the title. */}
+              <SequenceTrack peptide={peptide} hideTitle />
 
               {/* PELEG-FIX-010 (2026-05-07): explicit residue-coloring legend.
                   Sequence text uses S4PRED secondary-structure colors.
