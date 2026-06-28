@@ -20,7 +20,7 @@
 set -euo pipefail
 
 PVL_DIR=/opt/pvl
-BRANCH=wave-2.8/peleg-pdf-followups
+BRANCH=${BRANCH:-main}
 REPO_URL=https://github.com/saidaz24-meet/peptide_prediction.git
 S4PRED_WEIGHT_URLS=(
   "https://github.com/psipred/s4pred/releases/download/v1.2.4/weights_%d.pt"
