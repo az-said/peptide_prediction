@@ -420,9 +420,9 @@ describe("DEFAULT_CORRELATION_METRICS", () => {
       "Charge",
       "Length",
       "Helix score",
-      "T helix",
-      "T beta",
-      "T agg max",
+      "T helix peak",
+      "T β peak",
+      "T agg peak",
       "FF-Helix",
       "FF-SSW",
     ]);

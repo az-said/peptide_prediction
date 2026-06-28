@@ -131,6 +131,8 @@ Open <http://localhost:3000>. Done. Your data never leaves your machine.
 
 Without S4PRED or TANGO, PVL still computes FF-Helix %, charge, hydrophobicity, μH, biochem properties, and the full classification pipeline.
 
+> **Developing locally?** See [`docs/active/HANDOFF.md` §2 — Day-1 setup](docs/active/HANDOFF.md#2-day-1-setup) for the full venv + frontend + backend dev-server walkthrough.
+
 ---
 
 ## Use PVL from Claude Desktop
