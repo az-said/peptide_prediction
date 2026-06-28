@@ -23,8 +23,8 @@ PVL_DIR=/opt/pvl
 BRANCH=wave-2.8/peleg-pdf-followups
 REPO_URL=https://github.com/saidaz24-meet/peptide_prediction.git
 S4PRED_WEIGHT_URLS=(
-  "http://bioinfadmin.cs.ucl.ac.uk/downloads/s4pred/weights_%d.pt"
   "https://github.com/psipred/s4pred/releases/download/v1.2.4/weights_%d.pt"
+  "https://bioinfadmin.cs.ucl.ac.uk/downloads/s4pred/weights_%d.pt"
 )
 
 log() { printf '\n=== %s ===\n' "$*"; }

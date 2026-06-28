@@ -99,6 +99,18 @@ def welch_t_test(a: Sequence[Any], b: Sequence[Any]) -> Dict[str, float]:
         denominator = (se_a**2) / (n_a - 1) + (se_b**2) / (n_b - 1)
         df = ((se_a + se_b) ** 2) / denominator if denominator > 0 else float("nan")
 
+    # Guard against non-finite outputs from degenerate cohorts (zero variance
+    # in both groups, identical means, n=1, etc.). The Welch denominator can
+    # yield 0/0 → NaN; surface a clean 422 in the route instead of letting
+    # NaN propagate into the JSON response.
+    for value in (t_stat, p_value, df):
+        if not isinstance(value, (int, float)) or not math.isfinite(value):
+            raise ValueError(
+                "Welch's t-test produced non-finite output (degenerate "
+                "cohort: zero variance or n<2 effective). Use cohorts "
+                "with finite variance."
+            )
+
     return {"t": t_stat, "p": p_value, "df": df}
 
 

@@ -297,6 +297,7 @@ export default function QuickAnalyze() {
             at all. */}
         {useDatasetStore.getState().peptides.length > 0 && (
           <button
+            type="button"
             onClick={() => guardedNavigate("/upload")}
             className="inline-flex items-center text-small text-muted-foreground hover:text-foreground transition-colors"
           >

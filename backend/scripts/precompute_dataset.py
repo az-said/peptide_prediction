@@ -70,7 +70,12 @@ def load_reference(path: Path) -> Tuple[pd.DataFrame, Dict[str, Any]]:
 
     rows = []
     for p in peptides:
-        seq = str(p.get("sequence", "")).strip().upper()
+        raw_seq = p.get("sequence")
+        # Treat explicit null / missing as empty so we skip rather than
+        # ingesting the literal string "NONE" via str(None).
+        if raw_seq is None:
+            continue
+        seq = str(raw_seq).strip().upper()
         if not seq:
             continue
         rows.append(
@@ -202,14 +207,19 @@ def main() -> None:
 
     # Sanity-check predictor flags. process_upload_dataframe degrades gracefully
     # if these are off, but the artifact would be useless without TANGO + S4PRED.
-    if not os.getenv("USE_TANGO"):
+    # Treat "0"/"false"/"no"/"off" as disabled — env-var presence alone is not
+    # a useful signal because "0" is truthy in shell.
+    def _truthy(name: str) -> bool:
+        return os.getenv(name, "").strip().lower() in {"1", "true", "yes", "on"}
+
+    if not _truthy("USE_TANGO"):
         print(
-            "⚠  USE_TANGO is unset — TANGO won't run. Set USE_TANGO=1 to produce a real artifact.",
+            "⚠  USE_TANGO is not enabled — TANGO won't run. Set USE_TANGO=1 to produce a real artifact.",
             file=sys.stderr,
         )
-    if not os.getenv("USE_S4PRED"):
+    if not _truthy("USE_S4PRED"):
         print(
-            "⚠  USE_S4PRED is unset — S4PRED won't run. Set USE_S4PRED=1 to "
+            "⚠  USE_S4PRED is not enabled — S4PRED won't run. Set USE_S4PRED=1 to "
             "produce a real artifact.",
             file=sys.stderr,
         )

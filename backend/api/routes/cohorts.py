@@ -111,8 +111,13 @@ def _load_cohort_rows(dataset_id: str) -> list[dict]:
 
 
 def _extract_metric(rows: list[dict], metric: str) -> list[float | None]:
-    """Pull the metric column from a list of normalized PeptideRow dicts."""
-    return [row.get(metric) for row in rows]
+    """Pull the metric column from a list of normalized PeptideRow dicts.
+
+    Skips items that aren't dicts so a malformed artifact (e.g.
+    ``rows: [1, 2]``) returns an empty vector instead of crashing
+    on ``int.get``.
+    """
+    return [row.get(metric) for row in rows if isinstance(row, dict)]
 
 
 @router.post("/api/cohorts/compare", response_model=CohortCompareResponse)
