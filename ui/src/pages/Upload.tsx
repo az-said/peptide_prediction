@@ -33,10 +33,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Info, FlaskConical, Database, ArrowRight } from "lucide-react";
+import { AlertTriangle, Info, FlaskConical, Database, ArrowRight, ListPlus, Loader2 } from "lucide-react";
 import { setNavGuard } from "@/hooks/use-nav-guard";
 import { ThresholdConfigPanel } from "@/components/ThresholdConfigPanel";
 import type { ThresholdConfig } from "@/types/peptide";
+import { UniProtBatchPreview, parseAccessionList, type AccessionEntry } from "@/components/UniProtBatchPreview";
+import { executeUniProtQuery } from "@/lib/api";
 
 const steps = [
   { id: "upload", title: "Upload File", icon: UploadIcon },
@@ -67,6 +69,12 @@ export default function Upload() {
   const [currentStep, setCurrentStep] = useState(0);
   const [localFile, setLocalFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // M3: upload mode — "file" (existing) or "accessions" (paste UniProt IDs)
+  const [uploadMode, setUploadMode] = useState<"file" | "accessions">("file");
+  const [accessionText, setAccessionText] = useState("");
+  const [accessionEntries, setAccessionEntries] = useState<AccessionEntry[]>([]);
+  const [isSubmittingAccessions, setIsSubmittingAccessions] = useState(false);
 
   // threshold configuration
   const [thresholdMode, setThresholdMode] = useState<"default" | "recommended" | "custom">(
@@ -430,6 +438,91 @@ export default function Upload() {
     }
   };
 
+  // ── M3: Accession list handlers ────────────────────────────────────────
+
+  const handleAccessionTextChange = (text: string) => {
+    setAccessionText(text);
+    if (text.trim()) {
+      setAccessionEntries(parseAccessionList(text));
+    } else {
+      setAccessionEntries([]);
+    }
+  };
+
+  const handleAccessionRemove = (index: number) => {
+    setAccessionEntries((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAccessionCleanup = () => {
+    setAccessionEntries((prev) => prev.filter((e) => e.valid && !e.duplicate));
+  };
+
+  const validAccessionCount = accessionEntries.filter((e) => e.valid && !e.duplicate).length;
+
+  const handleSubmitAccessions = async () => {
+    const validEntries = accessionEntries.filter((e) => e.valid && !e.duplicate);
+    if (validEntries.length === 0) return;
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const token = uuid();
+    cancelTokenRef.current = token;
+
+    // Build OR-joined accession query
+    const queryStr = validEntries.map((e) => `accession:${e.accession}`).join(" OR ");
+
+    // Sync job for progress bar (reuse existing B8 pattern)
+    const syncJobId = useJobStore.getState().startSyncJob({
+      peptideCount: validEntries.length,
+      fileName: `${validEntries.length} UniProt accessions`,
+      hasTango: true,
+      hasS4pred: true,
+      cancelToken: token,
+      abortController: controller,
+    });
+    startSyncTick(syncJobId);
+
+    try {
+      setIsSubmittingAccessions(true);
+      setIsAnalyzing(true);
+
+      const requestBody: Record<string, any> = {
+        query: queryStr,
+        mode: "accession",
+        size: validEntries.length,
+        run_tango: true,
+        run_s4pred: true,
+        reviewed: null, // include both reviewed + unreviewed
+      };
+
+      const result = await executeUniProtQuery(requestBody, controller.signal, token);
+      clearSyncTick();
+      useJobStore.getState().completeSyncJob(syncJobId);
+
+      const rowCount = result.meta?.row_count || result.rows.length;
+      if (rowCount === 0) {
+        toast.error("No results returned from UniProt. Check the accessions and try again.");
+      } else {
+        ingestBackendRows(result.rows, toDatasetMetadata(result.meta));
+        toast.success(`Retrieved and analyzed ${rowCount} peptides from UniProt`);
+        navigate("/results");
+      }
+    } catch (e: any) {
+      clearSyncTick();
+      if (e.name === "AbortError") {
+        useJobStore.getState().completeSyncJob(syncJobId);
+        toast.info("Analysis cancelled");
+      } else {
+        useJobStore.getState().failSyncJob(syncJobId, e.message || String(e));
+        toast.error(`UniProt batch failed: ${e.message || e}`);
+      }
+    } finally {
+      abortRef.current = null;
+      setIsAnalyzing(false);
+      setIsSubmittingAccessions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background relative">
       <BgDashLines />
@@ -487,6 +580,88 @@ export default function Upload() {
             <CardContent className="p-4 sm:p-8">
               {currentStep === 0 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
+                  {/* M3: Upload mode toggle */}
+                  <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-[hsl(var(--border))] w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setUploadMode("file")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        uploadMode === "file"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <UploadIcon className="w-3.5 h-3.5" />
+                      Upload file
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUploadMode("accessions")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        uploadMode === "accessions"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <ListPlus className="w-3.5 h-3.5" />
+                      Paste accessions
+                    </button>
+                  </div>
+
+                  {/* M3: Accession list mode */}
+                  {uploadMode === "accessions" && (
+                    <div className="space-y-4">
+                      <div>
+                        <label
+                          htmlFor="accession-input"
+                          className="block text-sm font-medium text-foreground mb-1.5"
+                        >
+                          UniProt accessions
+                        </label>
+                        <textarea
+                          id="accession-input"
+                          rows={6}
+                          value={accessionText}
+                          onChange={(e) => handleAccessionTextChange(e.target.value)}
+                          placeholder={"P12345\nQ9UHC3-2\nA0A0K9RCN8\n\nOne accession per line, or comma-separated."}
+                          className="w-full rounded-lg border border-[hsl(var(--border))] bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                          disabled={isSubmittingAccessions}
+                        />
+                      </div>
+
+                      {accessionEntries.length > 0 && (
+                        <UniProtBatchPreview
+                          entries={accessionEntries}
+                          onRemove={handleAccessionRemove}
+                          onCleanup={handleAccessionCleanup}
+                        />
+                      )}
+
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={handleSubmitAccessions}
+                          disabled={validAccessionCount === 0 || isSubmittingAccessions}
+                          size="lg"
+                          className="px-8 btn-press"
+                        >
+                          {isSubmittingAccessions ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Fetching from UniProt...
+                            </>
+                          ) : (
+                            `Run analysis (${validAccessionCount} accession${validAccessionCount !== 1 ? "s" : ""})`
+                          )}
+                        </Button>
+                      </div>
+
+                      <AnalysisProgress />
+                    </div>
+                  )}
+
+                  {/* Existing file upload flow (only when uploadMode === "file") */}
+                  {uploadMode === "file" && (
+                  <>
                   {/* Example datasets */}
                   <div className="text-center space-y-3">
                     <p className="text-xs text-muted-foreground">Or try an example dataset:</p>
@@ -612,6 +787,8 @@ export default function Upload() {
                       Database Search <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                     </Button>
                   </div>
+                  </>
+                  )}
                 </motion.div>
               )}
 
