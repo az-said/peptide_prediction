@@ -1,8 +1,10 @@
 # Known Issues — Prioritized Backlog
 
-**Last Updated**: 2026-04-26
+**Last Updated**: 2026-06-29
 
 > **Status**: 17 original issues FIXED. ISSUE-018 to ISSUE-024 historic. ISSUE-025 to ISSUE-029 open (Wave 0 + Wave A + Wave B from team feedback 2026-04-26).
+>
+> **2026-06-29 — ISSUE-034 (P1, open)**: `scripts/precompute_dataset.py` does not engage TANGO when invoked via `process_upload_dataframe`. Live `/api/predict` (single peptide) and `/api/predict/batch` correctly populate `tangoAggCurve` / `tangoBetaCurve` / `tangoHelixCurve` on prod, but the precompute path reports `providerStatusSummary.tango.status: AVAILABLE, requested: 0` — TANGO is detected and available, but the subprocess is never invoked for the precompute DataFrame. S4PRED, biochem, FF-Helix, FF-SSW classification all populate correctly. Effect: the bundled `peleg_118` precomputed artifact loads instantly (~200ms) with full classification + per-tool chips but the per-residue aggregation heatmap renders empty for those 118 rows. Repro: `docker compose -f docker/docker-compose.prod.yml exec -e USE_TANGO=1 -e TANGO_BINARY_PATH=/opt/tools/tango/bin/tango_linux_x86_64 -T backend python scripts/precompute_dataset.py peleg_118`; then `curl /api/precomputed/peleg_118 | jq '.meta.providerStatusSummary.tango'`. The TANGO binary IS in the container and IS executable; binary resolution returns the expected path. Root cause likely a flag in the `process_upload_dataframe` cache / row-validation path that incorrectly classifies precompute-script rows as already-cached. Workaround for now: live predict works fine; users of the precomputed example see classification + S4PRED but not TANGO curves.
 
 ## Priority Definitions
 
