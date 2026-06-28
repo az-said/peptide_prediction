@@ -238,11 +238,12 @@ describe("WindowProfileChart", () => {
 
   // ── Default channels ──────────────────────────────────────────────────
 
-  it("DEFAULT_PVL_CHANNELS has 6 channels", () => {
-    expect(DEFAULT_PVL_CHANNELS).toHaveLength(6);
+  it("DEFAULT_PVL_CHANNELS has 7 channels", () => {
+    // B17 added the SSW segment band (Wave 2.8), bringing total to 7.
+    expect(DEFAULT_PVL_CHANNELS).toHaveLength(7);
     const types = DEFAULT_PVL_CHANNELS.map((ch) => ch.type);
     expect(types.filter((t) => t === "line")).toHaveLength(3);
-    expect(types.filter((t) => t === "segment-band")).toHaveLength(2);
+    expect(types.filter((t) => t === "segment-band")).toHaveLength(3);
     expect(types.filter((t) => t === "point-markers")).toHaveLength(1);
   });
 

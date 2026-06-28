@@ -138,3 +138,9 @@ _external/
 /T_*.md
 /COWORK_*.md
 /README_EXPLAINER.md
+
+# Dropbox/iCloud sync-conflict copies — never check these in.
+* 2.*
+* 3.*
+*\ 2.*
+*\ 3.*

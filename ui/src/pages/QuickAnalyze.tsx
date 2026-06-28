@@ -30,6 +30,8 @@ import { mapApiRowToPeptide } from "@/lib/peptideMapper";
 import { Peptide, ThresholdConfig } from "@/types/peptide";
 import { ThresholdConfigPanel } from "@/components/ThresholdConfigPanel";
 import { PeptideViewer } from "@/components/PeptideViewer";
+import { QuickKpiStrip } from "@/components/QuickKpiStrip";
+import { QUICK_ANALYZE_DATASETS } from "@/lib/referenceDistributions";
 import { useDatasetStore } from "@/stores/datasetStore";
 import { useJobStore } from "@/stores/jobStore";
 import { BgDotGrid } from "@/components/BgDotGrid";
@@ -177,11 +179,13 @@ export default function QuickAnalyze() {
   const confirmLeave = useCallback(() => {
     setShowLeaveDialog(false);
     setPeptide(null); // Clear results so guard is deactivated
-    if (pendingNavPath) {
-      navigate(pendingNavPath);
-      setPendingNavPath(null);
-    }
-  }, [pendingNavPath, navigate]);
+    // PELEG-A3 (2026-06-18 PDF1 p24): Leave Anyway routes to home, not to the
+    // intended destination. Peleg landed on stale batch results (Phylloseptin-O2)
+    // from a previous session — the persisted datasetStore made "/results" point
+    // to nothing relevant. Going home avoids the trap.
+    setPendingNavPath(null);
+    navigate("/");
+  }, [navigate]);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -251,7 +255,7 @@ export default function QuickAnalyze() {
               <AlertDialogTitle className="text-h3">Leave Quick Analyze?</AlertDialogTitle>
             </div>
             <AlertDialogDescription className="text-small text-muted-foreground">
-              Your prediction results will be lost. This analysis hasn't been saved to a dataset.
+              Your prediction results will be lost. Are you sure?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-2">
@@ -285,20 +289,27 @@ export default function QuickAnalyze() {
         <BgDotGrid opacity={0.02} />
         {/* V10-3: in-page analysis progress (self-gates on jobStore) */}
         <AnalysisProgress />
+        {/* PELEG (2026-06-23): the back-arrow used to navigate to /results,
+            but the persisted dataset is often stale or fully N/A — sending
+            users into a broken results page. Send to /upload instead so they
+            land somewhere actionable (re-upload or click into Results from
+            the standard flow). The link only renders if a dataset is loaded
+            at all. */}
         {useDatasetStore.getState().peptides.length > 0 && (
           <button
-            onClick={() => guardedNavigate("/results")}
+            type="button"
+            onClick={() => guardedNavigate("/upload")}
             className="inline-flex items-center text-small text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
-            Back to Batch Results
+            Back to upload
           </button>
         )}
 
         <div>
           <h1 className="text-h1 text-foreground page-header-title">Quick Analyze</h1>
           <p className="text-body text-muted-foreground mt-1 hidden md:block">
-            Paste a single peptide sequence for instant prediction.
+            Single sequence. Full prediction profile in seconds.
           </p>
         </div>
 
@@ -324,7 +335,7 @@ export default function QuickAnalyze() {
                     id="entry"
                     value={entry}
                     onChange={(e) => setEntry(e.target.value)}
-                    placeholder="e.g. Amyloid-beta"
+                    placeholder="e.g. Uperin 3.5"
                   />
                 </div>
               </div>
@@ -341,7 +352,7 @@ export default function QuickAnalyze() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-muted-foreground">Try an example:</span>
                 {[
-                  { label: "Amyloid-β(25-35)", seq: "GSNKGAIIGLM", entry: "Amyloid-beta(25-35)" },
+                  { label: "Uperin 3.5", seq: "GVGDLIRKAVSVIKNIV", entry: "Uperin 3.5" },
                   {
                     label: "LL-37",
                     seq: "LLGDFFRKSKEKIGKEFKRIVQRIKDFLRNLVPRTES",
@@ -465,8 +476,16 @@ export default function QuickAnalyze() {
 
         {/* ==================== RESULTS ==================== */}
         {p && (
-          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-            <PeptideViewer peptide={p} />
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="space-y-5"
+          >
+            {/* Q6 (Peleg 2026-06-18 PDF1 p18): 4-class KPI strip above the
+                sequence display. Mirrors the batch Results dashboard for
+                single-peptide context. */}
+            <QuickKpiStrip peptide={p} />
+            <PeptideViewer peptide={p} comparisonDatasets={QUICK_ANALYZE_DATASETS} />
           </motion.div>
         )}
         <AppFooter />

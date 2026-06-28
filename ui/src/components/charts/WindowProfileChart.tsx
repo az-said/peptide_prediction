@@ -42,6 +42,7 @@ import {
 import { RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildProfilePoints, helixRanges } from "@/lib/profile";
+import { SSW_RESIDUE_HEX } from "@/lib/sswColor";
 import { useThresholdStore } from "@/stores/thresholdStore";
 import type { Peptide } from "@/types/peptide";
 
@@ -140,6 +141,18 @@ export const DEFAULT_PVL_CHANNELS: WindowChannel[] = [
     source: "ffHelix",
     color: "hsl(var(--ff-helix, 142 71% 45%))",
     opacity: 0.2,
+  },
+  // B17 (Peleg 2026-06-18 PDF2): SSW residue zone band so the
+  // "switching positions" are visible in the sliding-window profile
+  // alongside Helix / FF-Helix bands. Same magenta token used everywhere
+  // SSW shows up (see ui/src/lib/sswColor.ts — chameleon-sequence convention).
+  {
+    type: "segment-band",
+    id: "sswZone",
+    label: "SSW zone",
+    source: "sswZone",
+    color: SSW_RESIDUE_HEX,
+    opacity: 0.22,
   },
   {
     type: "point-markers",

@@ -17,6 +17,7 @@
  *   4. Add a toggle entry in Mol3DViewer's OVERLAY_TOGGLES.
  */
 
+import { SSW_RESIDUE_HEX } from "@/lib/sswColor";
 import type { Peptide, SegmentTuple, Segment } from "@/types/peptide";
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -50,7 +51,11 @@ export const OVERLAY_COLORS: Record<OverlayType, string> = {
   tango: "#ef4444", // red-500 — TANGO aggregation peaks
   "s4pred-helix": "#a855f7", // purple-500 — S4PRED helix segments
   "ff-helix": "#22c55e", // green-500 — FF-Helix candidate regions
-  ssw: "#f59e0b", // amber-500 — SSW switch zones
+  // SSW: chameleon-sequence convention magenta (ChSeq database, Hauer et al.)
+  // for residues that switch between secondary structure states. Single source
+  // of truth at ui/src/lib/sswColor.ts. Changed from amber 2026-06-18
+  // (Peleg PDF1 p23 flagged amber/orange clash with the beta-strand series).
+  ssw: SSW_RESIDUE_HEX,
 };
 
 export const OVERLAY_TOGGLES: OverlayToggle[] = [
@@ -178,8 +183,7 @@ export function extractSSWOverlay(peptide: Peptide): StructureOverlay | null {
   // `??` alone would lock us to s4predSswFragments when it's an empty array
   // (which is null-shaped semantically but truthy to ??). Treat empty as missing.
   const sswPrimary = peptide.s4predSswFragments;
-  const segments =
-    sswPrimary && sswPrimary.length > 0 ? sswPrimary : peptide.s4pred?.betaSegments;
+  const segments = sswPrimary && sswPrimary.length > 0 ? sswPrimary : peptide.s4pred?.betaSegments;
   const ranges = normalizeSegments(segments);
   if (ranges.length === 0) return null;
 

@@ -156,7 +156,7 @@ export default function About() {
                   </p>
                   <p className="text-muted-foreground">
                     Scientific lead — four-category classification algorithm, threshold definitions,
-                    validation cohort, scientific review across every release.
+                    validation database, scientific review across every release.
                   </p>
                   <p className="mt-1">
                     <a
@@ -249,7 +249,7 @@ export default function About() {
               </CardHeader>
               <CardContent className="grid md:grid-cols-2 gap-3 text-sm">
                 <ul className="list-disc pl-5 space-y-1">
-                  <li>Peleg's four-category classification: Helix · FF-Helix · SSW · FF-SSW</li>
+                  <li>Four-category classification: Helix · FF-Helix · SSW · FF-SSW</li>
                   <li>
                     Dataset-derived fibril-formation thresholds (μH-positive mean for FF-Helix,
                     hydrophobicity-positive mean for FF-SSW)

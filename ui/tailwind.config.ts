@@ -79,6 +79,12 @@ export default {
           DEFAULT: "hsl(var(--ssw))",
           foreground: "hsl(var(--ssw-foreground))",
         },
+        // Chameleon-sequence convention magenta — used for SSW residue
+        // highlighting in the sequence track, aggregation bars, and Mol*
+        // overpaint. Distinct from `--ssw` (the badge blue). Fixed by
+        // convention, so it does NOT switch by theme. Mirror the constant
+        // in ui/src/lib/sswColor.ts.
+        "ssw-residue": "#E040FB",
         "ff-helix": {
           DEFAULT: "hsl(var(--ff-helix))",
           foreground: "hsl(var(--ff-helix-foreground))",

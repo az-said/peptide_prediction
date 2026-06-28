@@ -2,6 +2,9 @@
 Main FastAPI application setup and router registration.
 """
 
+# PERF-2026-06-18: must be the FIRST local import — pins OMP / MKL / OpenBLAS
+# thread counts BEFORE torch / numpy / scipy load via any downstream import.
+# See `backend/_perf_init.py` for the why.
 import asyncio
 import concurrent.futures
 import logging
@@ -17,20 +20,24 @@ from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.logging import LoggingIntegration
 from starlette.middleware.base import BaseHTTPMiddleware
 
+import _perf_init  # noqa: F401, E402
+
 # Import routers
 from api.routes import (
+    cohorts,
     example,
     feedback,
     health,
     jobs,
     peptides,
+    precomputed,
     predict,
     providers,
     uniprot,
     upload,
 )
 from config import settings
-from services.logger import get_logger, log_error, log_info, log_warning, set_trace_id
+from services.logger import get_logger, log_error, log_info, set_trace_id
 
 # ---------------------------------------------------------------------------
 # Sentry before_send filter (V6-1)
@@ -135,6 +142,27 @@ else:
 app = FastAPI(title="Peptide Prediction Service")
 
 
+# PERF-2026-06-22: pre-load the S4PRED 5-model BiLSTM ensemble at import
+# time, before any gunicorn worker forks. With gunicorn's --preload flag
+# (set in Dockerfile.backend CMD), the master loads the model once,
+# workers fork inheriting the weights via Linux copy-on-write. Result:
+# zero per-worker cold-start latency AND zero duplicated RAM across
+# workers.
+#
+# Without --preload (uvicorn dev server, single-worker gunicorn): the
+# load runs once when api.main is first imported, before the first
+# request hits. Same correctness, slightly different timing.
+#
+# This REPLACES the old async fire-and-forget _warmup_s4pred startup
+# hook, which raced with first-request handling and didn't help with
+# the per-worker RAM problem.
+from _app_preload import check_tango_binary_at_boot as _check_tango_binary_at_boot  # noqa: E402
+from _app_preload import preload_models as _preload_models  # noqa: E402
+
+_preload_models()
+_check_tango_binary_at_boot()
+
+
 # Add exception handler to capture HTTPExceptions to Sentry
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
@@ -167,6 +195,8 @@ class TraceIdMiddleware(BaseHTTPMiddleware):
     """
 
     async def dispatch(self, request: Request, call_next):
+        import time as _t
+
         trace_id = request.headers.get("X-Trace-Id") or str(uuid.uuid4())
         set_trace_id(trace_id)
         request.state.trace_id = trace_id
@@ -186,30 +216,40 @@ class TraceIdMiddleware(BaseHTTPMiddleware):
             },
         )
 
+        t0 = _t.perf_counter()
         try:
             response = await call_next(request)
             response.headers["X-Trace-Id"] = trace_id
 
+            # PERF-2026-06-21: request-level wall time so we can pair the
+            # per-stage timings emitted by services.perf_logger with the
+            # full end-to-end number a client would see.
+            elapsed_ms = round((_t.perf_counter() - t0) * 1000, 2)
+            response.headers["X-Elapsed-Ms"] = str(elapsed_ms)
+
             log_info(
                 "request_end",
-                f"{request.method} {request.url.path} {response.status_code}",
+                f"{request.method} {request.url.path} {response.status_code} {elapsed_ms}ms",
                 **{
                     "method": request.method,
                     "path": request.url.path,
                     "status_code": response.status_code,
                     "stage": "request",
+                    "elapsed_ms": elapsed_ms,
                 },
             )
             return response
         except Exception as e:
+            elapsed_ms = round((_t.perf_counter() - t0) * 1000, 2)
             log_error(
                 "request_error",
-                f"{request.method} {request.url.path} failed: {e}",
+                f"{request.method} {request.url.path} failed after {elapsed_ms}ms: {e}",
                 **{
                     "method": request.method,
                     "path": request.url.path,
                     "error": str(e),
                     "stage": "request",
+                    "elapsed_ms": elapsed_ms,
                 },
             )
             sentry_sdk.capture_exception(e, level="error")
@@ -238,6 +278,8 @@ app.include_router(uniprot.router)
 app.include_router(feedback.router)
 app.include_router(jobs.router)
 app.include_router(peptides.router)
+app.include_router(cohorts.router)
+app.include_router(precomputed.router)
 
 
 # Configure thread pool for asyncio.to_thread() — allows concurrent analysis requests.
@@ -267,90 +309,12 @@ def _check_redis():
         settings.CELERY_ENABLED = False
 
 
-@app.on_event("startup")
-async def _warmup_s4pred():
-    """Wave 2.5 B4a — eliminate the S4PRED cold-load latency hit on
-    the first Quick Analyze.
-
-    The S4PRED 5-model BiLSTM ensemble is module-globally cached in
-    ``tools.s4pred.model._predictor`` and lazy-loaded on first inference
-    (~10-30 s per worker). The first user request inherits that cost
-    even though every subsequent request is fast. This hook kicks off
-    the load as soon as FastAPI starts.
-
-    Critically: the warm-up runs in the default thread pool (not on the
-    event loop) so a 30 s model load does NOT block FastAPI's readiness
-    probe. If the warm-up fails, log and move on — analyses still work,
-    they're just cold-loaded on first hit.
-
-    Gated by ``settings.USE_S4PRED``. Skipped during pytest runs to keep
-    the test suite fast.
-    """
-    if not settings.USE_S4PRED:
-        log_info("s4pred_warmup_skip", "USE_S4PRED=0, skipping warm-up")
-        return
-    if _running_under_pytest:
-        log_info("s4pred_warmup_skip", "pytest detected, skipping warm-up")
-        return
-
-    async def _do_warmup() -> None:
-        await asyncio.to_thread(_warmup_s4pred_sync)
-
-    # Fire-and-forget: schedule the warm-up but don't await it. FastAPI
-    # finishes startup immediately and accepts requests; the first request
-    # that needs S4PRED will either find a warm model (likely) or trigger
-    # the cold load itself (worst case — no regression vs the prior behaviour).
-    try:
-        asyncio.create_task(_do_warmup())
-    except Exception as exc:
-        log_warning("s4pred_warmup_schedule_failed", f"Could not schedule warm-up: {exc}")
-
-
-def _warmup_s4pred_sync() -> None:
-    """Synchronous warm-up: load the model + run one tiny inference.
-
-    Runs in the FastAPI default thread pool via ``asyncio.to_thread``.
-    Errors are swallowed (logged at warning level) — a failed warm-up
-    must NEVER take the API down.
-    """
-    import time
-
-    started = time.perf_counter()
-    try:
-        from s4pred import get_s4pred_weights_path
-        from tools.s4pred import get_predictor
-
-        weights_path = get_s4pred_weights_path()
-        if not weights_path or not os.path.isdir(weights_path):
-            log_info(
-                "s4pred_warmup_skip",
-                f"weights not available at {weights_path!r}; warm-up skipped",
-                weights_path=weights_path,
-            )
-            return
-
-        log_info(
-            "s4pred_warmup_started",
-            f"Loading S4PRED 5-model ensemble from {weights_path}",
-            weights_path=weights_path,
-        )
-        predictor = get_predictor(weights_path)
-        # Single 5-residue inference: the cheapest tensor pass that still
-        # exercises every layer of every model in the ensemble. Cleared
-        # immediately — we only care about the side effect (cached weights).
-        predictor.predict_from_sequence("warmup", "ACDEF")
-        elapsed_ms = int((time.perf_counter() - started) * 1000)
-        log_info(
-            "s4pred_warmup_complete",
-            f"S4PRED warm-up done in {elapsed_ms} ms",
-            elapsed_ms=elapsed_ms,
-        )
-    except Exception as exc:
-        log_warning(
-            "s4pred_warmup_failed",
-            f"S4PRED warm-up failed (best-effort): {exc}. First inference will pay the cold-load cost.",
-            error=str(exc),
-        )
+# PERF-2026-06-22: the old fire-and-forget ``_warmup_s4pred`` startup
+# hook was removed here. It was replaced by the module-level
+# ``_preload_models()`` call above, which (combined with gunicorn
+# --preload) loads the ensemble once in the master process before any
+# worker forks. Strictly better — no race with first request, no
+# per-worker duplicated RAM.
 
 
 @app.on_event("shutdown")

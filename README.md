@@ -33,6 +33,18 @@ PVL is the only peptide-prediction tool that puts every analysis in one dashboar
 | 🤖 **AI-platform-ready** — designed for MCP, Python package, CLI, and embeddable widget | Web-only, no API, no integration story |
 | 🆓 **Open source · MIT · runs on your laptop** — `docker compose up` and your data never leaves your machine | Closed-source, paid, or hosted-only |
 
+### Performance
+
+PVL is built for interactivity — every part of the pipeline is measured and tuned to disappear behind the result.
+
+| Operation | Cold | Warm | Notes |
+|---|---|---|---|
+| **Quick Analyze** (single 17-aa peptide) | ~420 ms | ~6 ms | Cache hit on identical sequence + thresholds |
+| **Batch** (118 peptides, Peleg-validated set, ≤40 aa) | ~9 s | — | Includes batched-forward S4PRED ensemble |
+| Single S4PRED forward (5-BiLSTM ensemble) | ~334 ms | — | Padded-batch path for N≥2; ~4× faster than per-peptide |
+
+Measured 2026-06-22 on a fresh DESY VM (Hetzner CX33-class, 4 vCPU, container-bound). Per-stage timings are available via `PVL_PERF_LOGS=1`; see [`docs/internal/PERF_TRACE_RECIPE_2026_06_21.md`](docs/internal/PERF_TRACE_RECIPE_2026_06_21.md).
+
 ---
 
 ## Screenshots
@@ -118,6 +130,8 @@ Open <http://localhost:3000>. Done. Your data never leaves your machine.
 | **FF-Helix** | Fibril-forming helix detection | Always available | Built-in (pure Python) |
 
 Without S4PRED or TANGO, PVL still computes FF-Helix %, charge, hydrophobicity, μH, biochem properties, and the full classification pipeline.
+
+> **Developing locally?** See [`docs/active/HANDOFF.md` §2 — Day-1 setup](docs/active/HANDOFF.md#2-day-1-setup) for the full venv + frontend + backend dev-server walkthrough.
 
 ---
 
@@ -270,6 +284,9 @@ The doc tree splits into three buckets per the project's [clean-push policy](doc
 | [`UNIPROT_ENRICHMENT_SPEC.md`](docs/active/UNIPROT_ENRICHMENT_SPEC.md) | UniProt integration spec |
 | [`VECTOR_SEARCH_SPEC.md`](docs/active/VECTOR_SEARCH_SPEC.md) | LanceDB + ESM-2 vector search architecture |
 | [`ECOSYSTEM_GUIDE.md`](docs/active/ECOSYSTEM_GUIDE.md) | 5-surface reference (web · Python · CLI · MCP · self-host) |
+| [`PAPER_METHODS_REFERENCE.md`](docs/active/PAPER_METHODS_REFERENCE.md) | Methods-section-ready algorithm + dataset + tooling reference for the paper |
+| [`HANDOFF.md`](docs/active/HANDOFF.md) | One-page next-developer on-ramp |
+| Reference datasets | [`backend/data/reference_datasets/`](backend/data/reference_datasets/) — **Peleg-118** fibril-forming peptides ≤40 aa (curated 2026-06; UniProt + AmyPro + literature) + schema docs |
 | [`DESIGN_SYSTEM.md`](docs/active/DESIGN_SYSTEM.md) | Tailwind + shadcn conventions |
 | [`A4_BIO_TOOLS_SUBMISSION.md`](docs/active/A4_BIO_TOOLS_SUBMISSION.md) | bio.tools submission packet |
 | [`A5_ZENODO_RELEASE.md`](docs/active/A5_ZENODO_RELEASE.md) | Zenodo release procedure |

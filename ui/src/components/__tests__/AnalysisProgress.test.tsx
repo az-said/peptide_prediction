@@ -73,8 +73,15 @@ describe("AnalysisProgress", () => {
     useJobStore.setState({ jobs: { [ACTIVE_JOB.jobId]: ACTIVE_JOB } });
     render(<AnalysisProgress />);
 
-    expect(screen.getByTestId("analysis-progress")).toBeInTheDocument();
-    expect(screen.getByText(/Analyzing 250 peptides/)).toBeInTheDocument();
+    const progress = screen.getByTestId("analysis-progress");
+    expect(progress).toBeInTheDocument();
+    // B8 (2026-06-18) replaced "Analyzing N peptides" with the
+    // "Analyzing <processed> / <total> peptides" progress counter for batches
+    // > 1. The label spans 3 elements (text + tabular-nums span + text), so
+    // assert against the full container text instead of a single text node.
+    expect(progress.textContent).toMatch(/Analyzing/);
+    expect(progress.textContent).toMatch(/\/ 250/);
+    expect(progress.textContent).toMatch(/peptides/);
   });
 
   it("shows the stage label from STAGE_LABELS", () => {

@@ -33,10 +33,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { AlertTriangle, Info, FlaskConical, Database, ArrowRight } from "lucide-react";
+import {
+  AlertTriangle,
+  Info,
+  FlaskConical,
+  Database,
+  ArrowRight,
+  ListPlus,
+  Loader2,
+} from "lucide-react";
 import { setNavGuard } from "@/hooks/use-nav-guard";
 import { ThresholdConfigPanel } from "@/components/ThresholdConfigPanel";
 import type { ThresholdConfig } from "@/types/peptide";
+import {
+  UniProtBatchPreview,
+  parseAccessionList,
+  type AccessionEntry,
+} from "@/components/UniProtBatchPreview";
+import { executeUniProtQuery, loadPrecomputedDataset } from "@/lib/api";
 
 const steps = [
   { id: "upload", title: "Upload File", icon: UploadIcon },
@@ -67,6 +81,12 @@ export default function Upload() {
   const [currentStep, setCurrentStep] = useState(0);
   const [localFile, setLocalFile] = useState<File | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+
+  // M3: upload mode — "file" (existing) or "accessions" (paste UniProt IDs)
+  const [uploadMode, setUploadMode] = useState<"file" | "accessions">("file");
+  const [accessionText, setAccessionText] = useState("");
+  const [accessionEntries, setAccessionEntries] = useState<AccessionEntry[]>([]);
+  const [isSubmittingAccessions, setIsSubmittingAccessions] = useState(false);
 
   // threshold configuration
   const [thresholdMode, setThresholdMode] = useState<"default" | "recommended" | "custom">(
@@ -430,6 +450,91 @@ export default function Upload() {
     }
   };
 
+  // ── M3: Accession list handlers ────────────────────────────────────────
+
+  const handleAccessionTextChange = (text: string) => {
+    setAccessionText(text);
+    if (text.trim()) {
+      setAccessionEntries(parseAccessionList(text));
+    } else {
+      setAccessionEntries([]);
+    }
+  };
+
+  const handleAccessionRemove = (index: number) => {
+    setAccessionEntries((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handleAccessionCleanup = () => {
+    setAccessionEntries((prev) => prev.filter((e) => e.valid && !e.duplicate));
+  };
+
+  const validAccessionCount = accessionEntries.filter((e) => e.valid && !e.duplicate).length;
+
+  const handleSubmitAccessions = async () => {
+    const validEntries = accessionEntries.filter((e) => e.valid && !e.duplicate);
+    if (validEntries.length === 0) return;
+
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const token = uuid();
+    cancelTokenRef.current = token;
+
+    // Build OR-joined accession query
+    const queryStr = validEntries.map((e) => `accession:${e.accession}`).join(" OR ");
+
+    // Sync job for progress bar (reuse existing B8 pattern)
+    const syncJobId = useJobStore.getState().startSyncJob({
+      peptideCount: validEntries.length,
+      fileName: `${validEntries.length} UniProt accessions`,
+      hasTango: true,
+      hasS4pred: true,
+      cancelToken: token,
+      abortController: controller,
+    });
+    startSyncTick(syncJobId);
+
+    try {
+      setIsSubmittingAccessions(true);
+      setIsAnalyzing(true);
+
+      const requestBody: Record<string, any> = {
+        query: queryStr,
+        mode: "accession",
+        size: validEntries.length,
+        run_tango: true,
+        run_s4pred: true,
+        reviewed: null, // include both reviewed + unreviewed
+      };
+
+      const result = await executeUniProtQuery(requestBody, controller.signal, token);
+      clearSyncTick();
+      useJobStore.getState().completeSyncJob(syncJobId);
+
+      const rowCount = result.meta?.row_count || result.rows.length;
+      if (rowCount === 0) {
+        toast.error("No results returned from UniProt. Check the accessions and try again.");
+      } else {
+        ingestBackendRows(result.rows, toDatasetMetadata(result.meta));
+        toast.success(`Retrieved and analyzed ${rowCount} peptides from UniProt`);
+        navigate("/results");
+      }
+    } catch (e: any) {
+      clearSyncTick();
+      if (e.name === "AbortError") {
+        useJobStore.getState().completeSyncJob(syncJobId);
+        toast.info("Analysis cancelled");
+      } else {
+        useJobStore.getState().failSyncJob(syncJobId, e.message || String(e));
+        toast.error(`UniProt batch failed: ${e.message || e}`);
+      }
+    } finally {
+      abortRef.current = null;
+      setIsAnalyzing(false);
+      setIsSubmittingAccessions(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background relative">
       <BgDashLines />
@@ -443,11 +548,9 @@ export default function Upload() {
         >
           {/* Header & progress */}
           <div className="mb-6">
-            <h1 className="text-h1 text-foreground mb-1 page-header-title">
-              Upload & Process Dataset
-            </h1>
+            <h1 className="text-h1 text-foreground mb-1 page-header-title">Start Analysis</h1>
             <p className="text-body text-muted-foreground mb-4 hidden md:block">
-              Upload your peptide CSV/TSV/XLSX — columns are auto-detected.
+              Batch upload. CSV · TSV · XLSX · FASTA — up to 5,000 peptides per run.
             </p>
 
             {/* Step indicator — clean pill style */}
@@ -489,128 +592,250 @@ export default function Upload() {
             <CardContent className="p-4 sm:p-8">
               {currentStep === 0 && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-                  {/* Example datasets */}
-                  <div className="text-center space-y-3">
-                    <p className="text-xs text-muted-foreground">Or try an example dataset:</p>
-                    <div className="flex gap-2 justify-center flex-wrap">
-                      {[
-                        {
-                          label: "Antimicrobial Peptides (12)",
-                          file: "/example/antimicrobial_peptides.csv",
-                        },
-                        { label: "Amyloid Peptides (9)", file: "/example/amyloid_peptides.csv" },
-                        { label: "Venom Peptides (16)", file: "/example/peptide_data.csv" },
-                      ].map((ex) => (
-                        <Button
-                          key={ex.file}
-                          variant="ghost"
-                          size="sm"
-                          className="text-xs h-7"
-                          onClick={async () => {
-                            try {
-                              const resp = await fetch(ex.file);
-                              if (!resp.ok) {
-                                toast.error("Failed to load example dataset");
-                                return;
-                              }
-                              const text = await resp.text();
-                              if (!text.trim()) {
-                                toast.error("Failed to load example dataset");
-                                return;
-                              }
-                              const blob = new Blob([text], { type: "text/csv" });
-                              const file = new File(
-                                [blob],
-                                ex.file.split("/").pop() || "example.csv",
-                                { type: "text/csv" }
-                              );
-                              handleLocalPreview(file);
-                            } catch {
-                              toast.error("Failed to load example dataset");
-                            }
-                          }}
-                        >
-                          {ex.label}
-                        </Button>
-                      ))}
-                    </div>
-
-                    {/* Gold Standard Dataset */}
-                    <div className="pt-2 border-t border-[hsl(var(--border))]">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-xs h-8 border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50"
-                        onClick={async () => {
-                          try {
-                            toast.loading("Loading gold standard dataset...", { id: "gold-std" });
-                            const resp = await fetch("/Final_Staphylococcus_2023_new.xlsx");
-                            if (!resp.ok) {
-                              toast.error("Failed to load dataset", { id: "gold-std" });
-                              return;
-                            }
-                            const arrayBuf = await resp.arrayBuffer();
-                            const blob = new Blob([arrayBuf], {
-                              type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                            });
-                            const file = new File([blob], "Final_Staphylococcus_2023_new.xlsx", {
-                              type: blob.type,
-                            });
-                            toast.success("Dataset loaded — 2916 peptides", { id: "gold-std" });
-                            handleLocalPreview(file);
-                          } catch {
-                            toast.error("Failed to load dataset", { id: "gold-std" });
-                          }
-                        }}
-                      >
-                        <FlaskConical className="w-3.5 h-3.5 mr-1.5" />
-                        Gold Standard — Staphylococcus 2023 (2,916 peptides)
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* File Upload Dropzone */}
-                  <UploadDropzone
-                    onFileSelected={(f: File) => handleLocalPreview(f)}
-                    onFileProcessed={() => setCurrentStep(1)}
-                  />
-
-                  {/* Upload guidance */}
-                  <div className="grid sm:grid-cols-3 gap-3 text-xs">
-                    <div className="rounded-lg bg-[hsl(var(--surface-1))] border border-[hsl(var(--border))] p-3 space-y-1">
-                      <p className="font-medium text-foreground">Required Column</p>
-                      <p className="text-muted-foreground">
-                        <code className="bg-muted px-1 py-0.5 rounded text-[10px]">Sequence</code> —
-                        amino acid letters (A-Z)
-                      </p>
-                    </div>
-                    <div className="rounded-lg bg-[hsl(var(--surface-1))] border border-[hsl(var(--border))] p-3 space-y-1">
-                      <p className="font-medium text-foreground">Optional Columns</p>
-                      <p className="text-muted-foreground">Entry, Organism, Length, Protein name</p>
-                    </div>
-                    <div className="rounded-lg bg-[hsl(var(--surface-1))] border border-[hsl(var(--border))] p-3 space-y-1">
-                      <p className="font-medium text-foreground">Practical Limits</p>
-                      <p className="text-muted-foreground">
-                        ~500 entries (TANGO on) &middot; ~3000 (TANGO off)
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Cross-link to Database Search */}
-                  <div className="flex items-center justify-between bg-[hsl(var(--surface-1))] rounded-xl px-4 py-3 border border-[hsl(var(--border))]">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Database className="w-4 h-4 text-primary" />
-                      Looking for proteins? Search UniProt directly.
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => navigate("/search")}
-                      className="btn-press"
+                  {/* M3: Upload mode toggle */}
+                  <div className="flex items-center gap-1 p-1 rounded-lg bg-muted/50 border border-[hsl(var(--border))] w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setUploadMode("file")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        uploadMode === "file"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
                     >
-                      Database Search <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                    </Button>
+                      <UploadIcon className="w-3.5 h-3.5" />
+                      Upload file
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUploadMode("accessions")}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                        uploadMode === "accessions"
+                          ? "bg-background text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      <ListPlus className="w-3.5 h-3.5" />
+                      Paste accessions
+                    </button>
                   </div>
+
+                  {/* M3: Accession list mode */}
+                  {uploadMode === "accessions" && (
+                    <div className="space-y-4">
+                      <div>
+                        <label
+                          htmlFor="accession-input"
+                          className="block text-sm font-medium text-foreground mb-1.5"
+                        >
+                          UniProt accessions
+                        </label>
+                        <textarea
+                          id="accession-input"
+                          rows={6}
+                          value={accessionText}
+                          onChange={(e) => handleAccessionTextChange(e.target.value)}
+                          placeholder={
+                            "P12345\nQ9UHC3-2\nA0A0K9RCN8\n\nOne accession per line, or comma-separated."
+                          }
+                          className="w-full rounded-lg border border-[hsl(var(--border))] bg-background px-3 py-2 font-mono text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 resize-y"
+                          disabled={isSubmittingAccessions}
+                        />
+                      </div>
+
+                      {accessionEntries.length > 0 && (
+                        <UniProtBatchPreview
+                          entries={accessionEntries}
+                          onRemove={handleAccessionRemove}
+                          onCleanup={handleAccessionCleanup}
+                        />
+                      )}
+
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={handleSubmitAccessions}
+                          disabled={validAccessionCount === 0 || isSubmittingAccessions}
+                          size="lg"
+                          className="px-8 btn-press"
+                        >
+                          {isSubmittingAccessions ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Fetching from UniProt...
+                            </>
+                          ) : (
+                            `Run analysis (${validAccessionCount} accession${validAccessionCount !== 1 ? "s" : ""})`
+                          )}
+                        </Button>
+                      </div>
+
+                      <AnalysisProgress />
+                    </div>
+                  )}
+
+                  {/* Existing file upload flow (only when uploadMode === "file") */}
+                  {uploadMode === "file" && (
+                    <>
+                      {/* Example datasets */}
+                      <div className="text-center space-y-3">
+                        <p className="text-xs text-muted-foreground">Or try an example dataset:</p>
+                        <div className="flex gap-2 justify-center flex-wrap">
+                          {[
+                            {
+                              label: "Fibril-forming peptides (118)",
+                              file: "/example/fibril_forming_peptides_118.csv",
+                              precomputedId: "peleg_118",
+                            },
+                            {
+                              label: "Antimicrobial Peptides (12)",
+                              file: "/example/antimicrobial_peptides.csv",
+                            },
+                            {
+                              label: "Amyloid Peptides (9)",
+                              file: "/example/amyloid_peptides.csv",
+                            },
+                          ].map((ex) => (
+                            <Button
+                              key={ex.file}
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs h-7"
+                              onClick={async () => {
+                                // If this example has a precomputed artifact and the
+                                // backend serves it (200), skip the live pipeline +
+                                // the CSV preview screen and go straight to /results.
+                                if (ex.precomputedId) {
+                                  try {
+                                    const precomp = await loadPrecomputedDataset(ex.precomputedId);
+                                    if (precomp) {
+                                      ingestBackendRows(
+                                        precomp.rows ?? [],
+                                        toDatasetMetadata(precomp.meta)
+                                      );
+                                      toast.success(`Loaded ${ex.label} (instant)`);
+                                      navigate("/results");
+                                      return;
+                                    }
+                                  } catch {
+                                    // fall through to CSV flow on any error
+                                  }
+                                }
+                                try {
+                                  const resp = await fetch(ex.file);
+                                  if (!resp.ok) {
+                                    toast.error("Failed to load example dataset");
+                                    return;
+                                  }
+                                  const text = await resp.text();
+                                  if (!text.trim()) {
+                                    toast.error("Failed to load example dataset");
+                                    return;
+                                  }
+                                  const blob = new Blob([text], { type: "text/csv" });
+                                  const file = new File(
+                                    [blob],
+                                    ex.file.split("/").pop() || "example.csv",
+                                    { type: "text/csv" }
+                                  );
+                                  handleLocalPreview(file);
+                                } catch {
+                                  toast.error("Failed to load example dataset");
+                                }
+                              }}
+                            >
+                              {ex.label}
+                            </Button>
+                          ))}
+                        </div>
+
+                        {/* Gold Standard Dataset */}
+                        <div className="pt-2 border-t border-[hsl(var(--border))]">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-xs h-8 border-primary/30 text-primary hover:bg-primary/5 hover:border-primary/50"
+                            onClick={async () => {
+                              try {
+                                toast.loading("Loading gold standard dataset...", {
+                                  id: "gold-std",
+                                });
+                                const resp = await fetch("/Final_Staphylococcus_2023_new.xlsx");
+                                if (!resp.ok) {
+                                  toast.error("Failed to load dataset", { id: "gold-std" });
+                                  return;
+                                }
+                                const arrayBuf = await resp.arrayBuffer();
+                                const blob = new Blob([arrayBuf], {
+                                  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                                });
+                                const file = new File(
+                                  [blob],
+                                  "Final_Staphylococcus_2023_new.xlsx",
+                                  {
+                                    type: blob.type,
+                                  }
+                                );
+                                toast.success("Dataset loaded — 2916 peptides", { id: "gold-std" });
+                                handleLocalPreview(file);
+                              } catch {
+                                toast.error("Failed to load dataset", { id: "gold-std" });
+                              }
+                            }}
+                          >
+                            <FlaskConical className="w-3.5 h-3.5 mr-1.5" />
+                            Gold Standard — Staphylococcus 2023 (2,916 peptides)
+                          </Button>
+                        </div>
+                      </div>
+
+                      {/* File Upload Dropzone */}
+                      <UploadDropzone
+                        onFileSelected={(f: File) => handleLocalPreview(f)}
+                        onFileProcessed={() => setCurrentStep(1)}
+                      />
+
+                      {/* Upload guidance */}
+                      <div className="grid sm:grid-cols-3 gap-3 text-xs">
+                        <div className="rounded-lg bg-[hsl(var(--surface-1))] border border-[hsl(var(--border))] p-3 space-y-1">
+                          <p className="font-medium text-foreground">Required Column</p>
+                          <p className="text-muted-foreground">
+                            <code className="bg-muted px-1 py-0.5 rounded text-[10px]">
+                              Sequence
+                            </code>{" "}
+                            — amino acid letters (A-Z)
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-[hsl(var(--surface-1))] border border-[hsl(var(--border))] p-3 space-y-1">
+                          <p className="font-medium text-foreground">Optional Columns</p>
+                          <p className="text-muted-foreground">
+                            Entry, Organism, Length, Protein name
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-[hsl(var(--surface-1))] border border-[hsl(var(--border))] p-3 space-y-1">
+                          <p className="font-medium text-foreground">Practical Limits</p>
+                          <p className="text-muted-foreground">
+                            ~500 entries (TANGO on) &middot; ~3000 (TANGO off)
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Cross-link to Database Search */}
+                      <div className="flex items-center justify-between bg-[hsl(var(--surface-1))] rounded-xl px-4 py-3 border border-[hsl(var(--border))]">
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Database className="w-4 h-4 text-primary" />
+                          Looking for proteins? Search UniProt directly.
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate("/search")}
+                          className="btn-press"
+                        >
+                          Database Search <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </motion.div>
               )}
 
@@ -724,31 +949,46 @@ export default function Upload() {
                           const lengths = rawData.rows
                             .map((r) => String(pickSeq(r)).length)
                             .filter((l) => l > 0);
-                          const short = lengths.filter((l) => l < 15).length;
-                          const long = lengths.filter((l) => l > 40).length;
+                          const short = lengths.filter((l) => l < 4).length;
+                          const medium = lengths.filter((l) => l > 40 && l <= 80).length;
+                          const long = lengths.filter((l) => l > 80).length;
                           const total = lengths.length;
-                          const hasWarnings = short > 0 || long > 0;
+                          const hasWarnings = short > 0 || medium > 0 || long > 0;
                           if (!hasWarnings) return null;
                           return (
                             <Alert>
                               <AlertTriangle className="h-4 w-4" />
                               <AlertDescription>
-                                <div className="text-sm space-y-1">
+                                {/* F9 (Peleg Wave 2.5): scannable warning lines.
+                                    Bold the count + range so the eye picks them
+                                    up first; one short reason after the dash. */}
+                                <ul className="text-sm space-y-1 list-disc list-outside ml-5">
                                   {short > 0 && (
-                                    <p title="The minimum-length floor is an empirical default; citation pending.">
-                                      {short}/{total} sequences too short (&lt;15 aa) — S4PRED works
-                                      best on sequences ≥15 aa.
-                                    </p>
+                                    <li>
+                                      <strong>
+                                        {short}/{total}
+                                      </strong>{" "}
+                                      shorter than 4 aa — too short for the pipeline.
+                                    </li>
+                                  )}
+                                  {medium > 0 && (
+                                    <li>
+                                      <strong>
+                                        {medium}/{total}
+                                      </strong>{" "}
+                                      longer than 40 aa — will run, but results less reliable.
+                                    </li>
                                   )}
                                   {long > 0 && (
-                                    <p>
-                                      {long}/{total} sequences exceed the 40-aa pipeline limit —
-                                      above 40 aa the secondary-structure prediction becomes a
-                                      surface-vs-structure problem and the FF-Helix / SSW logic
-                                      loses meaning. Those rows will be skipped.
-                                    </p>
+                                    <li>
+                                      <strong>
+                                        {long}/{total}
+                                      </strong>{" "}
+                                      longer than 80 aa — <strong>will be skipped</strong> (outside
+                                      TANGO + S4PRED design range).
+                                    </li>
                                   )}
-                                </div>
+                                </ul>
                               </AlertDescription>
                             </Alert>
                           );

@@ -9,16 +9,11 @@
  * Peleg FIX-013: ConsensusCard tier system removed (certainty math
  * unjustified). See lib/consensus.ts header.
  */
-import { AlertTriangle, Copy, Download } from "lucide-react";
+import { AlertTriangle, Copy, Download, FileText } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "sonner";
 import type { Peptide } from "@/types/peptide";
 import { TangoBadge } from "@/components/TangoBadge";
@@ -28,12 +23,23 @@ import { AggregationHeatmap } from "@/components/AggregationHeatmap";
 import { AlphaFoldViewer } from "@/components/AlphaFoldViewer";
 import { S4PredChart } from "@/components/S4PredChart";
 import { BiochemComparison, DEFAULT_PVL_METRICS } from "@/components/BiochemComparison";
+import { PerToolResultChips } from "@/components/PerToolResultChips";
+import type { ReferenceDatasetConfig } from "@/lib/referenceDistributions";
+import { downloadReportHtml } from "@/lib/peptideHtmlReport";
 
 interface PeptideViewerProps {
   peptide: Peptide;
+  /** Q11: reference datasets for comparison tabs (forwarded to BiochemComparison) */
+  comparisonDatasets?: ReferenceDatasetConfig[];
+  /** Q11: default dataset tab id */
+  defaultDatasetId?: string;
 }
 
-export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
+export function PeptideViewer({
+  peptide: p,
+  comparisonDatasets,
+  defaultDatasetId,
+}: PeptideViewerProps) {
   const handleCopySequence = () => {
     navigator.clipboard.writeText(p.sequence);
     toast.success("Sequence copied to clipboard");
@@ -51,6 +57,11 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
     link.click();
     URL.revokeObjectURL(url);
     toast.success("FASTA downloaded");
+  };
+
+  const handleDownloadReport = () => {
+    downloadReportHtml(p);
+    toast.success("HTML report downloaded");
   };
 
   return (
@@ -107,9 +118,8 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[260px]">
                       <p className="text-xs leading-relaxed">
-                        Computed using literature-default thresholds (μH &gt; 0.5,
-                        hydrophobicity &gt; 0.5). Upload a cohort dataset for
-                        data-derived thresholds.
+                        Computed using literature-default thresholds (μH &gt; 0.5, hydrophobicity
+                        &gt; 0.5). Upload a database for data-derived thresholds.
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -126,9 +136,8 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" className="max-w-[260px]">
                       <p className="text-xs leading-relaxed">
-                        Computed using literature-default thresholds (μH &gt; 0.5,
-                        hydrophobicity &gt; 0.5). Upload a cohort dataset for
-                        data-derived thresholds.
+                        Computed using literature-default thresholds (μH &gt; 0.5, hydrophobicity
+                        &gt; 0.5). Upload a database for data-derived thresholds.
                       </p>
                     </TooltipContent>
                   </Tooltip>
@@ -141,6 +150,10 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
               <Button variant="outline" size="sm" onClick={handleDownloadFASTA}>
                 <Download className="w-4 h-4 mr-1" />
                 FASTA
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleDownloadReport}>
+                <FileText className="w-4 h-4 mr-1" />
+                Report (.html)
               </Button>
             </div>
           </div>
@@ -171,10 +184,23 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
         </div>
       )}
 
+      {/* Q9 (Peleg 2026-06-18 PDF1 p20): per-tool result chips — one
+          horizontal row of color-coded chips, one per provider/classifier.
+          Goes between the sequence and the biochem block so users get
+          the at-a-glance summary before scrolling. */}
+      <PerToolResultChips peptide={p} />
+
       {/* Wave Q.1: KPI tile row replaced with the unified BiochemComparison.
           Quick Analyze (single sequence, no database) auto-falls back to the
           single-peptide empty-state via allPeptides.length < 2. */}
-      <BiochemComparison peptide={p} allPeptides={[p]} stats={null} metrics={DEFAULT_PVL_METRICS} />
+      <BiochemComparison
+        peptide={p}
+        allPeptides={[p]}
+        stats={null}
+        metrics={DEFAULT_PVL_METRICS}
+        comparisonDatasets={comparisonDatasets}
+        defaultDatasetId={defaultDatasetId}
+      />
 
       {/* ── Helical Wheel ── */}
       {p.length != null && p.length <= 40 && (
@@ -194,14 +220,18 @@ export function PeptideViewer({ peptide: p }: PeptideViewerProps) {
       {/* ── S4PRED Per-Residue Probabilities ── */}
       <S4PredChart peptide={p} />
 
-      {/* ── TANGO Aggregation Heatmap ── */}
+      {/* ── TANGO Secondary Structure + Aggregation ──
+          Q12 (Peleg 2026-06-18 PDF1 p21): renamed from "TANGO Aggregation
+          Profile" to surface TANGO's secondary structure probabilities first,
+          with aggregation second. Subtitle uses the H/E/C terminology Peleg
+          asked for. */}
       {p.tango?.agg && p.tango.agg.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>TANGO Aggregation Profile</CardTitle>
+            <CardTitle>Tango Secondary Structure and Aggregation Probabilities</CardTitle>
             <CardDescription>
-              Per-residue aggregation propensity. Higher scores indicate regions with higher
-              aggregation propensity.
+              Per-residue helix (H), beta (E), coil (C), and aggregation probabilities from Tango
+              prediction. Higher scores indicate regions with stronger propensity.
             </CardDescription>
           </CardHeader>
           <CardContent>
