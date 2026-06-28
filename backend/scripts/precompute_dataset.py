@@ -119,14 +119,24 @@ def precompute(dataset_id: str) -> Path:
 
     t0 = time.perf_counter()
     print("→ Running PVL pipeline (TANGO + S4PRED + classification)...")
+    # The Pydantic Meta model requires thresholdConfigResolved to be a dict,
+    # not None. The pipeline still resolves real thresholds from the data and
+    # writes them into meta.thresholds — this default just keeps the response
+    # schema valid for downstream Pydantic ingestion.
+    default_threshold_config = {"mode": "default", "source": "precompute"}
+
     response = process_upload_dataframe(
         df=df,
-        threshold_config_requested=None,
-        threshold_config_resolved=None,
+        threshold_config_requested=default_threshold_config,
+        threshold_config_resolved=default_threshold_config,
         trace_entry=None,
         sentry_initialized=False,
         cancel_event=None,
-        sequence_source="precompute",
+        # api_models.RunMetadata.sequenceSource is a closed enum; "demo" is
+        # the closest semantic fit for a bundled reference artifact (and is
+        # already understood by the frontend). The dataset_id field on the
+        # response carries the true provenance.
+        sequence_source="demo",
     )
     elapsed = time.perf_counter() - t0
     print(f"  done in {elapsed:.1f}s")
