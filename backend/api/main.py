@@ -30,6 +30,7 @@ from api.routes import (
     health,
     jobs,
     peptides,
+    precomputed,
     predict,
     providers,
     uniprot,
@@ -278,6 +279,7 @@ app.include_router(feedback.router)
 app.include_router(jobs.router)
 app.include_router(peptides.router)
 app.include_router(cohorts.router)
+app.include_router(precomputed.router)
 
 
 # Configure thread pool for asyncio.to_thread() — allows concurrent analysis requests.

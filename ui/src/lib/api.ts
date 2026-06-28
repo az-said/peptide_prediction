@@ -106,11 +106,6 @@ export async function predictOne(
   return (await handleResponse(res)) as PredictResponse;
 }
 
-export async function fetchExampleDataset(recalc = 0): Promise<RowsResponse> {
-  const res = await fetch(`${API_BASE}/api/example?recalc=${recalc}`, { method: "GET" });
-  return (await handleResponse(res)) as RowsResponse;
-}
-
 /**
  * Execute a UniProt query with centralized error handling and auto-retry.
  * Strips HTML from error messages and provides clean error text.
@@ -211,7 +206,7 @@ export async function findSimilarPeptides(
   referenceId: string,
   k: number = 10,
   datasetId?: string,
-  signal?: AbortSignal,
+  signal?: AbortSignal
 ): Promise<FindSimilarPeptidesResult> {
   const body: Record<string, unknown> = { reference_id: referenceId, k };
   if (datasetId) body.dataset_id = datasetId;
@@ -230,11 +225,32 @@ export async function findSimilarPeptides(
     method: raw.method,
     elapsedMs: raw.elapsed_ms,
     results: raw.results.map((r) => ({
-      peptide: mapApiRowToPeptide(
-        r.peptide as Record<string, unknown>,
-        "/api/peptides/similar",
-      ),
+      peptide: mapApiRowToPeptide(r.peptide as Record<string, unknown>, "/api/peptides/similar"),
       distance: r.distance,
     })),
   };
+}
+
+/**
+ * Try to load a precomputed reference dataset (instant, no pipeline run).
+ * Returns the raw RowsResponse if the file exists on the server, or null
+ * on 404 so callers can fall back to the live upload-CSV path without a
+ * thrown error. Any other error (5xx, malformed JSON) does throw so the
+ * caller can surface it.
+ */
+export async function loadPrecomputedDataset(
+  datasetId: string,
+  signal?: AbortSignal
+): Promise<RowsResponse | null> {
+  const res = await fetch(`${API_BASE}/api/precomputed/${encodeURIComponent(datasetId)}`, {
+    method: "GET",
+    mode: "cors",
+    signal,
+  });
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new ApiError(text || `HTTP ${res.status}`, res.status);
+  }
+  return (await res.json()) as RowsResponse;
 }

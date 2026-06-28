@@ -20,7 +20,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useDatasetStore } from "@/stores/datasetStore";
-import { uploadCSV } from "@/lib/api";
+import { uploadCSV, loadPrecomputedDataset } from "@/lib/api";
 import { mapApiRowToPeptide } from "@/lib/peptideMapper";
 import type { Peptide, DatasetStats } from "@/types/peptide";
 import { BgDotGrid } from "@/components/BgDotGrid";
@@ -162,13 +162,19 @@ export default function Compare() {
   const handleLoadPeleg118 = useCallback(async () => {
     setLoadingPeleg(true);
     setError(null);
+    setBFilename("Fibril-forming peptides (118)");
     try {
-      const resp = await fetch("/example/fibril_forming_peptides_118.csv");
-      if (!resp.ok) throw new Error(`Failed to fetch reference CSV: ${resp.status}`);
-      const blob = await resp.blob();
-      const file = new File([blob], "fibril_forming_peptides_118.csv", { type: "text/csv" });
-      setBFilename("Fibril-forming peptides (118)");
-      const response = await uploadCSV(file);
+      // Try the precomputed path first — instant if `make precompute-datasets`
+      // has been run on the deploy host. Falls back to the live-pipeline path
+      // on 404 so the chip still works on hosts without the artifact.
+      let response = await loadPrecomputedDataset("peleg_118");
+      if (!response) {
+        const resp = await fetch("/example/fibril_forming_peptides_118.csv");
+        if (!resp.ok) throw new Error(`Failed to fetch reference CSV: ${resp.status}`);
+        const blob = await resp.blob();
+        const file = new File([blob], "fibril_forming_peptides_118.csv", { type: "text/csv" });
+        response = await uploadCSV(file);
+      }
       const rows = response.rows ?? [];
       const mapped = rows
         .map((r: any, idx: number) => {

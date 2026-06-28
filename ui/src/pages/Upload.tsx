@@ -50,7 +50,7 @@ import {
   parseAccessionList,
   type AccessionEntry,
 } from "@/components/UniProtBatchPreview";
-import { executeUniProtQuery } from "@/lib/api";
+import { executeUniProtQuery, loadPrecomputedDataset } from "@/lib/api";
 
 const steps = [
   { id: "upload", title: "Upload File", icon: UploadIcon },
@@ -684,6 +684,7 @@ export default function Upload() {
                             {
                               label: "Fibril-forming peptides (118)",
                               file: "/example/fibril_forming_peptides_118.csv",
+                              precomputedId: "peleg_118",
                             },
                             {
                               label: "Antimicrobial Peptides (12)",
@@ -700,6 +701,25 @@ export default function Upload() {
                               size="sm"
                               className="text-xs h-7"
                               onClick={async () => {
+                                // If this example has a precomputed artifact and the
+                                // backend serves it (200), skip the live pipeline +
+                                // the CSV preview screen and go straight to /results.
+                                if (ex.precomputedId) {
+                                  try {
+                                    const precomp = await loadPrecomputedDataset(ex.precomputedId);
+                                    if (precomp) {
+                                      ingestBackendRows(
+                                        precomp.rows ?? [],
+                                        toDatasetMetadata(precomp.meta)
+                                      );
+                                      toast.success(`Loaded ${ex.label} (instant)`);
+                                      navigate("/results");
+                                      return;
+                                    }
+                                  } catch {
+                                    // fall through to CSV flow on any error
+                                  }
+                                }
                                 try {
                                   const resp = await fetch(ex.file);
                                   if (!resp.ok) {
