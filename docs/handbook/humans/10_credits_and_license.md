@@ -1,0 +1,137 @@
+# Credits and license
+
+PVL is a collaboration between a structural-biology lab and a software platform. This page records who built what, how the software is licensed, how to cite it correctly, who funds it, and which tools it stands on. If you publish results produced with PVL, the [citation guidance](#citation-guidance) below is the part you need.
+
+---
+
+## Authors
+
+Author order reflects scientific contribution. The corresponding author for the published paper is Prof. Meytal Landau.
+
+| Role | Person | Affiliation | ORCID |
+|------|--------|-------------|-------|
+| **Algorithms + scientific lead** | Dr. Peleg Ragonis-Bachar | Technion — Israel Institute of Technology (Department of Biology) | [0000-0002-0979-8165](https://orcid.org/0000-0002-0979-8165) |
+| **Software + platform** | Said Azaizah | Massachusetts Institute of Technology + DESY | [0009-0002-3596-5358](https://orcid.org/0009-0002-3596-5358) |
+| **Scientific advisor** | Dr. Aleksandr Golubev | DESY (Deutsches Elektronen-Synchrotron) + Technion | _pending_ |
+| **PI / corresponding author** | Prof. Meytal Landau | Technion + EMBL Hamburg + Centre for Structural Systems Biology (CSSB) | [0000-0002-1743-3430](https://orcid.org/0000-0002-1743-3430) |
+
+What each person contributed:
+
+- **Dr. Peleg Ragonis-Bachar** — the four-category classification (Helix · FF-Helix · SSW · FF-SSW), the threshold definitions, the validation cohort, and the ongoing scientific review. The science PVL implements is hers; see [The science](02_the_science.md).
+- **Said Azaizah** — **Lead developer** and **co-founder**. Built the entire software platform: FastAPI backend, React frontend, the five surfaces (web · Python package · CLI · MCP server · self-host), CI/CD, observability, and deployment.
+- **Dr. Aleksandr Golubev** — research direction, lab adoption, and DESY infrastructure.
+- **Prof. Meytal Landau** — lab PI, structural-biology direction, and paper correspondence.
+
+Machine-readable author metadata lives in [`CITATION.cff`](../../../CITATION.cff) at the repository root.
+
+---
+
+## License
+
+PVL is released under the **MIT License** — the most permissive common open-source license. You may use, copy, modify, merge, publish, distribute, sublicense, and sell copies, including in closed-source and commercial work, provided the copyright notice and permission notice travel with the software. It is provided "as is", with no warranty.
+
+The canonical text is in [`LICENSE`](../../../LICENSE):
+
+> MIT License
+>
+> Copyright (c) 2026 Said Azaizah, Peleg Ragonis-Bachar, Aleksandr Golubev, Technion — Israel Institute of Technology, and Deutsches Elektronen-Synchrotron (DESY)
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+>
+> The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND … (see `LICENSE` for the full disclaimer).
+
+There is currently **no separate `LICENSE-DESY-RESEARCH.md`**; the single MIT `LICENSE` file governs the entire repository. If a DESY-specific research-use addendum is added later, it will appear at the repository root and be linked here.
+
+A note on the bundled predictors: TANGO and S4PRED carry their own upstream licenses and are not redistributed under PVL's MIT grant. PVL calls them as optional external tools — check each tool's own license before redistributing it.
+
+---
+
+## Citation guidance
+
+If you use PVL in your research, please cite **both** the software and the underlying algorithm. PVL is the instrument; the four-category classification is the science behind it, and that work deserves its own citation.
+
+### Cite the software (Zenodo DOI)
+
+A Zenodo archive DOI is minted automatically on each tagged GitHub release. Until the first release ships, the DOI is a placeholder (`10.5281/zenodo.PENDING`) — check [the publication path](../research/04_publication_path.md) for current DOI status before you cite.
+
+```bibtex
+@software{pvl_2026,
+  author    = {Ragonis-Bachar, Peleg and Azaizah, Said and Golubev, Aleksandr and Landau, Meytal},
+  title     = {Peptide Visual Lab (PVL)},
+  version   = {0.3.0},
+  year      = {2026},
+  url       = {https://github.com/saidaz24-meet/peptide_prediction},
+  doi       = {10.5281/zenodo.PENDING},
+  license   = {MIT}
+}
+```
+
+### Cite the underlying algorithm
+
+```bibtex
+@article{ragonis_bachar_2022,
+  author  = {Ragonis-Bachar, Peleg and Rayan, Bader and Barnea, Eilon and Engelberg, Yizhaq and Upcher, Alexander and Landau, Meytal},
+  title   = {Natural Antimicrobial Peptides Self-assemble as α-Sheet Conformations as Defined by a Linear Motif},
+  journal = {Biomacromolecules},
+  year    = {2022},
+  volume  = {24},
+  pages   = {413--425},
+  doi     = {10.1021/acs.biomac.2c00582}
+}
+```
+
+That paper — [Ragonis-Bachar et al. 2022](https://doi.org/10.1021/acs.biomac.2c00582), *Biomacromolecules* — is the source of the Helix · FF-Helix · SSW · FF-SSW classification PVL implements.
+
+### Cite a specific analysis
+
+Every analysis in PVL is also a citable URL. The in-app **Reproducibility Ribbon** copies a permalink that encodes the sequence, the thresholds, and the software version. Paste that link into a paper and reviewers re-open the exact view you analyzed. This is in addition to — not a replacement for — the two citations above.
+
+---
+
+## Funding
+
+PVL is developed within two host institutions:
+
+- **DESY — CSSB Hamburg** (Deutsches Elektronen-Synchrotron, Centre for Structural Systems Biology): hosts the Landau lab, provides the development VM and deployment infrastructure, and supports the platform work.
+- **Technion — Israel Institute of Technology**: the algorithm collaboration. The four-category classification and its validation cohort originate from research in the Landau group at the Technion.
+
+No external grant is tied to the software specifically; PVL is maintained part-time as a research instrument supporting the lab's published and ongoing work.
+
+---
+
+## Acknowledgements
+
+PVL stands on the shoulders of other people's work. Two people made the project possible directly:
+
+- **Dr. Peleg Ragonis-Bachar** — for the classification algorithm, the thresholds, and her ongoing scientific review of every change to the scientific pipeline.
+- **Dr. Aleksandr Golubev** — for DESY infrastructure, lab adoption, and research direction.
+
+### Tools we build on
+
+PVL is assembled from open-source software and public scientific databases. Where a tool produced a number you publish, cite the tool too.
+
+**Scientific tools and the papers behind them:**
+
+- **TANGO** — aggregation-propensity prediction. Fernández-Escamilla et al., *Nat Biotechnol* 22, 1302–1306 (2004). <https://tango.switchlab.org/>
+- **S4PRED** — neural secondary-structure prediction (5-model BiLSTM ensemble). Moffat et al., *Bioinformatics* 38, 4647–4653 (2022). <https://github.com/psipred/s4pred>
+- **AlphaFold DB** — predicted 3D structures. Jumper et al. (2021); Varadi et al. (2024). <https://alphafold.ebi.ac.uk/>
+- **Mol\*** — in-browser 3D structure viewer (RCSB PDB · EBI · ETH consortium). <https://molstar.org/>
+- **Hamodrakas (2007)** — secondary-structure/aggregation methodology underpinning the fibril-forming-helix analysis.
+- **Fauchère–Pliska** — the hydrophobicity scale used in PVL's biochemical calculations.
+- **Eisenberg** — the hydrophobic-moment formalism used to measure helix amphipathicity.
+
+These scientific foundations are explained in plain language in [The science](02_the_science.md).
+
+**Software stack PVL is built with:**
+
+- **Frontend** — React 18, TypeScript 5, Vite, Tailwind CSS, shadcn/ui, Zustand, Recharts, Mol\*, jsPDF (PDF export).
+- **Backend** — Python 3.11, FastAPI, Pydantic v2, pandas, PyTorch (CPU).
+- **Infrastructure** — Docker Compose, Caddy (auto-TLS), GitHub Actions (CI/CD), Sentry (observability).
+
+To every maintainer of those projects: thank you. PVL would not exist without freely shared scientific software.
+
+---
+
+**Previous:** [The pipeline](03_the_pipeline.md) · **See also:** [The science](02_the_science.md) · [Publication path](../research/04_publication_path.md)
