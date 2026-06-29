@@ -155,27 +155,28 @@ def _evaluate_against_truth(
     that need a different experimental condition to form fibrils. Report
     sensitivity / specificity but do NOT make absolute claims.
     """
-    # 2026-06-07 (CodeRabbit PR #80 I): validate run_output shape before nested
-    # access. If upload_service.process_dataframe changes return format, surface
-    # a clear error here instead of crashing on KeyError several frames down.
+    # 2026-06-29: process_upload_dataframe returns a RowsResponse dict
+    # (`{"rows": [...], "meta": {...}}`) — not the old `process_dataframe`
+    # result with a `df` attribute. Iterate `result["rows"]` directly.
     result_block = run_output.get("result")
-    if not isinstance(result_block, dict) or "df" not in result_block:
+    if not isinstance(result_block, dict) or "rows" not in result_block:
         raise ValueError(
-            f"upload_service.process_dataframe returned unexpected shape; "
-            f"expected `result.df`, got keys={list(run_output.keys())}"
+            f"process_upload_dataframe returned unexpected shape; "
+            f"expected `result.rows` list, got keys={list(result_block.keys()) if isinstance(result_block, dict) else type(result_block)}"
         )
-    df = result_block["df"]
+    rows_list = result_block["rows"]
     truth_by_id = {row["id"]: row["ff_truth"] for row in cohort}
 
     tp = fp = tn = fn = 0
     per_peptide: List[Dict[str, Any]] = []
-    for _, row in df.iterrows():
-        entry = row["Entry"]
+    for row in rows_list:
+        entry = row.get("id") or row.get("name")
         truth = truth_by_id.get(entry)
         if truth is None:
             continue
-        ff_helix = int(row.get("FF-Helix (S4PRED)", -1)) == 1
-        ff_ssw = int(row.get("FF-SSW", -1)) == 1
+        # PeptideRow camelCase shape from normalize_rows_for_ui.
+        ff_helix = row.get("ffHelixFlag") == 1
+        ff_ssw = row.get("ffSswFlag") == 1
         predicted_ff = ff_helix or ff_ssw
         if predicted_ff and truth:
             tp += 1
