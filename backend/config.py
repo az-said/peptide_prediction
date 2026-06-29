@@ -234,7 +234,9 @@ class Settings:
     MAX_PEPTIDES_PER_RUN_WITH_TANGO: int = int(os.getenv("MAX_PEPTIDES_PER_RUN_WITH_TANGO", "500"))
     """Budget for TANGO inclusion in a single upload run (default: 500).
     Above this, TANGO is auto-disabled and a ``tango_auto_disabled`` warning
-    is surfaced — S4PRED + FF-Helix still run."""
+    is surfaced — S4PRED + FF-Helix still run. See ADR-022 (40-aa length
+    cap) and ADR-024 (precompute artifact bypass) in
+    docs/active/DECISIONS.md."""
 
     MAX_PEPTIDES_PER_RUN_WITHOUT_TANGO: int = int(
         os.getenv("MAX_PEPTIDES_PER_RUN_WITHOUT_TANGO", "5000")

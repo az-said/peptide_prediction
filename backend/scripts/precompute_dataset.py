@@ -173,9 +173,10 @@ def precompute(dataset_id: str) -> Path:
         # already understood by the frontend). The dataset_id field on the
         # response carries the true provenance.
         sequence_source="demo",
-        # ISSUE-034 fix: precompute IS the cache source-of-truth — never read
-        # the cache here (prior partial entries can falsely register as hits
-        # and skip TANGO). Also bypass the 500-peptide budget gate since
+        # ISSUE-034 fix (see ADR-024 — precompute-JSON artifact approach):
+        # precompute IS the cache source-of-truth — never read the cache here
+        # (prior partial entries can falsely register as hits and skip TANGO).
+        # Also bypass the 500-peptide budget gate (ADR-022 length cap) since
         # gold-standard is 2,916.
         force_recompute=True,
         bypass_tango_budget=True,

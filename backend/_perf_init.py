@@ -2,6 +2,9 @@
 """
 Performance init — set CPU thread caps BEFORE torch / numpy / openblas import.
 
+See ADR-025 (4-thread cap + PyTorch thread pinning) in
+`docs/active/DECISIONS.md` for the architectural decision recorded.
+
 PVL prod (Hetzner CX33, 4 vCPU, 8 GB) was ~22× slower than a Mac terminal
 run on the same code. Root cause: PyTorch's S4PRED ensemble has 5 BiLSTM
 networks, and torch + OpenMP + MKL + OpenBLAS all default their intra-op

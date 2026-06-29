@@ -75,6 +75,51 @@ updates:
       - dependency-name: "pydantic"
         update-types: ["version-update:semver-major"]
 
+  # pvl-cli Python package
+  - package-ecosystem: "pip"
+    directory: "/pvl-cli"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Jerusalem"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "pvl-cli"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # pvl-mcp MCP server package
+  - package-ecosystem: "pip"
+    directory: "/mcp_server"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Asia/Jerusalem"
+    open-pull-requests-limit: 3
+    labels:
+      - "dependencies"
+      - "pvl-mcp"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Docker base images for the prod stack
+  - package-ecosystem: "docker"
+    directory: "/docker"
+    schedule:
+      interval: "monthly"
+    labels:
+      - "dependencies"
+      - "docker"
+
   # GitHub Actions workflow versions
   - package-ecosystem: "github-actions"
     directory: "/"
