@@ -16,7 +16,7 @@ Built around [Ragonis-Bachar et al. 2022](https://doi.org/10.1021/acs.biomac.2c0
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 [![CodeQL](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/codeql.yml/badge.svg)](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/codeql.yml)
 
-[**Try the live demo**](http://94.130.178.182:3000) · [**Self-host in 3 min**](#self-host-in-3-minutes) · [**Developer handbook**](docs/handbook/README.md) · [**API**](#api) · [**Contribute**](CONTRIBUTING.md) · [**Cite**](#citing-pvl)
+[**Try the live demo**](http://94.130.178.182:3000) · [**Self-host in 3 min**](#self-host-in-3-minutes) · [**Documentation site**](https://saidaz24-meet.github.io/peptide_prediction/) · [**API**](#api) · [**Contribute**](CONTRIBUTING.md) · [**Cite**](#citing-pvl)
 
 </div>
 

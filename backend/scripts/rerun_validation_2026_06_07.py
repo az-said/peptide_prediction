@@ -212,7 +212,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--cohort",
-        choices=["ragonis-bachar", "staphylococcus", "all"],
+        choices=["ragonis-bachar", "staphylococcus", "peleg-118", "all"],
         default="ragonis-bachar",
         help="Which cohort to run. 'all' runs both serially.",
     )
@@ -255,6 +255,38 @@ def main() -> int:
             "Staphylococcus cohort not yet wired into this script. Skipping. "
             "Add the 66-labelled-row CSV under data/validation/ first."
         )
+
+    if args.cohort in ("peleg-118", "all"):
+        # 2026-06-29 (Said): added the Peleg-118 cohort loader so we can fill
+        # the recall number in research/02_validation_evidence.md. Reads the
+        # curated reference JSON shipped with the repo and treats every row
+        # as a positive (the file is the validated fibril-forming set; there
+        # are no negatives in this dataset by construction). Recall = TP / 118.
+        peleg_path = (
+            _BACKEND_DIR / "data" / "reference_datasets" / "peleg_118_fibril_validated.json"
+        )
+        if not peleg_path.is_file():
+            logging.warning("Peleg-118 reference JSON missing at %s — skipping.", peleg_path)
+        else:
+            with peleg_path.open() as f:
+                payload = json.load(f)
+            peleg_rows: List[Dict[str, Any]] = []
+            for p in payload.get("peptides", []):
+                seq = (p.get("sequence") or "").strip().upper()
+                if not seq:
+                    continue
+                peleg_rows.append(
+                    {
+                        "id": p.get("name") or p.get("id"),
+                        "sequence": seq,
+                        # By construction, every peptide in this curated set has
+                        # experimentally validated fibril formation. The whole
+                        # cohort is the positive class for FF-Helix + FF-SSW.
+                        "ff_truth": True,
+                    }
+                )
+            logging.info("Peleg-118 cohort loaded: %d peptides", len(peleg_rows))
+            cohorts_to_run.append(("peleg-118", peleg_rows))
 
     for cohort_name, rows in cohorts_to_run:
         if args.dry_run:
