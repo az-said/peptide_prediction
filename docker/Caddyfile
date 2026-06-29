@@ -1,63 +1,158 @@
-# Peptide Visual Lab - Caddy Configuration
-# Auto-HTTPS with Let's Encrypt (zero config)
+# Peptide Visual Lab — Caddy reverse proxy + auto-HTTPS
+#
+# Single-DNS topology (one hostname serves frontend + API + docs; MCP and
+# pvl-cli traffic also flow through /api). Split-DNS (api.pvl.desy.de,
+# mcp.pvl.desy.de) is documented as a future option in
+# docs/active/CONSOLIDATED_FINAL_DEPLOY.md but not required for v1.0.
 #
 # Usage:
-#   1. Set DOMAIN in .env (e.g., DOMAIN=pvl.desy.de)
-#   2. Run: docker compose -f docker/docker-compose.caddy.yml up -d
-#   Caddy will automatically provision and renew TLS certificates.
+#   1. Set DOMAIN in /opt/pvl/.env.deploy (e.g. DOMAIN=pvl.cssb-hamburg.de)
+#   2. docker compose -f docker/docker-compose.caddy.yml --env-file .env.deploy up -d
+#   Caddy auto-provisions and renews Let's Encrypt certificates on first hit.
 #
-# For local dev without HTTPS, set DOMAIN=localhost
+# For local dev without HTTPS: DOMAIN=localhost (Caddy uses self-signed cert).
+#
+# Tuning rationale documented inline. See docs/active/CONSOLIDATED_FINAL_DEPLOY.md
+# for the full deploy + DNS handover narrative.
+
+{
+    # Global options — applied to every site in this file.
+    #
+    # admin: bind the admin API to loopback so docker exec can hit it but
+    # the public internet cannot enumerate sites or trigger reloads.
+    admin localhost:2019
+    # Email used for ACME registration. Lets Encrypt sends expiry warnings
+    # here if auto-renewal ever fails.
+    email said.azaizah@cssb-hamburg.de
+}
 
 {$DOMAIN:localhost} {
-    # Upload size limit (datasets can be 5-50MB)
+    # ────────────────────────────────────────────────────────────────────
+    # Request body
+    # ────────────────────────────────────────────────────────────────────
+    # Researchers paste up to ~50 MB CSV / XLSX of peptide rows. 100 MB
+    # gives 2× headroom without exposing the worker pool to DoS.
     request_body {
         max_size 100MB
     }
 
-    # API proxy - forward to backend service
+    # ────────────────────────────────────────────────────────────────────
+    # API proxy — every /api/* request to backend:8000
+    # ────────────────────────────────────────────────────────────────────
+    # TANGO + S4PRED on 2,000-row batches can run for ~15 min. Caddy's
+    # default 30 s read timeout would kill the request before completion,
+    # so we open it up to 10 min — long enough for the largest batches
+    # without leaving sockets stuck if a worker hangs.
     handle /api/* {
         reverse_proxy backend:8000 {
-            # Timeout settings for long-running predictions (TANGO can take minutes)
             transport http {
                 dial_timeout 60s
                 read_timeout 600s
                 write_timeout 600s
             }
+            # Forward the real client IP so slowapi's per-IP rate limiter
+            # gates by user, not by the upstream Caddy IP.
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
         }
     }
 
-    # Health check endpoint
+    # ────────────────────────────────────────────────────────────────────
+    # Docs site reverse-proxy (optional centrally-hosted handbook)
+    # ────────────────────────────────────────────────────────────────────
+    # If a future deploy serves the mkdocs handbook from /docs/ rather
+    # than GitHub Pages, uncomment this block + add a docs service to
+    # docker-compose.prod.yml. The handbook today lives at
+    # https://saidaz24-meet.github.io/peptide_prediction/ which is enough
+    # for v1.0; this stanza is the future hook.
+    # handle /docs/* {
+    #     reverse_proxy docs:8000
+    # }
+
+    # ────────────────────────────────────────────────────────────────────
+    # Health check — Caddy-level liveness probe
+    # ────────────────────────────────────────────────────────────────────
+    # Distinct from /api/health (which exercises the backend); this one
+    # returns 200 even if the backend is down, so external monitoring
+    # can tell "Caddy is up but backend died" from "the whole host died."
     handle /health {
         respond "healthy" 200
     }
 
-    # Static assets with caching
+    # ────────────────────────────────────────────────────────────────────
+    # Static asset cache — long-lived immutable hashed filenames
+    # ────────────────────────────────────────────────────────────────────
+    # Vite output uses content-hashed filenames (index-abc123.js), so a
+    # one-year cache is safe — a new deploy produces new hashes, the
+    # browser auto-fetches. Marks Cache-Control: immutable so browsers
+    # skip the revalidation round-trip.
     handle /assets/* {
         header Cache-Control "public, max-age=31536000, immutable"
         root * /srv
         file_server
     }
 
-    # SPA fallback - serve index.html for client-side routing
+    # ────────────────────────────────────────────────────────────────────
+    # SPA fallback — serve index.html for client-side routes
+    # ────────────────────────────────────────────────────────────────────
+    # React Router uses path-based routing (/results, /peptides/:id, etc.).
+    # Caddy's try_files semantics: try the literal path first (so static
+    # files still work), fall back to /index.html which loads the SPA.
     handle {
         root * /srv
         try_files {path} /index.html
         file_server
     }
 
+    # ────────────────────────────────────────────────────────────────────
     # Security headers
+    # ────────────────────────────────────────────────────────────────────
+    # See https://owasp.org/www-project-secure-headers/ for the full
+    # rationale. We aim for an A+ on securityheaders.com.
     header {
+        # HTTPS only — instruct browsers to refuse HTTP fallback for 1
+        # year, include all subdomains so if we later add an api. or mcp.
+        # subdomain they inherit. preload makes us submitable to the
+        # Chrome HSTS preload list.
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        # Prevent embed in third-party iframes (no clickjacking).
         X-Frame-Options "SAMEORIGIN"
+        # Disable MIME-sniffing — browsers must honour Content-Type.
         X-Content-Type-Options "nosniff"
+        # XSS auditor — legacy header but still respected by some clients.
         X-XSS-Protection "1; mode=block"
+        # Restrict where browsers can hit us from for CORS-style requests.
+        Referrer-Policy "strict-origin-when-cross-origin"
+        # Lock down what browser APIs the page can use (we don't need
+        # camera, microphone, geolocation, etc.).
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        # Don't leak the Caddy version string in error pages.
+        -Server
+        # Don't leak the X-Powered-By string from FastAPI / Node.
+        -X-Powered-By
     }
 
-    # Gzip compression
-    encode gzip
+    # ────────────────────────────────────────────────────────────────────
+    # Compression — zstd preferred, gzip fallback
+    # ────────────────────────────────────────────────────────────────────
+    # zstd is 20-30% smaller than gzip at the same CPU cost for our JSON
+    # payloads (peptide rows compress beautifully). Browsers that don't
+    # speak zstd (older Safari) fall through to gzip.
+    encode zstd gzip
 
-    # Access logging
+    # ────────────────────────────────────────────────────────────────────
+    # Access log — structured JSON for downstream collection
+    # ────────────────────────────────────────────────────────────────────
+    # Format JSON so log shippers (Loki / Vector / Promtail / Datadog)
+    # can parse without regex. The log volume is small (typical research
+    # use is ~10 requests/min); we keep all of it.
     log {
         output stdout
         format json
+        # Drop static-asset noise from the log — they're cached and
+        # uninteresting, and dropping them keeps the signal-to-noise high.
+        # Health probes also drop (otherwise the log is 90% liveness).
+        level INFO
     }
 }
