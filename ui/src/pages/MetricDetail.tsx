@@ -41,27 +41,15 @@ export default function MetricDetail() {
 
   const metric = metricId ? METRIC_DEFINITIONS[metricId] : null;
 
-  if (!metric || !metricId) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card>
-          <CardContent className="p-6">
-            <p className="text-muted-foreground">Metric not found</p>
-            <Button onClick={() => navigate("/results")} className="mt-4">
-              Back to Results
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   // peptides from store is already Peptide[] (mapped by ingestBackendRows)
   // No re-mapping needed - use directly
   const peptidesTyped: Peptide[] = peptides;
 
-  // Generate chart data based on metric type
+  // 2026-06-29 fix (Said): React error #310 — the useMemo below MUST run on
+  // every render, so it sits above the !metric early return below. Null
+  // metric/metricId is handled inline with an early return INSIDE the memo.
   const chartData = useMemo(() => {
+    if (!metric || !metricId) return null;
     if (!peptidesTyped.length) return null;
 
     switch (metric.chartType) {
@@ -136,7 +124,23 @@ export default function MetricDetail() {
       default:
         return null;
     }
-  }, [peptidesTyped, metricId, metric.chartType]);
+  }, [peptidesTyped, metricId, metric]);
+
+  // Now safe to early-return — the hook above has already run.
+  if (!metric || !metricId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card>
+          <CardContent className="p-6">
+            <p className="text-muted-foreground">Metric not found</p>
+            <Button onClick={() => navigate("/results")} className="mt-4">
+              Back to Results
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Show all peptides - PeptideTable will display all columns by default
   const filteredPeptides = peptidesTyped;

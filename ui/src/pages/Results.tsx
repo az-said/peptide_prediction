@@ -242,16 +242,11 @@ export default function Results() {
     }
   }, [peptides.length, isDemoLoading, navigate]);
 
-  if (peptides.length === 0) {
-    if (isDemoLoading) {
-      return <DemoLoadingSkeleton />;
-    }
-    return null;
-  }
-
+  // 2026-06-29 fix (Said): React error #310 ("Rendered more hooks than during
+  // the previous render"). The two useMemo calls below MUST run on every
+  // render — they can't be after the empty-peptides early return. Compute
+  // them with null-safe defaults, then perform the early return.
   const peptidesTyped: Peptide[] = peptides;
-
-  // -------- Ranking v2 --------
   const tangoAvailable =
     meta?.provider_status?.tango?.status !== "OFF" &&
     meta?.provider_status?.tango?.status !== "UNAVAILABLE";
@@ -268,6 +263,13 @@ export default function Results() {
       .slice(0, Math.max(1, topN));
     return sorted.map((r) => peptidesTyped.find((p) => p.id === r.peptideId)!).filter(Boolean);
   }, [peptidesTyped, rankings, topN]);
+
+  if (peptides.length === 0) {
+    if (isDemoLoading) {
+      return <DemoLoadingSkeleton />;
+    }
+    return null;
+  }
 
   function exportAllFASTA() {
     if (!peptidesTyped.length) return;
