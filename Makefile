@@ -1,6 +1,7 @@
 .PHONY: test test-unit lint typecheck fmt ci help smoke-tango contract-check \
         docker-build docker-up docker-down docker-smoke docker-logs docker-clean \
-        changelog-peleg session-log
+        changelog-peleg session-log \
+        docs-preview docs-build docs-build-no-strict docs-clean
 
 # Default target
 help:
@@ -214,3 +215,26 @@ docker-prod-up:
 
 docker-prod-down:
 	docker compose -f docker/docker-compose.prod.yml down
+
+# =============================================================================
+# Documentation site (docs/handbook → https://saidaz24-meet.github.io/peptide_prediction/)
+# =============================================================================
+
+# Local preview at http://127.0.0.1:8000 with hot reload
+docs-preview:
+	@which mkdocs > /dev/null 2>&1 || (echo "mkdocs not installed. Run: pip install mkdocs-material" && exit 1)
+	@echo "→ Serving handbook at http://127.0.0.1:8000/ — Ctrl-C to stop"
+	mkdocs serve --dev-addr 127.0.0.1:8000
+
+# Strict build — same as CI; fails on broken links
+docs-build:
+	@which mkdocs > /dev/null 2>&1 || (echo "mkdocs not installed. Run: pip install mkdocs-material" && exit 1)
+	mkdocs build --strict --verbose
+
+# Development build without --strict (useful when iterating on docs and you
+# don't want broken-link warnings to abort the build)
+docs-build-no-strict:
+	mkdocs build --verbose
+
+docs-clean:
+	rm -rf site/
