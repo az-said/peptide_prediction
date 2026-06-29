@@ -4,12 +4,26 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pvl-cli"
-version = "0.0.1"
-description = "Command-line client for the Peptide Visual Lab (PVL) prediction API."
+version = "0.1.0"
+description = "Command-line client for the Peptide Visual Lab (PVL) prediction API — TANGO + S4PRED + FF-Helix classification from any terminal."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Said Azaizah", email = "az.said2007@gmail.com" }]
+authors = [{ name = "Said Azaizah", email = "said.azaizah@cssb-hamburg.de" }]
+keywords = ["peptide", "bioinformatics", "aggregation", "secondary-structure", "tango", "s4pred", "amyloid", "fibril", "cli"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Environment :: Console",
+]
 dependencies = [
     "click>=8.1",
     "httpx>=0.25",
@@ -19,14 +33,19 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
+    "pytest-mock>=3.10",
 ]
 
 [project.scripts]
 pvl = "pvl.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/saidazaizah/peptide_prediction"
+Homepage = "https://github.com/saidaz24-meet/peptide_prediction"
+Documentation = "https://saidaz24-meet.github.io/peptide_prediction/"
+Source = "https://github.com/saidaz24-meet/peptide_prediction/tree/main/pvl-cli"
+Issues = "https://github.com/saidaz24-meet/peptide_prediction/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["pvl*"]
+namespaces = false

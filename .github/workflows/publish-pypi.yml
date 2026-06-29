@@ -1,0 +1,83 @@
+name: Publish to PyPI
+
+# Publishes pvl-cli and pvl-mcp to PyPI on every v* tag push.
+# Uses PyPI Trusted Publishing (OIDC) — no API token needed.
+#
+# One-time setup at https://pypi.org/manage/account/publishing/:
+#   1. Add "Pending publisher" for project `pvl-cli`:
+#        owner: saidaz24-meet
+#        repo:  peptide_prediction
+#        workflow file: publish-pypi.yml
+#        environment: pypi
+#   2. Same for `pvl-mcp`.
+# After the first successful publish, PyPI promotes the pending publisher
+# to a real one and subsequent publishes work automatically.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      package:
+        description: Which package to publish (pvl-cli, pvl-mcp, or both)
+        required: true
+        default: both
+        type: choice
+        options:
+          - pvl-cli
+          - pvl-mcp
+          - both
+
+jobs:
+  publish-pvl-cli:
+    if: ${{ github.event_name == 'push' || inputs.package == 'pvl-cli' || inputs.package == 'both' }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build tooling
+        run: pip install --upgrade build twine
+      - name: Build distribution
+        run: |
+          cd pvl-cli
+          python -m build
+      - name: Verify metadata
+        run: twine check pvl-cli/dist/*
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: pvl-cli/dist/
+          # When the Trusted Publisher is configured on pypi.org this needs no
+          # credentials. Until then, set the PYPI_API_TOKEN repo secret and
+          # uncomment the next line.
+          # password: ${{ secrets.PYPI_API_TOKEN }}
+
+  publish-pvl-mcp:
+    if: ${{ github.event_name == 'push' || inputs.package == 'pvl-mcp' || inputs.package == 'both' }}
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install build tooling
+        run: pip install --upgrade build twine
+      - name: Build distribution
+        run: |
+          cd mcp_server
+          python -m build
+      - name: Verify metadata
+        run: twine check mcp_server/dist/*
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: mcp_server/dist/
