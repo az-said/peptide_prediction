@@ -113,12 +113,24 @@ def _run_pipeline(rows: List[Dict[str, Any]], cohort_name: str) -> Dict[str, Any
         settings.USE_S4PRED,
     )
 
+    # 2026-06-29 — service was renamed: process_dataframe → process_upload_dataframe
+    # plus the signature switched from run_tango/run_s4pred booleans to
+    # threshold-config dicts. The precompute opt-in flags (force_recompute +
+    # bypass_tango_budget) ensure this validation run produces an authoritative
+    # artifact even if the provider cache or budget gate would otherwise drop
+    # TANGO rows (the ISSUE-034 fix).
+    default_threshold_config = {"mode": "default", "source": "validation"}
     t0 = time.time()
-    result = upload_service.process_dataframe(
+    result = upload_service.process_upload_dataframe(
         df=df,
-        run_tango=settings.USE_TANGO,
-        run_s4pred=settings.USE_S4PRED,
-        config_override=None,
+        threshold_config_requested=default_threshold_config,
+        threshold_config_resolved=default_threshold_config,
+        trace_entry=None,
+        sentry_initialized=False,
+        cancel_event=None,
+        sequence_source="demo",
+        force_recompute=True,
+        bypass_tango_budget=True,
     )
     elapsed = time.time() - t0
 
