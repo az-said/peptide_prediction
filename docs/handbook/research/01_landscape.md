@@ -186,7 +186,7 @@ For completeness, PVL's two vendored predictors:
 
 ## References
 
-[^rb2022]: Ragonis-Bachar, P., Rayan, B., Barnea, E., Engelberg, Y., Upcher, A. & Landau, M. "Natural antimicrobial peptides self-assemble as α-sheet conformations." *Biomacromolecules* (2022). doi:[10.1021/acs.biomac.2c00582](https://doi.org/10.1021/acs.biomac.2c00582)
+[^rb2022]: Ragonis-Bachar, P., Rayan, B., Barnea, E., Engelberg, Y., Upcher, A. & Landau, M. "Natural Antimicrobial Peptides Self-assemble as α/β Chameleon Amyloids." *Biomacromolecules* **23**(9), 3713–3727 (2022). doi:[10.1021/acs.biomac.2c00582](https://doi.org/10.1021/acs.biomac.2c00582). (Title/volume/pages Crossref-verified June 2026 — supersedes the "α-Sheet Conformations / 24:413–425" phrasing still in the repo README + CITATION.cff.)
 [^tango]: <https://doi.org/10.1038/nbt1012> — *Nature Biotechnology* 22, 1302–1306 (2004). Tool: <https://tango.switchlab.org/>
 [^waltz]: <https://doi.org/10.1038/nmeth.1432> — *Nature Methods* 7, 237–242 (2010). PubMed: <https://pubmed.ncbi.nlm.nih.gov/20154676/>
 [^waltzdb]: <https://academic.oup.com/bioinformatics/article/31/10/1698/177770> — *Bioinformatics* 31, 1698–1700 (2015).
