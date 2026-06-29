@@ -1,22 +1,78 @@
 # PVL Deployment Guide & Specification
 
-**Last Updated**: 2026-03-01
-**Audience**: Said deploying PVL on the DESY VM
+**Last Updated**: 2026-06-29
+**Audience**: Said + future devs deploying PVL on Hetzner VPS or the DESY VM.
 
 ---
 
-## Quick Reference
+## Hosts at a glance
+
+| Host | Address | Role | Status |
+|---|---|---|---|
+| **Hetzner CX33** ("VPS") | `94.130.178.182:3000` | Current public production (paper-citable URL) | Live, healthy |
+| **DESY VM** (`landau-webapp-dev`) | `131.169.4.163` (internal) | Long-term DESY-owned production | Live, bootstrapped 2026-06-29 |
+| **Said's MacBook** | `localhost` | Dev (Vite + uvicorn + Mac TANGO binary) | Dev only |
+
+When papers and bio.tools point at a stable URL, that URL will be the DESY one. Until DESY DNS + TLS is wired (waiting on Alex), the Hetzner URL is the citable one.
+
+---
+
+## Access path to the DESY VM (Kerberos, two hops)
+
+The VM is firewalled — reachable only from inside the DESY network. From a Mac on any network:
 
 ```bash
-# On the VM — full production deployment:
-DOMAIN=pvl.desy.de docker compose -f docker/docker-compose.caddy.yml up -d --build
+# Hop 1 — Maxwell login (password + OTP from mfa.desy.de)
+ssh azaizahs@max-display.desy.de
 
-# Check status:
-docker compose -f docker/docker-compose.caddy.yml ps
-docker compose -f docker/docker-compose.caddy.yml logs -f backend
+# Hop 2 — get a Kerberos ticket (DESY password again)
+kinit
 
-# Restart after code changes:
-docker compose -f docker/docker-compose.caddy.yml up -d --build
+# Hop 3 — root login on the VM (Kerberos auth, no password)
+ssh -l root landau-webapp-dev
+```
+
+After installing the Mac's SSH public key into `/root/.ssh/authorized_keys` on the VM (one-time), the third hop works via key auth and the chain is automatable for SSH-tunneled browser access:
+
+```bash
+# Mac → tunnel → VM frontend on localhost:8080
+ssh -J azaizahs@max-display.desy.de -L 8080:localhost:3000 root@landau-webapp-dev
+# Then open http://localhost:8080
+```
+
+---
+
+## Quick Reference — daily ops
+
+### Hetzner VPS (`root@94.130.178.182`)
+```bash
+cd /opt/pvl && \
+git pull --ff-only origin main && \
+bash scripts/prod_redeploy.sh
+```
+Full rebuild + restart of all 5 services. ~3 min.
+
+### DESY VM (in the SSH-from-Maxwell session)
+```bash
+cd /opt/pvl && \
+git pull --ff-only origin main && \
+docker compose -f docker/docker-compose.prod.yml --env-file .env.deploy build backend && \
+docker compose -f docker/docker-compose.prod.yml --env-file .env.deploy up -d
+```
+
+### Regenerate precomputed reference datasets (instant-load for example buttons)
+```bash
+docker compose -f docker/docker-compose.prod.yml exec -T backend python scripts/precompute_dataset.py peleg_118
+docker compose -f docker/docker-compose.prod.yml exec -T backend python scripts/precompute_dataset.py gold_standard
+```
+Required after every backend image rebuild — the precomputed artifacts live in the container's `data/precomputed/` and are wiped on rebuild. Peleg-118 (~10s), gold-standard 2,916 (~10–15 min on the VM).
+
+### Caddy + DNS (when Alex gives a hostname)
+```bash
+nano /opt/pvl/docker/Caddyfile      # change "localhost:3000" → "pvl.desy.de"
+docker compose -f docker/docker-compose.prod.yml restart frontend
+# Caddy auto-provisions Let's Encrypt on first hit. Verify:
+curl -I https://pvl.desy.de/api/health
 ```
 
 ---
