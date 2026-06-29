@@ -794,6 +794,13 @@ def process_upload_dataframe(
     progress_callback: Optional[Callable[[str, int], None]] = None,
     cancel_event: Optional[Any] = None,
     sequence_source: str = "csv",
+    # ISSUE-034 (Said 2026-06-29) — precompute path needs to bypass the
+    # provider cache (it IS the cache source-of-truth) and the TANGO budget
+    # gate (gold-standard is 2,916 > 500 default budget). Both flags default
+    # False so all existing API call sites behave unchanged; only the
+    # precompute script opts in.
+    force_recompute: bool = False,
+    bypass_tango_budget: bool = False,
     permalink: Optional[str] = None,
 ) -> Dict[str, Any]:
     """
@@ -853,7 +860,7 @@ def process_upload_dataframe(
         df = df.iloc[:hard_cap].copy()
 
     tango_budget = settings.MAX_PEPTIDES_PER_RUN_WITH_TANGO
-    auto_disable_tango = len(df) > tango_budget
+    auto_disable_tango = (len(df) > tango_budget) and not bypass_tango_budget
     if auto_disable_tango:
         warnings_collected.append(
             {
@@ -912,13 +919,24 @@ def process_upload_dataframe(
     try:
         from services.provider_cache import split_cached_uncached, write_computed_to_cache
 
-        _df_hits, df = split_cached_uncached(df, settings.USE_TANGO, settings.USE_S4PRED)
-        _cache_active = True
-        if not _df_hits.empty:
+        if force_recompute:
+            # ISSUE-034: precompute path bypasses the cache entirely. We are the
+            # cache source-of-truth, can't trust prior partial entries (e.g. a
+            # row with s4pred cached but tango as empty dict from a crashed run
+            # would falsely register as a cache hit and skip TANGO).
             log_info(
-                "provider_cache_split",
-                f"Cache: {len(_df_hits)} hits, {len(df)} misses out of {len(_df_hits) + len(df)}",
+                "provider_cache_bypassed",
+                f"force_recompute=True — skipping cache split for {len(df)} rows",
             )
+            _cache_active = True
+        else:
+            _df_hits, df = split_cached_uncached(df, settings.USE_TANGO, settings.USE_S4PRED)
+            _cache_active = True
+            if not _df_hits.empty:
+                log_info(
+                    "provider_cache_split",
+                    f"Cache: {len(_df_hits)} hits, {len(df)} misses out of {len(_df_hits) + len(df)}",
+                )
         if progress_callback:
             progress_callback("cache_lookup", 18)
     except Exception as e:

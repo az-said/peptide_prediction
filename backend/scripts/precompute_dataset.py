@@ -173,6 +173,12 @@ def precompute(dataset_id: str) -> Path:
         # already understood by the frontend). The dataset_id field on the
         # response carries the true provenance.
         sequence_source="demo",
+        # ISSUE-034 fix: precompute IS the cache source-of-truth — never read
+        # the cache here (prior partial entries can falsely register as hits
+        # and skip TANGO). Also bypass the 500-peptide budget gate since
+        # gold-standard is 2,916.
+        force_recompute=True,
+        bypass_tango_budget=True,
     )
     elapsed = time.perf_counter() - t0
     print(f"  done in {elapsed:.1f}s")
