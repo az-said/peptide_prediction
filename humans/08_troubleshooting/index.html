@@ -1,0 +1,1909 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Open-source web platform for peptide aggregation propensity, secondary structure prediction, and fibril-forming candidacy classification. Documentation handbook.">
+      
+      
+        <meta name="author" content="Said Azaizah">
+      
+      
+        <link rel="canonical" href="https://az-said.github.io/peptide_prediction/humans/08_troubleshooting/">
+      
+      
+        <link rel="prev" href="../07_extending/">
+      
+      
+        <link rel="next" href="../09_glossary/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../../assets/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
+    
+    
+      
+        <title>Troubleshooting - PVL — Peptide Visual Lab</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      
+        
+        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CJetBrains+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"JetBrains Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#troubleshooting-when-something-is-broken" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow md-header--lifted" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../.." title="PVL — Peptide Visual Lab" class="md-header__button md-logo" aria-label="PVL — Peptide Visual Lab" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 2h2v2c0 1.44.68 2.61 1.88 3.78.86.83 2.01 1.63 3.21 2.42l-1.83 1.19C8.27 10.72 7.31 10 6.5 9.21 5.07 7.82 4 6.1 4 4zm14 0h2v2c0 2.1-1.07 3.82-2.5 5.21-1.41 1.38-3.21 2.52-4.96 3.63-1.75 1.12-3.45 2.21-4.66 3.38C6.68 17.39 6 18.56 6 20v2H4v-2c0-2.1 1.07-3.82 2.5-5.21 1.41-1.38 3.21-2.52 4.96-3.63 1.75-1.12 3.45-2.21 4.66-3.38C17.32 6.61 18 5.44 18 4zm-3.26 10.61c.99.67 1.95 1.39 2.76 2.18C18.93 16.18 20 17.9 20 20v2h-2v-2c0-1.44-.68-2.61-1.88-3.78-.86-.83-2.01-1.63-3.21-2.42zM7 3h10v1l-.06.5H7.06L7 4zm.68 3h8.64c-.24.34-.52.69-.9 1.06l-.51.44H9.07l-.49-.44c-.38-.37-.66-.72-.9-1.06m1.41 10.5h5.84l.49.44c.38.37.66.72.9 1.06H7.68c.24-.34.52-.69.9-1.06zm-2.03 3h9.88l.06.5v1H7v-1z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            PVL — Peptide Visual Lab
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Troubleshooting
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme)" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_0">
+    
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="m14.3 16-.7-2h-3.2l-.7 2H7.8L11 7h2l3.2 9zM20 8.69V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12zm-9.15 3.96h2.3L12 9z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="deep-purple" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+    
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+    
+    
+    
+    <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="deep-purple" data-md-color-accent="pink"  aria-label="Switch to system preference"  type="radio" name="__palette" id="__palette_2">
+    
+      <label class="md-header__button md-icon" title="Switch to system preference" for="__palette_0" hidden>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
+      </label>
+    
+  
+</form>
+      
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+          <a href="javascript:void(0)" class="md-search__icon md-icon" title="Share" aria-label="Share" data-clipboard data-clipboard-text="" data-md-component="search-share" tabindex="-1">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.15c-.05.21-.08.43-.08.66 0 1.61 1.31 2.91 2.92 2.91s2.92-1.3 2.92-2.91A2.92 2.92 0 0 0 18 16.08"/></svg>
+          </a>
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+        <div class="md-search__suggest" data-md-component="search-suggest"></div>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/az-said/peptide_prediction" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    az-said/peptide_prediction
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+    
+      
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../.." class="md-tabs__link">
+        
+  
+  
+    
+  
+  Home
+
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+  
+    
+  
+  
+    
+    
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../00_what_is_pvl/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  For Researchers
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../agents/00_read_me_first/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  For Agents
+
+        </a>
+      </li>
+    
+  
+
+      
+        
+  
+  
+  
+  
+    
+    
+      <li class="md-tabs__item">
+        <a href="../../research/01_landscape/" class="md-tabs__link">
+          
+  
+  
+    
+  
+  For Researchers (advanced)
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ul>
+  </div>
+</nav>
+    
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../.." title="PVL — Peptide Visual Lab" class="md-nav__button md-logo" aria-label="PVL — Peptide Visual Lab" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 2h2v2c0 1.44.68 2.61 1.88 3.78.86.83 2.01 1.63 3.21 2.42l-1.83 1.19C8.27 10.72 7.31 10 6.5 9.21 5.07 7.82 4 6.1 4 4zm14 0h2v2c0 2.1-1.07 3.82-2.5 5.21-1.41 1.38-3.21 2.52-4.96 3.63-1.75 1.12-3.45 2.21-4.66 3.38C6.68 17.39 6 18.56 6 20v2H4v-2c0-2.1 1.07-3.82 2.5-5.21 1.41-1.38 3.21-2.52 4.96-3.63 1.75-1.12 3.45-2.21 4.66-3.38C17.32 6.61 18 5.44 18 4zm-3.26 10.61c.99.67 1.95 1.39 2.76 2.18C18.93 16.18 20 17.9 20 20v2h-2v-2c0-1.44-.68-2.61-1.88-3.78-.86-.83-2.01-1.63-3.21-2.42zM7 3h10v1l-.06.5H7.06L7 4zm.68 3h8.64c-.24.34-.52.69-.9 1.06l-.51.44H9.07l-.49-.44c-.38-.37-.66-.72-.9-1.06m1.41 10.5h5.84l.49.44c.38.37.66.72.9 1.06H7.68c.24-.34.52-.69.9-1.06zm-2.03 3h9.88l.06.5v1H7v-1z"/></svg>
+
+    </a>
+    PVL — Peptide Visual Lab
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/az-said/peptide_prediction" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+  </div>
+  <div class="md-source__repository">
+    az-said/peptide_prediction
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../.." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+        
+        
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+        
+          
+          <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For Researchers
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    For Researchers
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../00_what_is_pvl/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    What is PVL
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../01_first_run/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    First run
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../02_the_science/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The science
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../03_the_pipeline/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    The pipeline
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../04_the_ui_walkthrough/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    UI walkthrough
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../05_use_cases/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Use cases
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../06_deploying/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Deploying
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../07_extending/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Extending
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Troubleshooting
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-quick-analyze-sat-on-analyzing-for-30-seconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Quick Analyze sat on "Analyzing…" for 30+ seconds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-aggregation-heatmap-is-empty-for-the-bundled-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. The aggregation heatmap is empty for the bundled example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-i-uploaded-a-csv-but-the-table-shows-0-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. I uploaded a CSV but the table shows 0 rows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-mol-shows-no-structure-available-for-my-peptide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Mol* shows "No structure available" for my peptide
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-i-see-something-went-wrong-minified-react-error-xxx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. I see "Something went wrong" / Minified React error #XXX
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-the-doi-badge-in-the-readme-is-grey-says-mints-on-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. The DOI badge in the README is grey / says "mints on release"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-i-get-a-429-rate-limit-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. I get a 429 rate limit error
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-tango-output-is-all-zeros-for-all-peptides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. TANGO output is all zeros for all peptides
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-s4pred-probabilities-sum-to-1-or-1-by-a-lot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. S4PRED probabilities sum to &gt;1 or &lt;1 by a lot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#still-stuck" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Still stuck?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../09_glossary/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Glossary
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../10_credits_and_license/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Credits & license
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+        
+          
+          <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For Agents
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    For Agents
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/00_read_me_first/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Read me first
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/01_repo_map/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Repo map
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/02_contracts_and_invariants/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Contracts & invariants
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/03_doing_a_safe_change/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Doing a safe change
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/04_when_to_ask_humans/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    When to ask humans
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/05_existing_tooling/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Existing tooling
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/06_failure_modes/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Failure modes
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../agents/07_artifacts_index/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Artifacts index
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+      
+      
+        
+      
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
+        
+          
+          <label class="md-nav__link" for="__nav_4" id="__nav_4_label" tabindex="0">
+            
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    For Researchers (advanced)
+  
+
+    
+  </span>
+  
+  
+
+            <span class="md-nav__icon md-icon"></span>
+          </label>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_4">
+            <span class="md-nav__icon md-icon"></span>
+            
+  
+    For Researchers (advanced)
+  
+
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../research/01_landscape/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Competitive landscape
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../research/02_validation_evidence/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Validation evidence
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../research/03_open_questions/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Open questions
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../research/04_publication_path/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Publication path
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="On this page">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      On this page
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#contents" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Contents
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#1-quick-analyze-sat-on-analyzing-for-30-seconds" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        1. Quick Analyze sat on "Analyzing…" for 30+ seconds
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#2-the-aggregation-heatmap-is-empty-for-the-bundled-example" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        2. The aggregation heatmap is empty for the bundled example
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#3-i-uploaded-a-csv-but-the-table-shows-0-rows" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        3. I uploaded a CSV but the table shows 0 rows
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#4-mol-shows-no-structure-available-for-my-peptide" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        4. Mol* shows "No structure available" for my peptide
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#5-i-see-something-went-wrong-minified-react-error-xxx" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        5. I see "Something went wrong" / Minified React error #XXX
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#6-the-doi-badge-in-the-readme-is-grey-says-mints-on-release" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        6. The DOI badge in the README is grey / says "mints on release"
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#7-i-get-a-429-rate-limit-error" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        7. I get a 429 rate limit error
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#8-tango-output-is-all-zeros-for-all-peptides" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        8. TANGO output is all zeros for all peptides
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#9-s4pred-probabilities-sum-to-1-or-1-by-a-lot" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        9. S4PRED probabilities sum to &gt;1 or &lt;1 by a lot
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#still-stuck" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Still stuck?
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+                
+
+
+
+  
+
+
+  <nav class="md-path" aria-label="Navigation" >
+    <ol class="md-path__list">
+      
+        
+  
+  
+    <li class="md-path__item">
+      <a href="../.." class="md-path__link">
+        
+  <span class="md-ellipsis">
+    Home
+  </span>
+
+      </a>
+    </li>
+  
+
+      
+      
+        
+  
+  
+    
+    
+      <li class="md-path__item">
+        <a href="../00_what_is_pvl/" class="md-path__link">
+          
+  <span class="md-ellipsis">
+    For Researchers
+  </span>
+
+        </a>
+      </li>
+    
+  
+
+      
+    </ol>
+  </nav>
+
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+  
+    <a href="https://github.com/az-said/peptide_prediction/edit/main/docs/handbook/humans/08_troubleshooting.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75z"/></svg>
+    </a>
+  
+  
+    
+      
+    
+    <a href="https://github.com/az-said/peptide_prediction/raw/main/docs/handbook/humans/08_troubleshooting.md" title="View source of this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 9a3 3 0 0 0-3 3 3 3 0 0 0 3 3 3 3 0 0 0 3-3 3 3 0 0 0-3-3m0 8a5 5 0 0 1-5-5 5 5 0 0 1 5-5 5 5 0 0 1 5 5 5 5 0 0 1-5 5m0-12.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5"/></svg>
+    </a>
+  
+
+
+<h1 id="troubleshooting-when-something-is-broken">Troubleshooting — When Something Is Broken<a class="headerlink" href="#troubleshooting-when-something-is-broken" title="Permanent link">&para;</a></h1>
+<blockquote>
+<p>Symptom-first. Find the line that matches what you see, read the one-sentence cause, apply the fix. Each entry links to the authoritative issue record and to <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a> for the deeper agent-level diagnosis when the quick fix doesn't hold.</p>
+</blockquote>
+<p><strong>The one rule that explains half of these:</strong> PVL degrades gracefully. If TANGO or S4PRED can't run, FF-Helix%, charge, hydrophobicity, and μH still compute — so a half-empty result is usually a missing <em>predictor</em>, not a broken pipeline. A blank field means <strong>no data</strong> (<code>null</code>), never a fake <code>0</code>. And <code>-1</code> is a real value (e.g. charge <code>-1.0</code>), not a sentinel.</p>
+<h2 id="contents">Contents<a class="headerlink" href="#contents" title="Permanent link">&para;</a></h2>
+<ul>
+<li><a href="#1-quick-analyze-sat-on-analyzing-for-30-seconds">1. Quick Analyze sat on "Analyzing…" for 30+ seconds</a></li>
+<li><a href="#2-the-aggregation-heatmap-is-empty-for-the-bundled-example">2. The aggregation heatmap is empty for the bundled example</a></li>
+<li><a href="#3-i-uploaded-a-csv-but-the-table-shows-0-rows">3. I uploaded a CSV but the table shows 0 rows</a></li>
+<li><a href="#4-mol-shows-no-structure-available-for-my-peptide">4. Mol* shows "No structure available" for my peptide</a></li>
+<li><a href="#5-i-see-something-went-wrong--minified-react-error-xxx">5. I see "Something went wrong" / Minified React error #XXX</a></li>
+<li><a href="#6-the-doi-badge-in-the-readme-is-grey--says-mints-on-release">6. The DOI badge in the README is grey / says "mints on release"</a></li>
+<li><a href="#7-i-get-a-429-rate-limit-error">7. I get a 429 rate limit error</a></li>
+<li><a href="#8-tango-output-is-all-zeros-for-all-peptides">8. TANGO output is all zeros for all peptides</a></li>
+<li><a href="#9-s4pred-probabilities-sum-to-1-or-1-by-a-lot">9. S4PRED probabilities sum to &gt;1 or &lt;1 by a lot</a></li>
+<li><a href="#still-stuck">Still stuck?</a></li>
+</ul>
+<hr />
+<h2 id="1-quick-analyze-sat-on-analyzing-for-30-seconds">1. Quick Analyze sat on "Analyzing…" for 30+ seconds<a class="headerlink" href="#1-quick-analyze-sat-on-analyzing-for-30-seconds" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> The first request after a server start pays a one-time <a href="../02_the_science/#3-s4pred">S4PRED</a> cost — it loads 5 PyTorch BiLSTM model weights into memory before it can predict.</p>
+<p><strong>Fix:</strong> Wait it out once; subsequent requests are fast because the process stays warm. If every request is slow, you're probably running the live pipeline on a large batch instead of the precomputed artifact — confirm the backend logged <code>boot</code> and that <code>--reload</code> isn't restarting the worker mid-request.</p>
+<ul>
+<li>See <a href="https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md"><code>https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md</code></a> → ISSUE-033 (the inline ESM-2 embedding that used to add 3–5 s/peptide is fixed; predict no longer waits on it).</li>
+<li>Can't fix → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="2-the-aggregation-heatmap-is-empty-for-the-bundled-example">2. The aggregation heatmap is empty for the bundled example<a class="headerlink" href="#2-the-aggregation-heatmap-is-empty-for-the-bundled-example" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> The heatmap is driven by <a href="../02_the_science/#2-tango">TANGO</a> per-residue curves. It's blank when TANGO didn't run — either <code>USE_TANGO=0</code>, or TANGO failed under Apple-Silicon x86 emulation, or the precomputed example artifact was built without the TANGO subprocess.</p>
+<p><strong>Fix:</strong> Set <code>USE_TANGO=1</code> on a native-Linux/x86 host and re-run. On an Apple-Silicon Mac in Docker, TANGO can't execute under emulation — run the backend natively or regenerate the example artifact with <code>scripts/precompute_dataset.py</code>.</p>
+<ul>
+<li>See <a href="https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md"><code>https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md</code></a> → <strong>ISSUE-034</strong> (precompute silently skipped the TANGO subprocess — fixed with <code>force_recompute</code> + <code>bypass_tango_budget</code>) and <strong>ISSUE-018</strong> (TANGO fails under Apple-Silicon emulation).</li>
+<li>Can't fix → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="3-i-uploaded-a-csv-but-the-table-shows-0-rows">3. I uploaded a CSV but the table shows 0 rows<a class="headerlink" href="#3-i-uploaded-a-csv-but-the-table-shows-0-rows" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> The upload pipeline requires an <code>Entry</code> (or <code>Accession</code>/<code>ID</code>) column <strong>and</strong> a <code>Sequence</code> column. If neither maps, or the file parsed to zero data rows, you get an empty result — not a crash.</p>
+<p><strong>Fix:</strong> Open your file and confirm the header row literally contains <code>Entry</code>/<code>Accession</code>/<code>ID</code> and <code>Sequence</code>. Re-export from UniProt with those columns, or rename your headers. Empty files and header-only files are rejected with a 400 explaining exactly that.</p>
+<ul>
+<li>Grounded in <a href="https://github.com/az-said/peptide_prediction/blob/main/backend/api/routes/upload.py"><code>backend/api/routes/upload.py</code></a> (<code>require_cols(df, ["Entry", "Sequence"])</code>) and <a href="https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md"><code>https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md</code></a> → ISSUE-002 (the <code>missing required field "id" or "Entry"</code> mapping bug, fixed).</li>
+<li>Can't fix → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="4-mol-shows-no-structure-available-for-my-peptide">4. Mol* shows "No structure available" for my peptide<a class="headerlink" href="#4-mol-shows-no-structure-available-for-my-peptide" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> The 3D viewer fetches a predicted model from the AlphaFold DB by UniProt accession. If the accession has no AlphaFold entry (the API returns 404), or the row has no real accession (e.g. a Quick-Analyze peptide you typed by hand), there's nothing to render.</p>
+<p><strong>Fix:</strong> This is expected, not a bug — many short or synthetic peptides aren't in AlphaFold. Use a row that carries a valid UniProt accession. Note AlphaFold predictions for peptides under ~30 residues are unreliable anyway, which the viewer warns about.</p>
+<ul>
+<li>Grounded in <a href="https://github.com/az-said/peptide_prediction/blob/main/ui/src/lib/alphafold.ts"><code>ui/src/lib/alphafold.ts</code></a> (<code>returns null on 404</code>) and <a href="https://github.com/az-said/peptide_prediction/blob/main/ui/src/components/Mol3DViewer.tsx"><code>ui/src/components/Mol3DViewer.tsx</code></a> ("No AlphaFold structure available"). No KNOWN_ISSUES entry — this is designed behavior.</li>
+<li>Can't fix → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="5-i-see-something-went-wrong-minified-react-error-xxx">5. I see "Something went wrong" / Minified React error #XXX<a class="headerlink" href="#5-i-see-something-went-wrong-minified-react-error-xxx" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> A frontend render crash. The three historical culprits are a Radix <code>React.Children.only</code> violation, and <code>crypto.randomUUID</code> being undefined on plain HTTP or old Safari.</p>
+<p><strong>Fix:</strong> Hard-refresh to pull the latest build. If it persists, open the browser console, read the de-minified component name, and check it against the known crashes below. Serving over HTTPS (or localhost) resolves the <code>crypto.randomUUID</code> class of errors.</p>
+<ul>
+<li>See <a href="https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md"><code>https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md</code></a> → <strong>ISSUE-023</strong> (<code>React.Children.only</code> on <code>/results</code>, fixed), <strong>ISSUE-027</strong> (<code>crypto.randomUUID is not a function</code> on HTTP/Safari, fixed), <strong>ISSUE-002</strong> (the older "Something went wrong" mapping error, fixed).</li>
+<li>Can't fix → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="6-the-doi-badge-in-the-readme-is-grey-says-mints-on-release">6. The DOI badge in the README is grey / says "mints on release"<a class="headerlink" href="#6-the-doi-badge-in-the-readme-is-grey-says-mints-on-release" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> This is the intended pre-release state, not a failure. PVL is <code>v0.3.0</code> pre-release; the Zenodo DOI is only minted when a GitHub release tag is published.</p>
+<p><strong>Fix:</strong> Nothing to fix. The release script (<code>scripts/publish_v0_3_0.sh</code>) patches the badge line on tag, guided by the <code>DOI-BADGE-MARKER</code> comment in <a href="https://github.com/az-said/peptide_prediction/blob/main/README.md"><code>README.md</code></a>. Until then, cite the underlying algorithm via Ragonis-Bachar et al. 2022.</p>
+<ul>
+<li>See <a href="https://github.com/az-said/peptide_prediction/blob/main/docs/active/DECISIONS.md"><code>https://github.com/az-said/peptide_prediction/blob/main/docs/active/DECISIONS.md</code></a> and the README "Citing PVL" section. No KNOWN_ISSUES entry — this is expected.</li>
+<li>Background → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="7-i-get-a-429-rate-limit-error">7. I get a 429 rate limit error<a class="headerlink" href="#7-i-get-a-429-rate-limit-error" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> PVL puts a per-IP token bucket (slowapi) in front of the heavy routes — Quick Analyze / predict is capped at <strong>30 requests/minute</strong>, and feedback submissions are throttled separately. A 429 can also bubble up from UniProt's own API when a batch query pages too fast.</p>
+<p><strong>Fix:</strong> Slow down and retry after a minute — the cap is per-IP, so a tight loop or a shared NAT can trip it. For UniProt-origin 429s, PVL already honors the upstream <code>Retry-After</code> header and retries once; if it still fails, your query is too large — narrow it.</p>
+<ul>
+<li>Grounded in <a href="https://github.com/az-said/peptide_prediction/blob/main/backend/api/routes/predict.py"><code>backend/api/routes/predict.py</code></a> (<code>@_LIMITER.limit("30/minute")</code>), <a href="https://github.com/az-said/peptide_prediction/blob/main/backend/api/routes/feedback.py"><code>backend/api/routes/feedback.py</code></a>, and <a href="https://github.com/az-said/peptide_prediction/blob/main/backend/services/uniprot_execute_service.py"><code>backend/services/uniprot_execute_service.py</code></a> (Retry-After handling). No KNOWN_ISSUES entry — this is a guardrail working as designed.</li>
+<li>Can't fix → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="8-tango-output-is-all-zeros-for-all-peptides">8. TANGO output is all zeros for all peptides<a class="headerlink" href="#8-tango-output-is-all-zeros-for-all-peptides" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> TANGO didn't actually run. Most common: <code>USE_TANGO=0</code>, the binary failing under Apple-Silicon emulation, the dataset exceeding the per-run TANGO budget (<code>MAX_PEPTIDES_PER_RUN_WITH_TANGO</code>, default <strong>500</strong>) which auto-disables it, or a precompute artifact built without the subprocess.</p>
+<p><strong>Fix:</strong> Check the backend <code>boot</code> log for <code>USE_TANGO=True</code>, and check <code>meta.warnings</code> for <code>tango_auto_disabled</code> (batch &gt; 500) or <code>tango_not_available</code>. For a large dataset, raise the budget env var on a host with headroom, or accept that TANGO is off and rely on S4PRED + FF-Helix. On Apple Silicon, run natively.</p>
+<ul>
+<li>Grounded in <a href="https://github.com/az-said/peptide_prediction/blob/main/backend/config.py"><code>backend/config.py</code></a> (<code>USE_TANGO</code>, <code>MAX_PEPTIDES_PER_RUN_WITH_TANGO</code>) and <a href="https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md"><code>https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md</code></a> → <strong>ISSUE-018</strong> (emulation) and <strong>ISSUE-034</strong> (precompute skip).</li>
+<li>Can't fix → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="9-s4pred-probabilities-sum-to-1-or-1-by-a-lot">9. S4PRED probabilities sum to &gt;1 or &lt;1 by a lot<a class="headerlink" href="#9-s4pred-probabilities-sum-to-1-or-1-by-a-lot" title="Permanent link">&para;</a></h2>
+<p><strong>Cause:</strong> Almost always a units/field mix-up, not a math bug. S4PRED emits <strong>per-residue</strong> 3-state probabilities (helix + sheet + coil) that sum to ~1 <em>at each position</em> — they are not meant to sum to 1 across the whole sequence. The whole-sequence numbers PVL surfaces (e.g. helix <strong>% content</strong>) are 0–100 aggregates, a different quantity. A truly empty/<code>null</code> S4PRED block usually means the sequence exceeded <code>S4PRED_MAX_LENGTH</code> (default <strong>40 aa</strong>) and was skipped with an <code>s4pred_skipped_long_seq</code> warning.</p>
+<p><strong>Fix:</strong> Confirm you're reading per-residue probabilities (sum ≈ 1 per column) vs aggregate helix% (0–100). If the fields are <code>null</code>, check the sequence length and <code>meta.warnings</code>; trim to ≤ 40 aa.</p>
+<ul>
+<li>Grounded in <a href="https://github.com/az-said/peptide_prediction/blob/main/backend/config.py"><code>backend/config.py</code></a> (<code>S4PRED_MAX_LENGTH = 40</code>). <strong>Not tied to a KNOWN_ISSUES entry</strong> — there is no recorded bug where the per-residue probabilities themselves fail to sum to 1; this entry is expectation-setting, so escalate if you see genuine per-residue drift.</li>
+<li>Can't fix → <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+</ul>
+<hr />
+<h2 id="still-stuck">Still stuck?<a class="headerlink" href="#still-stuck" title="Permanent link">&para;</a></h2>
+<ul>
+<li>For dev-environment basics (ports, venv, TANGO binary not found), see <a href="../01_first_run/"><code>01_first_run.md</code></a> → Troubleshooting.</li>
+<li>For the full backend debugging workflow and the agent's diagnostic decision tree, see <a href="../../agents/06_failure_modes/"><code>../agents/06_failure_modes.md</code></a>.</li>
+<li>If you've confirmed a genuinely new failure, file it against the template at the bottom of <a href="https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md"><code>https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md</code></a>.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var labels=set.querySelector(".tabbed-labels");for(var tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8z"/></svg>
+  Back to top
+</button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../07_extending/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Extending">
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Extending
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../09_glossary/" class="md-footer__link md-footer__link--next" aria-label="Next: Glossary">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Glossary
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      &copy; 2026 Said Azaizah, Peleg Ragonis-Bachar, Aleksandr Golubev, Technion + DESY + MIT. Released under the MIT License.
+
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        
+<div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/az-said/peptide_prediction" target="_blank" rel="noopener" title="PVL on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M173.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6m-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3m44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9M252.8 8C114.1 8 8 113.3 8 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C436.2 457.8 504 362.9 504 252 504 113.3 391.5 8 252.8 8M105.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1m-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7m32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1m-11.4-14.7c-1.6 1-1.6 3.6 0 5.9s4.3 3.3 5.6 2.3c1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://bio.tools/pvl" target="_blank" rel="noopener" title="PVL on bio.tools (after registration)" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M288 0H128c-17.7 0-32 14.3-32 32s14.3 32 32 32v151.5L7.5 426.3C2.6 435 0 444.7 0 454.7 0 486.4 25.6 512 57.3 512h333.4c31.6 0 57.3-25.6 57.3-57.3 0-10-2.6-19.8-7.5-28.4L320 215.5V64c17.7 0 32-14.3 32-32S337.7 0 320 0zm-96 215.5V64h64v151.5c0 11.1 2.9 22.1 8.4 31.8L306 320H142l41.6-72.7c5.5-9.7 8.4-20.6 8.4-31.8"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["announce.dismiss", "content.action.edit", "content.action.view", "content.code.annotate", "content.code.copy", "content.tabs.link", "content.tooltips", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.prefetch", "navigation.path", "navigation.sections", "navigation.tabs", "navigation.tabs.sticky", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest", "toc.follow"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"default": "latest", "provider": "mike"}}</script>
+    
+    
+      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      
+    
+  </body>
+</html>
