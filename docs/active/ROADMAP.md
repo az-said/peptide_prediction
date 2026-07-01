@@ -600,7 +600,7 @@ Each graph goes through the cycle above. Charts to redesign:
 **Goal**: Production-grade Docker workflow — pull GHCR images locally, optimize builds, prepare K8s migration path.
 
 ### Current State (2026-03-05)
-- **GHCR images**: `ghcr.io/saidaz24-meet/peptide_prediction/backend:main` and `frontend:main` auto-published on every push to main
+- **GHCR images**: `ghcr.io/az-said/peptide_prediction/backend:main` and `frontend:main` auto-published on every push to main
 - **Local images**: `pvl-backend:test` (3.41GB, 1 month old), `pvl-frontend:test` (105MB) — STALE
 - **3 compose files**: `docker-compose.yml` (dev), `docker-compose.prod.yml` (production/Nginx), `docker-compose.caddy.yml` (production/Caddy+HTTPS)
 - **Backend image**: ~800MB (CPU-only PyTorch), multi-stage build
@@ -613,12 +613,12 @@ Each graph goes through the cycle above. Charts to redesign:
 Replace stale local builds with fresh GHCR images:
 ```bash
 # Pull latest images from GHCR
-docker pull ghcr.io/saidaz24-meet/peptide_prediction/backend:main
-docker pull ghcr.io/saidaz24-meet/peptide_prediction/frontend:main
+docker pull ghcr.io/az-said/peptide_prediction/backend:main
+docker pull ghcr.io/az-said/peptide_prediction/frontend:main
 
 # Tag for local use
-docker tag ghcr.io/saidaz24-meet/peptide_prediction/backend:main pvl-backend:latest
-docker tag ghcr.io/saidaz24-meet/peptide_prediction/frontend:main pvl-frontend:latest
+docker tag ghcr.io/az-said/peptide_prediction/backend:main pvl-backend:latest
+docker tag ghcr.io/az-said/peptide_prediction/frontend:main pvl-frontend:latest
 ```
 
 **Tasks**:

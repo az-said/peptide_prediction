@@ -64,7 +64,7 @@
     # If a future deploy serves the mkdocs handbook from /docs/ rather
     # than GitHub Pages, uncomment this block + add a docs service to
     # docker-compose.prod.yml. The handbook today lives at
-    # https://saidaz24-meet.github.io/peptide_prediction/ which is enough
+    # https://az-said.github.io/peptide_prediction/ which is enough
     # for v1.0; this stanza is the future hook.
     # handle /docs/* {
     #     reverse_proxy docs:8000

@@ -62,7 +62,7 @@ git pull origin main
 make docker-up   # rebuilds backend + frontend + redeploys
 ```
 
-Or download the [v0.3.0 source tarball from GitHub](https://github.com/saidaz24-meet/peptide_prediction/releases/tag/v0.3.0).
+Or download the [v0.3.0 source tarball from GitHub](https://github.com/az-said/peptide_prediction/releases/tag/v0.3.0).
 
 The API contract did not change in v0.3.0 — existing consumers (Python package, CLI, MCP) continue to work without modification.
 
@@ -81,7 +81,7 @@ This release would not exist without Dr. Peleg Ragonis-Bachar's monthly review c
   author    = {Ragonis-Bachar, Peleg and Azaizah, Said and Golubev, Aleksandr and Landau, Meytal},
   title     = {Peptide Visual Lab (PVL) v0.3.0},
   year      = {2026},
-  url       = {https://github.com/saidaz24-meet/peptide_prediction/releases/tag/v0.3.0},
+  url       = {https://github.com/az-said/peptide_prediction/releases/tag/v0.3.0},
   doi       = {10.5281/zenodo.PENDING},
   license   = {MIT}
 }

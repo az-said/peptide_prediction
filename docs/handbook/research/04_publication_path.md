@@ -1,6 +1,6 @@
 # The publication path: Zenodo → bio.tools → JOSS
 
-> **For grant writers, lab PIs, and paper authors.** This page explains how PVL becomes a *citable, discoverable, peer-reviewed* scientific artifact — and what you can put in a methods section or a grant once each milestone lands. It is a map, not a how-to; the operator's checklist lives in [`docs/active/PUBLICATION_PATH.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/PUBLICATION_PATH.md).
+> **For grant writers, lab PIs, and paper authors.** This page explains how PVL becomes a *citable, discoverable, peer-reviewed* scientific artifact — and what you can put in a methods section or a grant once each milestone lands. It is a map, not a how-to; the operator's checklist lives in [`docs/active/PUBLICATION_PATH.md`](https://github.com/az-said/peptide_prediction/blob/main/docs/active/PUBLICATION_PATH.md).
 
 ## Contents
 
@@ -20,7 +20,7 @@ The path is sequential — each step depends on the one before it.
 2. **[Zenodo](../humans/09_glossary.md#z) mints a DOI.** A standing GitHub↔Zenodo link means the release event automatically deposits a snapshot in Zenodo's CERN-backed archive and issues a Digital Object Identifier within a minute or two — no manual upload.
 3. **Wire the DOI back in.** The minted DOI is written into `CITATION.cff` and the README badge row, so anyone landing on the repo gets the correct citation.
 4. **Register on [bio.tools](../humans/09_glossary.md#b).** PVL is submitted to the ELIXIR bio.tools registry with a structured description, EDAM ontology terms, authors, and license.
-5. **Submit the [JOSS](../humans/09_glossary.md#j) paper.** The software paper at [`paper/paper.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/paper/paper.md) goes to the *Journal of Open Source Software* for open peer review.
+5. **Submit the [JOSS](../humans/09_glossary.md#j) paper.** The software paper at [`paper/paper.md`](https://github.com/az-said/peptide_prediction/blob/main/paper/paper.md) goes to the *Journal of Open Source Software* for open peer review.
 
 ---
 

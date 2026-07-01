@@ -37,7 +37,7 @@ Resolve these BEFORE tagging a release. Each is an email to send, not work to do
 ### One-time Zenodo ↔ GitHub link (do this BEFORE the release if not yet done)
 
 1. Go to https://zenodo.org/account/settings/github/
-2. Sign in with the GitHub account that owns `saidaz24-meet/peptide_prediction` (Said's account).
+2. Sign in with the GitHub account that owns `az-said/peptide_prediction` (Said's account).
 3. Find `peptide_prediction` in the repo list. Toggle the switch to ON.
 4. (Optional) fill in default metadata on Zenodo: license MIT, communities ("Bioinformatics"), keywords.
 
@@ -67,7 +67,7 @@ gh release create v1.0.0 \
 gh release view v1.0.0
 ```
 
-Or web UI: https://github.com/saidaz24-meet/peptide_prediction/releases/new → tag `v1.0.0`, paste release notes.
+Or web UI: https://github.com/az-said/peptide_prediction/releases/new → tag `v1.0.0`, paste release notes.
 
 ### Release notes template
 
@@ -185,10 +185,10 @@ Time: ~20 minutes once you start.
 
 #### URLs
 - **Homepage**: `http://94.130.178.182:3000` (or DESY URL once migrated)
-- **Source code**: `https://github.com/saidaz24-meet/peptide_prediction`
-- **Issue tracker**: `https://github.com/saidaz24-meet/peptide_prediction/issues`
-- **Documentation**: `https://github.com/saidaz24-meet/peptide_prediction#readme`
-- **Download**: `https://github.com/saidaz24-meet/peptide_prediction/releases`
+- **Source code**: `https://github.com/az-said/peptide_prediction`
+- **Issue tracker**: `https://github.com/az-said/peptide_prediction/issues`
+- **Documentation**: `https://github.com/az-said/peptide_prediction#readme`
+- **Download**: `https://github.com/az-said/peptide_prediction/releases`
 
 #### License
 - **License (OSI)**: `MIT`
@@ -293,7 +293,7 @@ The README badge row should look like:
 [![bio.tools](https://img.shields.io/badge/bio.tools-PVL-blue)](https://bio.tools/pvl)
 [![JOSS](https://joss.theoj.org/papers/XXXXX/status.svg)](https://joss.theoj.org/papers/XXXXX)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/saidaz24-meet/peptide_prediction/actions)
+[![CI](https://github.com/az-said/peptide_prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/az-said/peptide_prediction/actions)
 ```
 
 That's the publication path. ~3 weeks of elapsed time end-to-end (mostly waiting on reviewers); ~2 hours of actual work.

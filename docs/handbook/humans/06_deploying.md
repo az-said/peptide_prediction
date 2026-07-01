@@ -180,7 +180,7 @@ ssh -J azaizahs@max-display.desy.de -L 8080:localhost:3000 root@landau-webapp-de
 `scripts/desy_vm_bootstrap.sh` takes a clean Ubuntu 24.04 root box to a running backend. It's safe to re-run. The one-liner from the box (`scripts/desy_vm_bootstrap.sh`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/saidaz24-meet/peptide_prediction/wave-2.8/peleg-pdf-followups/scripts/desy_vm_bootstrap.sh | bash
+curl -fsSL https://raw.githubusercontent.com/az-said/peptide_prediction/wave-2.8/peleg-pdf-followups/scripts/desy_vm_bootstrap.sh | bash
 ```
 
 Its eight stages: sanity check → install Docker engine + compose plugin → clone to `/opt/pvl` → download S4PRED weights → write a minimal `.env.deploy` → build the backend image locally → start the container → validate perf env vars. It builds from source rather than pulling from a registry because the feature branch isn't on GHCR yet.

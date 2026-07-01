@@ -83,7 +83,7 @@ These are the things that, if neglected, will bite the next person at 3am. Verif
 - [ ] **TLS** via Caddy (already configured for the DESY-domain handoff).
 
 ### 2.4 Repo hardening
-- [ ] **Branch protection on `main`**: 1 review required, CI green required, no force-push. Set via `gh api -X PUT repos/saidaz24-meet/peptide_prediction/branches/main/protection ...` or the GitHub UI.
+- [ ] **Branch protection on `main`**: 1 review required, CI green required, no force-push. Set via `gh api -X PUT repos/az-said/peptide_prediction/branches/main/protection ...` or the GitHub UI.
 - [ ] **CodeQL** scan enabled. GitHub → Settings → Code security → Enable default.
 - [ ] **Dependabot** alerts on. GitHub → Settings → Code security.
 - [ ] **Pre-push hook** already runs ruff (#129). Confirm: `cat .git/hooks/pre-push | head`.

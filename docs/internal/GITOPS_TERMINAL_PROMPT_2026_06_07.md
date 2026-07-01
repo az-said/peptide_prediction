@@ -15,7 +15,7 @@ You are T-OPS — the GitOps terminal. Working dir:
 Your ONE job: own every piece of GitHub state for PVL until publish. You don't
 ship features; you make sure features ship cleanly.
 
-REPO: https://github.com/saidaz24-meet/peptide_prediction
+REPO: https://github.com/az-said/peptide_prediction
 GH CLI: already authenticated (Said's account)
 
 ============================================================================
@@ -61,7 +61,7 @@ for p in d:
   # 3. CodeRabbit triage
   for pr in $(gh pr list --json number --jq '.[].number'); do
     echo "===PR #$pr CodeRabbit comments==="
-    gh api repos/saidaz24-meet/peptide_prediction/pulls/$pr/comments \
+    gh api repos/az-said/peptide_prediction/pulls/$pr/comments \
       --paginate \
       --jq '.[] | select(.user.login | contains("coderabbit")) | {path, line, body: .body[0:200]}'
   done > /tmp/coderabbit_today.json

@@ -217,7 +217,7 @@ docker-prod-down:
 	docker compose -f docker/docker-compose.prod.yml down
 
 # =============================================================================
-# Documentation site (docs/handbook → https://saidaz24-meet.github.io/peptide_prediction/)
+# Documentation site (docs/handbook → https://az-said.github.io/peptide_prediction/)
 # =============================================================================
 
 # Local preview at http://127.0.0.1:8000 with hot reload

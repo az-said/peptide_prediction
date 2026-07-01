@@ -16,7 +16,7 @@ PVL exposes a Model Context Protocol (MCP) server so any MCP-aware LLM client ca
 2. **`pvl-mcp` installed.** Until PyPI release ships, install from source:
 
    ```bash
-   git clone https://github.com/saidaz24-meet/peptide_prediction
+   git clone https://github.com/az-said/peptide_prediction
    cd peptide_prediction/mcp_server
    pip install -e .
    ```

@@ -1,6 +1,6 @@
 # pvl-mcp — Peptide Visual Lab MCP Server
 
-`pvl-mcp` exposes the [Peptide Visual Lab](https://github.com/saidaz24-meet/peptide_prediction) REST API as a set of tools that any MCP-aware LLM client can call directly: Claude Desktop, Cursor, Continue, Cline, Windsurf, or your own agent.
+`pvl-mcp` exposes the [Peptide Visual Lab](https://github.com/az-said/peptide_prediction) REST API as a set of tools that any MCP-aware LLM client can call directly: Claude Desktop, Cursor, Continue, Cline, Windsurf, or your own agent.
 
 When a researcher asks their assistant *"find me the top 5 amyloid candidates from S. aureus, length 10–50, ranked by FF-Helix score"*, the LLM calls PVL tools, receives structured data, and synthesizes the answer — with PVL's exact category definitions baked into the system prompt so the science stays correct.
 

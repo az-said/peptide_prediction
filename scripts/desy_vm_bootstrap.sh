@@ -4,7 +4,7 @@
 # Run as root on a fresh Ubuntu 24.04 box. Safe to re-run.
 #
 # One-liner from the box:
-#   curl -fsSL https://raw.githubusercontent.com/saidaz24-meet/peptide_prediction/wave-2.8/peleg-pdf-followups/scripts/desy_vm_bootstrap.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/az-said/peptide_prediction/wave-2.8/peleg-pdf-followups/scripts/desy_vm_bootstrap.sh | bash
 #
 # Stages:
 #   1. Sanity (Ubuntu 24.04 + github reachable)
@@ -21,7 +21,7 @@ set -euo pipefail
 
 PVL_DIR=/opt/pvl
 BRANCH=${BRANCH:-main}
-REPO_URL=https://github.com/saidaz24-meet/peptide_prediction.git
+REPO_URL=https://github.com/az-said/peptide_prediction.git
 S4PRED_WEIGHT_URLS=(
   "https://github.com/psipred/s4pred/releases/download/v1.2.4/weights_%d.pt"
   "https://bioinfadmin.cs.ucl.ac.uk/downloads/s4pred/weights_%d.pt"

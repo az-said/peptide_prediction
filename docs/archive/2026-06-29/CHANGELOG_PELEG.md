@@ -36,7 +36,7 @@ _T1 (Said) — replace this line with one paragraph of plain-language commentary
 - **2026-05-08** research(M-006): add 'AI workflow infrastructure' research mission
 - **2026-05-08** feat(research): set up T-RES research terminal infrastructure
 - **2026-05-07** docs(plan): mark Wave 1 PUSHED — merge commit 5d2ad3f via PR #4
-- **2026-05-07** Merge pull request #4 from saidaz24-meet/wave-1-platform-foundation
+- **2026-05-07** Merge pull request #4 from az-said/wave-1-platform-foundation
 - **2026-05-07** fix(ci): resolve ruff lint errors + cross-platform package-lock
 - **2026-05-07** docs(README): next-level README — Mermaid diagrams + screenshot showcase + push-ready
 - **2026-05-07** docs: MASTER_PUSH_PLAN — 7-wave path to full-platform vision

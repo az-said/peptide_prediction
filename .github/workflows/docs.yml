@@ -1,7 +1,7 @@
 name: Deploy handbook to GitHub Pages
 
 # Builds docs/handbook/ with mkdocs-material and publishes to gh-pages
-# branch. The result is live at https://saidaz24-meet.github.io/peptide_prediction/
+# branch. The result is live at https://az-said.github.io/peptide_prediction/
 #
 # Trigger: every push to main that touches docs/handbook/ or mkdocs.yml,
 # plus a manual dispatch button for forcing a rebuild.

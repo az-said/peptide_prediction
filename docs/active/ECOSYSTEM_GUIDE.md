@@ -208,7 +208,7 @@ Restart Claude Desktop. In a new conversation you can now say *"Use the pvl tool
 
 **One-command spin-up**:
 ```bash
-git clone https://github.com/saidaz24-meet/peptide_prediction.git pvl
+git clone https://github.com/az-said/peptide_prediction.git pvl
 cd pvl
 docker compose up -d
 ```

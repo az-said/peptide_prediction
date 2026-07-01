@@ -25,7 +25,7 @@
 
 **Fix:** Wait it out once; subsequent requests are fast because the process stays warm. If every request is slow, you're probably running the live pipeline on a large batch instead of the precomputed artifact — confirm the backend logged `boot` and that `--reload` isn't restarting the worker mid-request.
 
-- See [`https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → ISSUE-033 (the inline ESM-2 embedding that used to add 3–5 s/peptide is fixed; predict no longer waits on it).
+- See [`https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → ISSUE-033 (the inline ESM-2 embedding that used to add 3–5 s/peptide is fixed; predict no longer waits on it).
 - Can't fix → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -36,7 +36,7 @@
 
 **Fix:** Set `USE_TANGO=1` on a native-Linux/x86 host and re-run. On an Apple-Silicon Mac in Docker, TANGO can't execute under emulation — run the backend natively or regenerate the example artifact with `scripts/precompute_dataset.py`.
 
-- See [`https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → **ISSUE-034** (precompute silently skipped the TANGO subprocess — fixed with `force_recompute` + `bypass_tango_budget`) and **ISSUE-018** (TANGO fails under Apple-Silicon emulation).
+- See [`https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → **ISSUE-034** (precompute silently skipped the TANGO subprocess — fixed with `force_recompute` + `bypass_tango_budget`) and **ISSUE-018** (TANGO fails under Apple-Silicon emulation).
 - Can't fix → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -47,7 +47,7 @@
 
 **Fix:** Open your file and confirm the header row literally contains `Entry`/`Accession`/`ID` and `Sequence`. Re-export from UniProt with those columns, or rename your headers. Empty files and header-only files are rejected with a 400 explaining exactly that.
 
-- Grounded in [`backend/api/routes/upload.py`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/backend/api/routes/upload.py) (`require_cols(df, ["Entry", "Sequence"])`) and [`https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → ISSUE-002 (the `missing required field "id" or "Entry"` mapping bug, fixed).
+- Grounded in [`backend/api/routes/upload.py`](https://github.com/az-said/peptide_prediction/blob/main/backend/api/routes/upload.py) (`require_cols(df, ["Entry", "Sequence"])`) and [`https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → ISSUE-002 (the `missing required field "id" or "Entry"` mapping bug, fixed).
 - Can't fix → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -58,7 +58,7 @@
 
 **Fix:** This is expected, not a bug — many short or synthetic peptides aren't in AlphaFold. Use a row that carries a valid UniProt accession. Note AlphaFold predictions for peptides under ~30 residues are unreliable anyway, which the viewer warns about.
 
-- Grounded in [`ui/src/lib/alphafold.ts`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/ui/src/lib/alphafold.ts) (`returns null on 404`) and [`ui/src/components/Mol3DViewer.tsx`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/ui/src/components/Mol3DViewer.tsx) ("No AlphaFold structure available"). No KNOWN_ISSUES entry — this is designed behavior.
+- Grounded in [`ui/src/lib/alphafold.ts`](https://github.com/az-said/peptide_prediction/blob/main/ui/src/lib/alphafold.ts) (`returns null on 404`) and [`ui/src/components/Mol3DViewer.tsx`](https://github.com/az-said/peptide_prediction/blob/main/ui/src/components/Mol3DViewer.tsx) ("No AlphaFold structure available"). No KNOWN_ISSUES entry — this is designed behavior.
 - Can't fix → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -69,7 +69,7 @@
 
 **Fix:** Hard-refresh to pull the latest build. If it persists, open the browser console, read the de-minified component name, and check it against the known crashes below. Serving over HTTPS (or localhost) resolves the `crypto.randomUUID` class of errors.
 
-- See [`https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → **ISSUE-023** (`React.Children.only` on `/results`, fixed), **ISSUE-027** (`crypto.randomUUID is not a function` on HTTP/Safari, fixed), **ISSUE-002** (the older "Something went wrong" mapping error, fixed).
+- See [`https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → **ISSUE-023** (`React.Children.only` on `/results`, fixed), **ISSUE-027** (`crypto.randomUUID is not a function` on HTTP/Safari, fixed), **ISSUE-002** (the older "Something went wrong" mapping error, fixed).
 - Can't fix → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -78,9 +78,9 @@
 
 **Cause:** This is the intended pre-release state, not a failure. PVL is `v0.3.0` pre-release; the Zenodo DOI is only minted when a GitHub release tag is published.
 
-**Fix:** Nothing to fix. The release script (`scripts/publish_v0_3_0.sh`) patches the badge line on tag, guided by the `DOI-BADGE-MARKER` comment in [`README.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/README.md). Until then, cite the underlying algorithm via Ragonis-Bachar et al. 2022.
+**Fix:** Nothing to fix. The release script (`scripts/publish_v0_3_0.sh`) patches the badge line on tag, guided by the `DOI-BADGE-MARKER` comment in [`README.md`](https://github.com/az-said/peptide_prediction/blob/main/README.md). Until then, cite the underlying algorithm via Ragonis-Bachar et al. 2022.
 
-- See [`https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/DECISIONS.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/DECISIONS.md) and the README "Citing PVL" section. No KNOWN_ISSUES entry — this is expected.
+- See [`https://github.com/az-said/peptide_prediction/blob/main/docs/active/DECISIONS.md`](https://github.com/az-said/peptide_prediction/blob/main/docs/active/DECISIONS.md) and the README "Citing PVL" section. No KNOWN_ISSUES entry — this is expected.
 - Background → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -91,7 +91,7 @@
 
 **Fix:** Slow down and retry after a minute — the cap is per-IP, so a tight loop or a shared NAT can trip it. For UniProt-origin 429s, PVL already honors the upstream `Retry-After` header and retries once; if it still fails, your query is too large — narrow it.
 
-- Grounded in [`backend/api/routes/predict.py`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/backend/api/routes/predict.py) (`@_LIMITER.limit("30/minute")`), [`backend/api/routes/feedback.py`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/backend/api/routes/feedback.py), and [`backend/services/uniprot_execute_service.py`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/backend/services/uniprot_execute_service.py) (Retry-After handling). No KNOWN_ISSUES entry — this is a guardrail working as designed.
+- Grounded in [`backend/api/routes/predict.py`](https://github.com/az-said/peptide_prediction/blob/main/backend/api/routes/predict.py) (`@_LIMITER.limit("30/minute")`), [`backend/api/routes/feedback.py`](https://github.com/az-said/peptide_prediction/blob/main/backend/api/routes/feedback.py), and [`backend/services/uniprot_execute_service.py`](https://github.com/az-said/peptide_prediction/blob/main/backend/services/uniprot_execute_service.py) (Retry-After handling). No KNOWN_ISSUES entry — this is a guardrail working as designed.
 - Can't fix → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -102,7 +102,7 @@
 
 **Fix:** Check the backend `boot` log for `USE_TANGO=True`, and check `meta.warnings` for `tango_auto_disabled` (batch > 500) or `tango_not_available`. For a large dataset, raise the budget env var on a host with headroom, or accept that TANGO is off and rely on S4PRED + FF-Helix. On Apple Silicon, run natively.
 
-- Grounded in [`backend/config.py`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/backend/config.py) (`USE_TANGO`, `MAX_PEPTIDES_PER_RUN_WITH_TANGO`) and [`https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → **ISSUE-018** (emulation) and **ISSUE-034** (precompute skip).
+- Grounded in [`backend/config.py`](https://github.com/az-said/peptide_prediction/blob/main/backend/config.py) (`USE_TANGO`, `MAX_PEPTIDES_PER_RUN_WITH_TANGO`) and [`https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md) → **ISSUE-018** (emulation) and **ISSUE-034** (precompute skip).
 - Can't fix → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -113,7 +113,7 @@
 
 **Fix:** Confirm you're reading per-residue probabilities (sum ≈ 1 per column) vs aggregate helix% (0–100). If the fields are `null`, check the sequence length and `meta.warnings`; trim to ≤ 40 aa.
 
-- Grounded in [`backend/config.py`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/backend/config.py) (`S4PRED_MAX_LENGTH = 40`). **Not tied to a KNOWN_ISSUES entry** — there is no recorded bug where the per-residue probabilities themselves fail to sum to 1; this entry is expectation-setting, so escalate if you see genuine per-residue drift.
+- Grounded in [`backend/config.py`](https://github.com/az-said/peptide_prediction/blob/main/backend/config.py) (`S4PRED_MAX_LENGTH = 40`). **Not tied to a KNOWN_ISSUES entry** — there is no recorded bug where the per-residue probabilities themselves fail to sum to 1; this entry is expectation-setting, so escalate if you see genuine per-residue drift.
 - Can't fix → [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
 
 ---
@@ -122,4 +122,4 @@
 
 - For dev-environment basics (ports, venv, TANGO binary not found), see [`01_first_run.md`](01_first_run.md) → Troubleshooting.
 - For the full backend debugging workflow and the agent's diagnostic decision tree, see [`../agents/06_failure_modes.md`](../agents/06_failure_modes.md).
-- If you've confirmed a genuinely new failure, file it against the template at the bottom of [`https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md).
+- If you've confirmed a genuinely new failure, file it against the template at the bottom of [`https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md`](https://github.com/az-said/peptide_prediction/blob/main/docs/active/KNOWN_ISSUES.md).

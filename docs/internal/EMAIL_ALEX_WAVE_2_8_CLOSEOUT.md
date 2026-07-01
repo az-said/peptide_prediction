@@ -14,7 +14,7 @@ Three things from your side would close out the production story:
 
 2. **DESY K8s namespace + Ingress** when DESY IT is ready. We can keep running on the VM in the meantime, but K8s is the right long-term home. `docs/active/DEPLOYMENT.md` §"K8s plan" has the manifest skeleton — needs a namespace, Ingress controller, and resource quotas from DESY IT.
 
-3. **GitLab mirror** for the DESY-side fork. Automated mirror from `github.com/saidaz24-meet/peptide_prediction` so the DESY GitLab stays in sync without manual pushes.
+3. **GitLab mirror** for the DESY-side fork. Automated mirror from `github.com/az-said/peptide_prediction` so the DESY GitLab stays in sync without manual pushes.
 
 Everything else is wired and running:
 - **Sentry** (DSN in vault, runbook at `docs/active/SENTRY_RUNBOOK.md`)

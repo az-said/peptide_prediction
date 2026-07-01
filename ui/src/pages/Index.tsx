@@ -358,7 +358,7 @@ const Index = () => {
                 Licensed
               </span>
               <a
-                href="https://github.com/saidaz24-meet/peptide_prediction"
+                href="https://github.com/az-said/peptide_prediction"
                 target="_blank"
                 rel="noopener"
                 className="flex items-center gap-1.5 hover:text-foreground transition-colors"

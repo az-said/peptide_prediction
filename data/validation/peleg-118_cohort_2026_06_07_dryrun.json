@@ -1,0 +1,592 @@
+[
+  {
+    "id": "Phosphoribulokinase, 41 kDa subunit",
+    "sequence": "ADEKXVVIGLAADSG",
+    "ff_truth": true
+  },
+  {
+    "id": "Human \u03b1-defensin 6, HD6",
+    "sequence": "AFTCHCRRSCYSTEYSYGTCTVMGINHRFCCL",
+    "ff_truth": true
+  },
+  {
+    "id": "Pleurocidin-like peptide GcSc4C5",
+    "sequence": "AGWGSIFKHIFKAGKFIHGAIQAHND",
+    "ff_truth": true
+  },
+  {
+    "id": "Dermaseptin-4",
+    "sequence": "ALWKDILKNAGKAALNEINQIVQ",
+    "ff_truth": true
+  },
+  {
+    "id": "Thaumatin-like protein",
+    "sequence": "ANFEIVNNCPYTVWAAASPGGGRRLDRGQT",
+    "ff_truth": true
+  },
+  {
+    "id": "Toxin Cm38",
+    "sequence": "ARDGYIVDEKGCKFACFIN",
+    "ff_truth": true
+  },
+  {
+    "id": "Defensin-like protein 1 C-terminal peptide, C65A_C74A_C76A",
+    "sequence": "ARHGSANYVFPAHKAIAYF",
+    "ff_truth": true
+  },
+  {
+    "id": "Ocellatin-5",
+    "sequence": "AVLDILKDVGKGLLSHFMEKV",
+    "ff_truth": true
+  },
+  {
+    "id": "Calcitonin",
+    "sequence": "CGNLSTCMLGTYTQDFNKFHTFPQTAIGVGAP",
+    "ff_truth": true
+  },
+  {
+    "id": "Urocortin",
+    "sequence": "DDPPLSIDLTFHLLRTLLELARTQSQRERAEQNRIIFDSV",
+    "ff_truth": true
+  },
+  {
+    "id": "Beta-defensin 1 (BNBD-1) (BNDB-1)",
+    "sequence": "DFASCHTNGGICLPNRCPGHMIQIGICFRPRVKCCRSW",
+    "ff_truth": true
+  },
+  {
+    "id": "Diptericin",
+    "sequence": "DLHIPPPDNKINWPQLSGGGGGSPKTGYDININAQQK",
+    "ff_truth": true
+  },
+  {
+    "id": "Antifungal protein 4 (CW-4)",
+    "sequence": "DRQIDMEEQQLEKLNKQDRXPGLRYAAKQQMXTXRMG",
+    "ff_truth": true
+  },
+  {
+    "id": "Ice-structuring protein A",
+    "sequence": "DTASDAAAAAALTAANAKAAAELTAANAAAAAAATAR",
+    "ff_truth": true
+  },
+  {
+    "id": "momorcochin-S",
+    "sequence": "DVTFSLLGANTKSYAAFITNFRKDVASEKK",
+    "ff_truth": true
+  },
+  {
+    "id": "ADan peptide",
+    "sequence": "EASNCFAIRHFENKFAVETLICFNLFLNSQEKHY",
+    "ff_truth": true
+  },
+  {
+    "id": "ABri peptide",
+    "sequence": "EASNCFAIRHFENKFAVETLICSRTVKKNIIEEN",
+    "ff_truth": true
+  },
+  {
+    "id": "Brevinin-1OKc",
+    "sequence": "FFGSIIGALAKGLPSLISLIKK",
+    "ff_truth": true
+  },
+  {
+    "id": "Lung Surfactant",
+    "sequence": "FGIPCCPVHLKRLLIVVVVVVLIVVVIVGALLMGL",
+    "ff_truth": true
+  },
+  {
+    "id": "Conolysin-Mt1 (Moonwalker peptide) [Cleaved into: Conolysin-Mt2]",
+    "sequence": "FHPSLWVLIPQYIQLIRKILKSG",
+    "ff_truth": true
+  },
+  {
+    "id": "Grammistin Pp 2a",
+    "sequence": "FIGGIISLIKKLF",
+    "ff_truth": true
+  },
+  {
+    "id": "Chrysophsin-3",
+    "sequence": "FIGLLISAGKAIHDLIRRRH",
+    "ff_truth": true
+  },
+  {
+    "id": "Ll-37(17-29)- FK13",
+    "sequence": "FKRIVQRIKDFLR",
+    "ff_truth": true
+  },
+  {
+    "id": "Temporin-1ITa",
+    "sequence": "FLGAIAQALTSLLGKL",
+    "ff_truth": true
+  },
+  {
+    "id": "Brevinin-1DYe",
+    "sequence": "FLIGMTQGLICLITRKC",
+    "ff_truth": true
+  },
+  {
+    "id": "Vespid chemotactic peptide 5g (VCP 5g)",
+    "sequence": "FLIIRRPIVLGLL",
+    "ff_truth": true
+  },
+  {
+    "id": "Cyanophlyctin",
+    "sequence": "FLNALKNFAKTAGKRLKSLLN",
+    "ff_truth": true
+  },
+  {
+    "id": "Vespid-CP 5e",
+    "sequence": "FLPIIAKLLGGLL",
+    "ff_truth": true
+  },
+  {
+    "id": "Brevinin-1SE",
+    "sequence": "FLPLVRGAAKLIPSVVCAISKRC",
+    "ff_truth": true
+  },
+  {
+    "id": "Phylloseptin-O2 (PLS-O2) (Phylloseptin-5) (PS-5)",
+    "sequence": "FLSLIPHAINAVSAIAKHS",
+    "ff_truth": true
+  },
+  {
+    "id": "Phylloseptin-2.1TR",
+    "sequence": "FLSLIPHIATGIAALAKHL",
+    "ff_truth": true
+  },
+  {
+    "id": "Obestatin",
+    "sequence": "FNAPFDVGIKLSGVQYQQHSQAL",
+    "ff_truth": true
+  },
+  {
+    "id": "Urocortin-3",
+    "sequence": "FTLSLDVPTNIMNLLFNIAKAKNLRAQAAANAHLMAQI",
+    "ff_truth": true
+  },
+  {
+    "id": "Temporin-1Cea",
+    "sequence": "FVDLKKIANIINSIFGK",
+    "ff_truth": true
+  },
+  {
+    "id": "Insulin Chain B",
+    "sequence": "FVNQHLCGSHLVEALYLVCGERGFFYTPKT",
+    "ff_truth": true
+  },
+  {
+    "id": "Temporin-L",
+    "sequence": "FVQWFSKFLGRIL",
+    "ff_truth": true
+  },
+  {
+    "id": "Plantaricin J",
+    "sequence": "GAWKNFWSSLRKGFYDGEAGRAIRR",
+    "ff_truth": true
+  },
+  {
+    "id": "Chitinase (EC 3.2.1.14)",
+    "sequence": "GDGTGPGPGP",
+    "ff_truth": true
+  },
+  {
+    "id": "Cupiennin-1",
+    "sequence": "GFGALFKFLAKKVAKTVAKQAAKQGAKYVVNKQME",
+    "ff_truth": true
+  },
+  {
+    "id": "Defensin",
+    "sequence": "GFGCPLDQMQCHRHCQTITGRSGGYCSGPLKLTCTCYR",
+    "ff_truth": true
+  },
+  {
+    "id": "Ascaphin-7M",
+    "sequence": "GFKDWIKSAAKKLIKTVASNIANQ",
+    "ff_truth": true
+  },
+  {
+    "id": "Frenatin-4",
+    "sequence": "GFLDKLKKGASDFANALVNSIKGT",
+    "ff_truth": true
+  },
+  {
+    "id": "Osmin",
+    "sequence": "GFLSALKKYLPIVLKHV",
+    "ff_truth": true
+  },
+  {
+    "id": "Ascaphin-1",
+    "sequence": "GFRDVLKGAAKAFVKTVAGHIAN",
+    "ff_truth": true
+  },
+  {
+    "id": "Defensin D7 (Antimicrobial peptide D7) (So-D7)",
+    "sequence": "GIFSSRKCKTPSKTFKGYCTRDSNCDTSCRYEGYPAGD",
+    "ff_truth": true
+  },
+  {
+    "id": "Melittin",
+    "sequence": "GIGAVLKVLTTGLPALISWIKRKRQQ",
+    "ff_truth": true
+  },
+  {
+    "id": "Pelophylaxin-2",
+    "sequence": "GILLNTLKGAAKNVAGVLLDKLKCKITGGC",
+    "ff_truth": true
+  },
+  {
+    "id": "Pseudin-4",
+    "sequence": "GINTLKKVIQGLHEVIKLVSNHA",
+    "ff_truth": true
+  },
+  {
+    "id": "Insulin Chain A",
+    "sequence": "GIVEQCCTSICSLYQLENYCN",
+    "ff_truth": true
+  },
+  {
+    "id": "Brevinin-2Va",
+    "sequence": "GIWDTLKNVGKAVLGKVLENV",
+    "ff_truth": true
+  },
+  {
+    "id": "M-poneritoxin-Ng1d (M-PONTX-Ng1d) (Poneratoxin) (Ponericin-W4)",
+    "sequence": "GIWGTALKWGVKLLPKLVGMAQTKKQ",
+    "ff_truth": true
+  },
+  {
+    "id": "Deserticolin-1",
+    "sequence": "GLADFLNKAVGKVVDFVKS",
+    "ff_truth": true
+  },
+  {
+    "id": "Aurein 1.2",
+    "sequence": "GLFDIIKKIAESF",
+    "ff_truth": true
+  },
+  {
+    "id": "Citropin-1.3",
+    "sequence": "GLFDIIKKVASVIGGL",
+    "ff_truth": true
+  },
+  {
+    "id": "Aurein-3.3",
+    "sequence": "GLFDIVKKIAGHIVSSI",
+    "ff_truth": true
+  },
+  {
+    "id": "Brevinin-2skb",
+    "sequence": "GLFNVFKKVGKNVLKNVAGSLMDNLKCKVSGEC",
+    "ff_truth": true
+  },
+  {
+    "id": "Alyteserin-1a",
+    "sequence": "GLKDIFKAGLGSLVKGIAAHVAN",
+    "ff_truth": true
+  },
+  {
+    "id": "Alyteserin-1d",
+    "sequence": "GLKDIFKAGLGSLVKNIAAHVAN",
+    "ff_truth": true
+  },
+  {
+    "id": "Dahlein-5.6",
+    "sequence": "GLLASLGKVFGGYLAEKLKPK",
+    "ff_truth": true
+  },
+  {
+    "id": "Ranatuerin-2B",
+    "sequence": "GLLDTIKGVAKTVAASMLDKLKCKISGC",
+    "ff_truth": true
+  },
+  {
+    "id": "Dermaseptin S9, Preprodermaseptin S9, DRS S9",
+    "sequence": "GLRSKIWLWVLLMIWQESNKFKKM",
+    "ff_truth": true
+  },
+  {
+    "id": "Caerin-3.3",
+    "sequence": "GLWEKIKEKANELVSGIVEGVK",
+    "ff_truth": true
+  },
+  {
+    "id": "Dermaseptin-DI1 (DRS-DI1) (Dermadistinctin-K) (DD-K)",
+    "sequence": "GLWSKIKAAGKEAAKAAAKAAGKAALNAVSEAV",
+    "ff_truth": true
+  },
+  {
+    "id": "Peptide PGLa-BM3",
+    "sequence": "GMASTAGSVLGKLAKAVAIGAL",
+    "ff_truth": true
+  },
+  {
+    "id": "Dermaseptin-DA4 (DRS-DA4)",
+    "sequence": "GMWSKIKNAGKAAKAAAKAAGKAALGAVSEAM",
+    "ff_truth": true
+  },
+  {
+    "id": "Bacteriocin BacGR",
+    "sequence": "GNVAELTEVR",
+    "ff_truth": true
+  },
+  {
+    "id": "Antimicrobial peptide 4 (XT-4)",
+    "sequence": "GVFLDALKKFAKGGMNAVLNPK",
+    "ff_truth": true
+  },
+  {
+    "id": "Uperine-3.5 antimicrobial peptide",
+    "sequence": "GVGDLIRKAVSVIKNIV",
+    "ff_truth": true
+  },
+  {
+    "id": "Ocellatin-LB1",
+    "sequence": "GVVDILKGAAKDIAGHLASKVM",
+    "ff_truth": true
+  },
+  {
+    "id": "Xenoposin precursor fragment BM1 (XPF-BM1),Xenoposin precursor fragment R1 (XPF-R1)",
+    "sequence": "GWASKIGQTLGKMAKVGLHELIQPK",
+    "ff_truth": true
+  },
+  {
+    "id": "Glucagon-like peptide 2",
+    "sequence": "HADGSFSDEMNTILDNLAARDFINWLIQTKITD",
+    "ff_truth": true
+  },
+  {
+    "id": "Glucagon-like peptide 1",
+    "sequence": "HDEFERHAEGTFTSDVSSYLEGQAAKEFIAWLVKGRG",
+    "ff_truth": true
+  },
+  {
+    "id": "Glucagon",
+    "sequence": "HSQGTFTSDYSKYLDSRRAQDFVQWLMNT",
+    "ff_truth": true
+  },
+  {
+    "id": "Riparin-2.1",
+    "sequence": "IIEKLVNTALGLLSGL",
+    "ff_truth": true
+  },
+  {
+    "id": "Bombinin-H1/H3",
+    "sequence": "IIGPVLGMVGSALGGLLKKIG",
+    "ff_truth": true
+  },
+  {
+    "id": "Maximin-Ht (Maximin-7)",
+    "sequence": "ILGPVLGLVGNALGGLIKNE",
+    "ff_truth": true
+  },
+  {
+    "id": "Agelaia-CP",
+    "sequence": "ILGTILGLLKGL",
+    "ff_truth": true
+  },
+  {
+    "id": "Polybia-CP",
+    "sequence": "ILGTILGLLKSL",
+    "ff_truth": true
+  },
+  {
+    "id": "Dominulin-B",
+    "sequence": "INWKKIAEIGKQVLSAL",
+    "ff_truth": true
+  },
+  {
+    "id": "Mastoparan PDD-B",
+    "sequence": "INWLKLGKKILGAL",
+    "ff_truth": true
+  },
+  {
+    "id": "Trypsin",
+    "sequence": "IVGGTAVTPGEFPYQLSFQDSIEGVESHFCGG",
+    "ff_truth": true
+  },
+  {
+    "id": "IAPP, Amylin",
+    "sequence": "KCNTATCATQRLANFLVHSSNNFGAILSSTNVGSNTY",
+    "ff_truth": true
+  },
+  {
+    "id": "Plantaricin A",
+    "sequence": "KSSAYSLQMGATAIKQVKKLFKKWGW",
+    "ff_truth": true
+  },
+  {
+    "id": "Probable bradykinin-potentiating peptide (BPP) (Probable antimicrobial peptide)",
+    "sequence": "KVLAPAEEAPAEAPAAAE",
+    "ff_truth": true
+  },
+  {
+    "id": "Bombinin H4",
+    "sequence": "LIGPVLGLVGSALGGLLKKI",
+    "ff_truth": true
+  },
+  {
+    "id": "gLL-37",
+    "sequence": "LLGDFFRKAKEKIGKESKRIVQRIKDFLRNLVPRTES",
+    "ff_truth": true
+  },
+  {
+    "id": "Cathelicidin (LL37)",
+    "sequence": "LLGDFFRKSKEKIGKEFKRIVQRIKDFLRNLVPRTES",
+    "ff_truth": true
+  },
+  {
+    "id": "Temporin-1Tb",
+    "sequence": "LLPIVGNLLKSLL",
+    "ff_truth": true
+  },
+  {
+    "id": "Temporin-1Tk (TK) (Temporin-K)",
+    "sequence": "LLPNLLKSLL",
+    "ff_truth": true
+  },
+  {
+    "id": "Eumenitin",
+    "sequence": "LNLKGIFKKVASLLT",
+    "ff_truth": true
+  },
+  {
+    "id": "Panurgin 1",
+    "sequence": "LNWGAILKHIIK",
+    "ff_truth": true
+  },
+  {
+    "id": "delta-hemolysin",
+    "sequence": "MAADIISTIGDLVKWIIDTVNKFKK",
+    "ff_truth": true
+  },
+  {
+    "id": "PSMa4",
+    "sequence": "MAIVGTIIKIIKAIIDIFAK",
+    "ff_truth": true
+  },
+  {
+    "id": "Hemolysin H2U",
+    "sequence": "MDFIIDIIKKIVGLFTGK",
+    "ff_truth": true
+  },
+  {
+    "id": "PSMa3",
+    "sequence": "MEFVAKLFKFFKDLLGKFLGNN",
+    "ff_truth": true
+  },
+  {
+    "id": "Phenol-soluble modulin A1",
+    "sequence": "MGIIAGIIKVIKSLIEQFTGK",
+    "ff_truth": true
+  },
+  {
+    "id": "3-hydroxypropionic acid resistance peptide",
+    "sequence": "MKPALRDFIAIVQERLASVTA",
+    "ff_truth": true
+  },
+  {
+    "id": "thr operon leader peptide",
+    "sequence": "MNRIGMITTIITTTITTGNGAG",
+    "ff_truth": true
+  },
+  {
+    "id": "Accessory gene regulator D amphipathic leader sequence, N-AgrD",
+    "sequence": "MNTLFNLFFDFITGILKNIGNIAA",
+    "ff_truth": true
+  },
+  {
+    "id": "sex pheromone inhibitor determinant",
+    "sequence": "MSKRAMKKIIPLITLFVVTLVG",
+    "ff_truth": true
+  },
+  {
+    "id": "Ribosome-inactivating protein luffacylin (EC 3.2.2.22) (rRNA N-glycosidase)",
+    "sequence": "PRGSPRTEYEAARR",
+    "ff_truth": true
+  },
+  {
+    "id": "Sauvagin",
+    "sequence": "QGPPISIDLSLELLRKMIEIEKQEKEKQQAANNRLLLDTI",
+    "ff_truth": true
+  },
+  {
+    "id": "Protegrin-1 antimicrobial peptide",
+    "sequence": "RGGRLCYCRRRFCVCVGR",
+    "ff_truth": true
+  },
+  {
+    "id": "Cecropin-C",
+    "sequence": "RRFKKFLKKVEGAGRRVANAAQKGLPLAAGVKGLV",
+    "ff_truth": true
+  },
+  {
+    "id": "Plantaricin-K",
+    "sequence": "RRSRKNGIGYAIGYAFGAVERAVLGGSRDYNK",
+    "ff_truth": true
+  },
+  {
+    "id": "Pleurocidin-like peptide WFX",
+    "sequence": "RSTEDIIKSISGGGFLNAMNA",
+    "ff_truth": true
+  },
+  {
+    "id": "Cecropin-A",
+    "sequence": "RWKVFKKIEKVGRNIRDGVIKAAPAIEVLGQAKAL",
+    "ff_truth": true
+  },
+  {
+    "id": "Hyphancin-3F",
+    "sequence": "RWKVFKKIEKVGRNIRDGVIKAGPAIAVVGQAKAL",
+    "ff_truth": true
+  },
+  {
+    "id": "Putative antimicrobial protein 3 (Cm-p2)",
+    "sequence": "SESILIVHQQQSRSSGS",
+    "ff_truth": true
+  },
+  {
+    "id": "Dolabellanin-B2",
+    "sequence": "SHQDCYEALHKCMASHSKPFSCSMKFHMCLQQQ",
+    "ff_truth": true
+  },
+  {
+    "id": "Equinatoxin-1''",
+    "sequence": "SVAVAGAVIEGATLTFNVLQ",
+    "ff_truth": true
+  },
+  {
+    "id": "Cn-AMP2",
+    "sequence": "TESYFVFSVGM",
+    "ff_truth": true
+  },
+  {
+    "id": "Bacteriocin lactococcin MMFII",
+    "sequence": "TSYGNGVHCNKSKCWIDVSELETYKAGTVSNPKDILW",
+    "ff_truth": true
+  },
+  {
+    "id": "Major cell-surface adhesin PAc, P1",
+    "sequence": "TYETEKPLKPAPVAPNYEKEPTPPTRTPDQAEPNKPTPPT",
+    "ff_truth": true
+  },
+  {
+    "id": "Lasioglossin LL-I",
+    "sequence": "VNWKKVLGKIIKVAK",
+    "ff_truth": true
+  },
+  {
+    "id": "N-acetylmuramoyl-L-alanine amidase L2 (EC 3.5.1.28)",
+    "sequence": "XNVVFLNXPXPQW",
+    "ff_truth": true
+  },
+  {
+    "id": "Salmocidin-1",
+    "sequence": "XXSVPAFGHYLPAXP",
+    "ff_truth": true
+  },
+  {
+    "id": "PlnA-22 (Bacteriocin)",
+    "sequence": "YSLQMGATAIKQVKKLFKKWGW",
+    "ff_truth": true
+  }
+]

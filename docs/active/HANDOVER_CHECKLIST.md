@@ -113,7 +113,7 @@ That's it. No separate doc deployment.
 If you need to read a specific doc from your Mac without SSHing in:
 
 ```bash
-gh api repos/saidaz24-meet/peptide_prediction/contents/docs/active/HANDOVER_CHECKLIST.md --jq '.content' | base64 -d | less
+gh api repos/az-said/peptide_prediction/contents/docs/active/HANDOVER_CHECKLIST.md --jq '.content' | base64 -d | less
 ```
 
 ---

@@ -27,12 +27,12 @@ The Methods source-of-truth is `docs/active/PAPER_METHODS_REFERENCE.md`. Every a
 
 **Six open questions I need from you before v1.0**
 Filed as GitHub Issues for tracking; close them at our next sync.
-1. [OQ1](https://github.com/saidaz24-meet/peptide_prediction/issues/106) — Coiled-coil terminology (3-state coil vs coiled-coil motif).
-2. [OQ2](https://github.com/saidaz24-meet/peptide_prediction/issues/107) — "Rank & Merge" — what does Merge mean to the user?
-3. [OQ4](https://github.com/saidaz24-meet/peptide_prediction/issues/108) — y=0.5 dashed line in the Aggregation-Structure overlay — what does it represent?
-4. [OQ5](https://github.com/saidaz24-meet/peptide_prediction/issues/109) — SSW residue colour in the Mol* 3D viewer — magenta is shipped; want to confirm.
-5. [OQ7](https://github.com/saidaz24-meet/peptide_prediction/issues/110) — Beta % calculation flagged as "too aggressive" (F10) — what threshold do you want?
-6. [OQ8](https://github.com/saidaz24-meet/peptide_prediction/issues/111) — "AlphaFold-predicted structure" title — approved 2026-06-03 or delete per the 2026-06-18 meeting?
+1. [OQ1](https://github.com/az-said/peptide_prediction/issues/106) — Coiled-coil terminology (3-state coil vs coiled-coil motif).
+2. [OQ2](https://github.com/az-said/peptide_prediction/issues/107) — "Rank & Merge" — what does Merge mean to the user?
+3. [OQ4](https://github.com/az-said/peptide_prediction/issues/108) — y=0.5 dashed line in the Aggregation-Structure overlay — what does it represent?
+4. [OQ5](https://github.com/az-said/peptide_prediction/issues/109) — SSW residue colour in the Mol* 3D viewer — magenta is shipped; want to confirm.
+5. [OQ7](https://github.com/az-said/peptide_prediction/issues/110) — Beta % calculation flagged as "too aggressive" (F10) — what threshold do you want?
+6. [OQ8](https://github.com/az-said/peptide_prediction/issues/111) — "AlphaFold-predicted structure" title — approved 2026-06-03 or delete per the 2026-06-18 meeting?
 
 **Quality + scale**
 - 672 frontend tests + 646 backend tests passing.

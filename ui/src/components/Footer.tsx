@@ -32,12 +32,12 @@ const COLUMNS = [
       { label: "Help & Docs", to: "/help", internal: true },
       {
         label: "GitHub",
-        to: "https://github.com/saidaz24-meet/peptide_prediction",
+        to: "https://github.com/az-said/peptide_prediction",
         internal: false,
       },
       {
         label: "Report Issue",
-        to: "https://github.com/saidaz24-meet/peptide_prediction/issues",
+        to: "https://github.com/az-said/peptide_prediction/issues",
         internal: false,
       },
       { label: "About", to: "/about", internal: true },
@@ -59,7 +59,7 @@ const COLUMNS = [
     links: [
       {
         label: "MIT License",
-        to: "https://github.com/saidaz24-meet/peptide_prediction/blob/main/LICENSE",
+        to: "https://github.com/az-said/peptide_prediction/blob/main/LICENSE",
         internal: false,
       },
       { label: "Privacy Policy", to: "/about#privacy", internal: true },
@@ -173,7 +173,7 @@ export function Footer({ className }: FooterProps) {
             <div className="flex items-center gap-4 text-xs text-muted-foreground/50">
               <span>&copy; {year} PVL</span>
               <a
-                href="https://github.com/saidaz24-meet/peptide_prediction"
+                href="https://github.com/az-said/peptide_prediction"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-muted-foreground transition-colors"

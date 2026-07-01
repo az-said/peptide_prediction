@@ -5,7 +5,7 @@ name: Publish to PyPI
 #
 # One-time setup at https://pypi.org/manage/account/publishing/:
 #   1. Add "Pending publisher" for project `pvl-cli`:
-#        owner: saidaz24-meet
+#        owner: az-said
 #        repo:  peptide_prediction
 #        workflow file: publish-pypi.yml
 #        environment: pypi

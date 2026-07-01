@@ -10,7 +10,7 @@
 |---|---|---|
 | **Public (paper-citable)** | http://94.130.178.182:3000 | Live, healthy, ISSUE-034 fix being deployed |
 | **DESY institutional** | `landau-webapp-dev` (internal, tunnel `localhost:8080`) | Live, healthy, fix deployed + artifacts regenerated |
-| **GitHub** | https://github.com/saidaz24-meet/peptide_prediction | Public, MIT, branch-protected, CodeQL, secret scanning |
+| **GitHub** | https://github.com/az-said/peptide_prediction | Public, MIT, branch-protected, CodeQL, secret scanning |
 
 ## 2. Scientific completeness
 
@@ -65,7 +65,7 @@ Five items. All blocked on external people; nothing in this list is technical wo
 |---|---|---|---|
 | 1 | Send `EMAIL_PELEG_FINAL.md` | You | 5 min |
 | 2 | Send `EMAIL_ALEX_FINAL.md` | You | 5 min |
-| 3 | Peleg answers OQ1, OQ2, OQ4, OQ5, OQ7, OQ8 ([#106-111](https://github.com/saidaz24-meet/peptide_prediction/issues)) | Peleg | 1-2 weeks |
+| 3 | Peleg answers OQ1, OQ2, OQ4, OQ5, OQ7, OQ8 ([#106-111](https://github.com/az-said/peptide_prediction/issues)) | Peleg | 1-2 weeks |
 | 4 | Alex provides: DNS hostname, firewall 80/443, ORCID | Alex | 1-2 weeks |
 | 5 | Cut v1.0.0 tag → Zenodo DOI → wire DOI into CITATION.cff + README | You | 30 min after #3 + #4 |
 

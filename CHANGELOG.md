@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
 - `pvl-cli` v0.1.0 first publishable version: 9 PyPI classifiers, 9 search keywords, full PyPI URL set, pytest-mock dev dep, 14 smoke tests (12 mocked + 2 live integration against the live Hetzner endpoint).
 - `.github/workflows/publish-pypi.yml` — Trusted Publishing on every `v*.*.*` tag for both `pvl-cli` and `pvl-mcp`; `workflow_dispatch` lets you publish one without the other.
 - `.github/workflows/docker-publish.yml` — multi-arch QEMU + Buildx GHCR publish on `main` and `v*.*.*`. Versioned + `latest` tags on releases, `edge` + `main-<sha>` tags on every main push. OCI labels with documentation URL + license + vendor.
-- `mkdocs.yml` + `.github/workflows/docs.yml` — documentation site at <https://saidaz24-meet.github.io/peptide_prediction/> using mkdocs-material with auto/light/dark palette, full-text search, code-copy buttons, persona-aware nav.
+- `mkdocs.yml` + `.github/workflows/docs.yml` — documentation site at <https://az-said.github.io/peptide_prediction/> using mkdocs-material with auto/light/dark palette, full-text search, code-copy buttons, persona-aware nav.
 - `backend/scripts/precompute_dataset.py` learned `force_recompute=True` + `bypass_tango_budget=True` flags so the precompute can write authoritative artifacts even when the provider cache or 500-peptide budget gate would otherwise drop TANGO rows. Fixed ISSUE-034 [#112].
 - `backend/scripts/diagnose_tango.py` — pinpoints which gate (binary resolve / budget / cache split / build_records / run_tango_simple) drops rows. Used to root-cause ISSUE-034.
 - `backend/scripts/rerun_validation_2026_06_07.py` learned the `peleg-118` cohort. Run `python scripts/rerun_validation_2026_06_07.py --cohort peleg-118` to produce the recall number for `research/02_validation_evidence.md`.
@@ -34,7 +34,7 @@ The format is based on [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.
 ### Changed
 - License normalized to MIT (`LICENSE-DESY-RESEARCH.md` archived; single-line copyright header for GitHub's SPDX detector → repo now shows as MIT in the badge row).
 - README citations corrected: S4PRED → Moffat & Jones 2021 *Bioinformatics* 37:3744–3751 (`btab491`); Ragonis-Bachar 2022 → "α/β Chameleon Amyloids" *Biomacromolecules* 23(9):3713–3727 (Crossref-verified, June 2026).
-- README top-nav now points at <https://saidaz24-meet.github.io/peptide_prediction/> as the canonical documentation surface.
+- README top-nav now points at <https://az-said.github.io/peptide_prediction/> as the canonical documentation surface.
 - `docs/active/DEPLOYMENT.md` refreshed with the verified DESY VM Kerberos access path + hosts-at-a-glance + daily ops snippets + Caddy DNS handover.
 - `docs/active/HANDOFF.md` §10 rewritten to reflect Wave 2.8/2.9 close-out state + improvement backlog with four tiers.
 - `docs/active/` cleanup: 11 dated artifacts archived to `docs/archive/2026-06-29/`; `A4_BIO_TOOLS_SUBMISSION.md` + `A5_ZENODO_RELEASE.md` merged → `PUBLICATION_PATH.md`; `DEVELOPER_REFERENCE.md` renamed → `ARCHITECTURE.md`; `MASTER_DEV_DOC.md` + `ACTIVE_CONTEXT.md` + `SENTRY_OBSERVABILITY_STRATEGY.md` archived as superseded.
@@ -70,6 +70,6 @@ First public release. See [docs/archive/2026-06-29/RELEASE_NOTES_v0.3.0.md](docs
 
 ---
 
-[Unreleased]: https://github.com/saidaz24-meet/peptide_prediction/compare/v0.3.0...HEAD
-[0.3.0]: https://github.com/saidaz24-meet/peptide_prediction/releases/tag/v0.3.0
-[0.1.0]: https://github.com/saidaz24-meet/peptide_prediction/releases/tag/v0.1.0
+[Unreleased]: https://github.com/az-said/peptide_prediction/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/az-said/peptide_prediction/releases/tag/v0.3.0
+[0.1.0]: https://github.com/az-said/peptide_prediction/releases/tag/v0.1.0

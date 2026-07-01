@@ -17,7 +17,7 @@ export const PVL_CITATION = `@software{pvl2026,
   title        = {{Peptide Visual Lab (PVL): All-in-one Prediction and Visualization for Peptide Aggregation and Structure}},
   year         = {2026},
   publisher    = {GitHub},
-  url          = {https://github.com/saidaz24-meet/peptide_prediction},
+  url          = {https://github.com/az-said/peptide_prediction},
   note         = {DOI pending -- Zenodo submission in progress}
 }`;
 

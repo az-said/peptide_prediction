@@ -51,7 +51,7 @@ The figure pack has ~5 panels (cover + classification + biochem + aggregation + 
 
 - Single `<PanelHeader>` SVG fragment with: panel number, panel title, peptide ID (or "Dataset"), and a small underline accent in the class colour token
 - Panel sizes: standardize to A4 portrait (210 × 297mm) at 96 DPI = 793 × 1122 px, so the full pack prints cleanly as a multi-page PDF
-- Each panel ends with the same footer: "PVL v0.3.0 · github.com/saidaz24-meet/peptide_prediction · CC-BY 4.0"
+- Each panel ends with the same footer: "PVL v0.3.0 · github.com/az-said/peptide_prediction · CC-BY 4.0"
 
 ---
 

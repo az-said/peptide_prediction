@@ -1,6 +1,6 @@
 # DESY GitLab Mirror — How To Migrate
 
-> **Status (2026-06-29)**: Not configured. Repo lives at `github.com/saidaz24-meet/peptide_prediction` (public, MIT). DESY policy may require a GitLab mirror once PVL moves from "research prototype" → "DESY-hosted scientific tool." This doc is the runbook for that day.
+> **Status (2026-06-29)**: Not configured. Repo lives at `github.com/az-said/peptide_prediction` (public, MIT). DESY policy may require a GitLab mirror once PVL moves from "research prototype" → "DESY-hosted scientific tool." This doc is the runbook for that day.
 >
 > **When to do this**: when Alex confirms DESY's GitLab needs a mirror, OR when the JOSS paper is accepted and the DESY URL is the citable one.
 
@@ -22,7 +22,7 @@ This pattern is standard in CERN, EMBL, and most public-research institutions th
 - DESY GitLab URL: <https://gitlab.desy.de/> (or wherever Alex points you)
 - Sign in with DESY credentials (`azaizahs`).
 - New project → Import → "Repository by URL"
-- Source: `https://github.com/saidaz24-meet/peptide_prediction.git`
+- Source: `https://github.com/az-said/peptide_prediction.git`
 - Visibility: **Public** (matches GitHub MIT license; if DESY policy requires Internal, set Internal — but understand JOSS reviewers can't see Internal projects)
 - Initial branch: `main`
 - Click Create.
@@ -32,7 +32,7 @@ After import, the project lives at something like `gitlab.desy.de/azaizahs/pepti
 ### 2. Configure auto-mirror (GitHub → GitLab)
 - In GitLab, go to **Settings → Repository → Mirroring repositories**.
 - Direction: **Pull** (GitLab pulls from GitHub)
-- Repository URL: `https://github.com/saidaz24-meet/peptide_prediction.git`
+- Repository URL: `https://github.com/az-said/peptide_prediction.git`
 - Authentication: leave empty for public repo.
 - Mirror options: ✅ Keep divergent refs, ✅ Trigger pipelines for mirror updates (if you want GitLab CI to run too).
 - Save.

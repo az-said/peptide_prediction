@@ -32,7 +32,7 @@ If `python3` is < 3.11, install via pyenv / asdf / Homebrew. PVL targets 3.11 in
 ## Clone (10 sec)
 
 ```bash
-git clone https://github.com/saidaz24-meet/peptide_prediction
+git clone https://github.com/az-said/peptide_prediction
 cd peptide_prediction
 ```
 

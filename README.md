@@ -6,7 +6,7 @@
 
 Built around [Ragonis-Bachar et al. 2022](https://doi.org/10.1021/acs.biomac.2c00582)'s 4-category classification (Helix · FF-Helix · SSW · FF-SSW). Five surfaces: web · Python package · CLI · MCP server · Docker self-host.
 
-[![CI](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/ci.yml)
+[![CI](https://github.com/az-said/peptide_prediction/actions/workflows/ci.yml/badge.svg)](https://github.com/az-said/peptide_prediction/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Version](https://img.shields.io/badge/version-v0.3.0-blue.svg)](CITATION.cff)
 [![DOI](https://img.shields.io/badge/DOI-mints%20on%20release-lightgrey.svg)](#citing-pvl)
@@ -14,9 +14,9 @@ Built around [Ragonis-Bachar et al. 2022](https://doi.org/10.1021/acs.biomac.2c0
 
 [![Status](https://img.shields.io/badge/status-pre--release-orange.svg)](#status)
 [![PRs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![CodeQL](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/codeql.yml/badge.svg)](https://github.com/saidaz24-meet/peptide_prediction/actions/workflows/codeql.yml)
+[![CodeQL](https://github.com/az-said/peptide_prediction/actions/workflows/codeql.yml/badge.svg)](https://github.com/az-said/peptide_prediction/actions/workflows/codeql.yml)
 
-[**Try the live demo**](http://94.130.178.182:3000) · [**Self-host in 3 min**](#self-host-in-3-minutes) · [**Documentation site**](https://saidaz24-meet.github.io/peptide_prediction/) · [**API**](#api) · [**Contribute**](CONTRIBUTING.md) · [**Cite**](#citing-pvl)
+[**Try the live demo**](http://94.130.178.182:3000) · [**Self-host in 3 min**](#self-host-in-3-minutes) · [**Documentation site**](https://az-said.github.io/peptide_prediction/) · [**API**](#api) · [**Contribute**](CONTRIBUTING.md) · [**Cite**](#citing-pvl)
 
 </div>
 
@@ -114,7 +114,7 @@ Architectural decisions logged in [`docs/active/DECISIONS.md`](docs/active/DECIS
 ## Self-host in 3 minutes
 
 ```bash
-git clone https://github.com/saidaz24-meet/peptide_prediction.git
+git clone https://github.com/az-said/peptide_prediction.git
 cd peptide_prediction
 cp backend/.env.example backend/.env
 make docker-up
@@ -354,7 +354,7 @@ If you use PVL in your research, please cite both the **software** and the **und
   title     = {Peptide Visual Lab (PVL)},
   version   = {0.3.0},
   year      = {2026},
-  url       = {https://github.com/saidaz24-meet/peptide_prediction},
+  url       = {https://github.com/az-said/peptide_prediction},
   doi       = {10.5281/zenodo.PENDING},
   license   = {MIT}
 }

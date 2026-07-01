@@ -37,9 +37,9 @@ dev = [
 pvl-mcp = "pvl_mcp.server:main"
 
 [project.urls]
-Homepage = "https://github.com/saidaz24-meet/peptide_prediction"
-Documentation = "https://github.com/saidaz24-meet/peptide_prediction/blob/main/docs/active/MCP_RUNBOOK.md"
-Issues = "https://github.com/saidaz24-meet/peptide_prediction/issues"
+Homepage = "https://github.com/az-said/peptide_prediction"
+Documentation = "https://github.com/az-said/peptide_prediction/blob/main/docs/active/MCP_RUNBOOK.md"
+Issues = "https://github.com/az-said/peptide_prediction/issues"
 
 [tool.setuptools.packages.find]
 include = ["pvl_mcp*"]

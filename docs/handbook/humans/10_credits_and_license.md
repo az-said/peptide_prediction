@@ -30,7 +30,7 @@ What each person contributed:
 - **Dr. Aleksandr Golubev** — research direction, lab adoption, and DESY infrastructure.
 - **Prof. Meytal Landau** — lab PI, structural-biology direction, and paper correspondence.
 
-Machine-readable author metadata lives in [`CITATION.cff`](https://github.com/saidaz24-meet/peptide_prediction/blob/main/CITATION.cff) at the repository root.
+Machine-readable author metadata lives in [`CITATION.cff`](https://github.com/az-said/peptide_prediction/blob/main/CITATION.cff) at the repository root.
 
 ---
 
@@ -70,7 +70,7 @@ A Zenodo archive DOI is minted automatically on each tagged GitHub release. Unti
   title     = {Peptide Visual Lab (PVL)},
   version   = {0.3.0},
   year      = {2026},
-  url       = {https://github.com/saidaz24-meet/peptide_prediction},
+  url       = {https://github.com/az-said/peptide_prediction},
   doi       = {10.5281/zenodo.PENDING},
   license   = {MIT}
 }

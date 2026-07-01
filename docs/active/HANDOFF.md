@@ -10,7 +10,7 @@
 
 - **Stack**: React 18 + TypeScript + Vite (frontend) · Python 3.11 + FastAPI (backend) · TANGO Fortran binary + S4PRED PyTorch ensemble (predictors).
 - **License**: MIT.
-- **Repo**: https://github.com/saidaz24-meet/peptide_prediction
+- **Repo**: https://github.com/az-said/peptide_prediction
 - **Production**: Hetzner VPS at the moment; DESY VM migration queued (see `memory/project_desy_vm_access.md`).
 
 ---
@@ -19,7 +19,7 @@
 
 ```bash
 # Clone
-git clone https://github.com/saidaz24-meet/peptide_prediction.git
+git clone https://github.com/az-said/peptide_prediction.git
 cd peptide_prediction
 
 # Backend

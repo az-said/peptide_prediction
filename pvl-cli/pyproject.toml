@@ -40,10 +40,10 @@ dev = [
 pvl = "pvl.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/saidaz24-meet/peptide_prediction"
-Documentation = "https://saidaz24-meet.github.io/peptide_prediction/"
-Source = "https://github.com/saidaz24-meet/peptide_prediction/tree/main/pvl-cli"
-Issues = "https://github.com/saidaz24-meet/peptide_prediction/issues"
+Homepage = "https://github.com/az-said/peptide_prediction"
+Documentation = "https://az-said.github.io/peptide_prediction/"
+Source = "https://github.com/az-said/peptide_prediction/tree/main/pvl-cli"
+Issues = "https://github.com/az-said/peptide_prediction/issues"
 
 [tool.setuptools.packages.find]
 where = ["."]

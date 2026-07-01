@@ -12,10 +12,10 @@
 
 site_name: PVL — Peptide Visual Lab
 site_description: Open-source web platform for peptide aggregation propensity, secondary structure prediction, and fibril-forming candidacy classification. Documentation handbook.
-site_url: https://saidaz24-meet.github.io/peptide_prediction/
+site_url: https://az-said.github.io/peptide_prediction/
 site_author: Said Azaizah
-repo_url: https://github.com/saidaz24-meet/peptide_prediction
-repo_name: saidaz24-meet/peptide_prediction
+repo_url: https://github.com/az-said/peptide_prediction
+repo_name: az-said/peptide_prediction
 edit_uri: edit/main/docs/handbook/
 copyright: >
   &copy; 2026 Said Azaizah, Peleg Ragonis-Bachar, Aleksandr Golubev, Technion + DESY + MIT.
@@ -85,7 +85,7 @@ theme:
 extra:
   social:
     - icon: fontawesome/brands/github
-      link: https://github.com/saidaz24-meet/peptide_prediction
+      link: https://github.com/az-said/peptide_prediction
       name: PVL on GitHub
     - icon: fontawesome/solid/flask
       link: https://bio.tools/pvl

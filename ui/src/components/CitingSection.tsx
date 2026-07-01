@@ -111,7 +111,7 @@ export function CitingSection({ className }: CitingSectionProps) {
 
       <div className="flex items-center justify-center mt-4">
         <a
-          href="https://github.com/saidaz24-meet/peptide_prediction/issues"
+          href="https://github.com/az-said/peptide_prediction/issues"
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 transition-colors"

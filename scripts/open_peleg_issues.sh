@@ -19,7 +19,7 @@
 
 set -euo pipefail
 
-REPO=${REPO:-saidaz24-meet/peptide_prediction}
+REPO=${REPO:-az-said/peptide_prediction}
 MILESTONE=${MILESTONE:-Wave 2.9}
 DRY=0
 for arg in "$@"; do

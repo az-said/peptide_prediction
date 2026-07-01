@@ -15,7 +15,7 @@ services:
   # Backend API Service (pre-built from GHCR)
   # ---------------------------------------------------------------------------
   backend:
-    image: ghcr.io/saidaz24-meet/pvl-backend:${PVL_TAG:-latest}
+    image: ghcr.io/az-said/pvl-backend:${PVL_TAG:-latest}
     container_name: pvl-backend
     volumes:
       - pvl-runs:/data/runs
@@ -97,7 +97,7 @@ services:
   # Celery Worker — Batch Queue (heavy analysis jobs)
   # ---------------------------------------------------------------------------
   celery-batch:
-    image: ghcr.io/saidaz24-meet/pvl-backend:${PVL_TAG:-latest}
+    image: ghcr.io/az-said/pvl-backend:${PVL_TAG:-latest}
     container_name: pvl-celery-batch
     command: >
       celery -A celery_app worker
@@ -144,7 +144,7 @@ services:
   # Celery Worker — Quick Queue (single-sequence predictions)
   # ---------------------------------------------------------------------------
   celery-quick:
-    image: ghcr.io/saidaz24-meet/pvl-backend:${PVL_TAG:-latest}
+    image: ghcr.io/az-said/pvl-backend:${PVL_TAG:-latest}
     container_name: pvl-celery-quick
     command: >
       celery -A celery_app worker
@@ -191,7 +191,7 @@ services:
   # Frontend Service (pre-built from GHCR)
   # ---------------------------------------------------------------------------
   frontend:
-    image: ghcr.io/saidaz24-meet/pvl-frontend:${PVL_TAG:-latest}
+    image: ghcr.io/az-said/pvl-frontend:${PVL_TAG:-latest}
     container_name: pvl-frontend
     ports:
       - "80:80"

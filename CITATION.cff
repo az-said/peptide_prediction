@@ -31,7 +31,7 @@ authors:
     email: "mlandau@technion.ac.il"
     orcid: "https://orcid.org/0000-0002-1743-3430"
     affiliation: "Technion — Israel Institute of Technology + EMBL Hamburg + Centre for Structural Systems Biology"
-repository-code: "https://github.com/saidaz24-meet/peptide_prediction"
+repository-code: "https://github.com/az-said/peptide_prediction"
 license: MIT
 keywords:
   - peptide

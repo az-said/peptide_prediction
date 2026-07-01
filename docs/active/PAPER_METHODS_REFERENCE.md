@@ -215,7 +215,7 @@ Each artifact contains the full normalized response (same shape as the live `/pr
 
 ### 7.1 Code
 
-- **Repository**: https://github.com/saidaz24-meet/peptide_prediction
+- **Repository**: https://github.com/az-said/peptide_prediction
 - **License**: MIT
 - **Tag for the paper**: `v0.3.0` (matches `CITATION.cff`).
 - **Concept DOI** (Zenodo, always-latest): mints on first release; see `CITATION.cff`.
@@ -231,7 +231,7 @@ Each artifact contains the full normalized response (same shape as the live `/pr
   publisher    = {Zenodo},
   version      = {v0.3.0},
   doi          = {10.5281/zenodo.XXXXXXX},
-  url          = {https://github.com/saidaz24-meet/peptide_prediction}
+  url          = {https://github.com/az-said/peptide_prediction}
 }
 ```
 

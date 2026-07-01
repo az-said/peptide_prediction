@@ -27,7 +27,7 @@ If those tradeoffs work for you, we're glad to have you.
 ### Setup
 
 ```bash
-git clone https://github.com/saidaz24-meet/peptide_prediction.git
+git clone https://github.com/az-said/peptide_prediction.git
 cd peptide_prediction
 
 # Backend
@@ -109,7 +109,7 @@ Example: `feat(backend): add MCP server scaffolding for G1`
 
 ### Good first issues
 
-Look for the [`good-first-issue` label on GitHub](https://github.com/saidaz24-meet/peptide_prediction/labels/good-first-issue). Small, well-scoped tickets we've vetted as approachable.
+Look for the [`good-first-issue` label on GitHub](https://github.com/az-said/peptide_prediction/labels/good-first-issue). Small, well-scoped tickets we've vetted as approachable.
 
 Common themes:
 - Bug fixes in chart components
@@ -190,8 +190,8 @@ Dependabot opens weekly batched PRs for minor/patch updates automatically.
 
 ## Questions?
 
-- Bugs / feature requests → [GitHub Issues](https://github.com/saidaz24-meet/peptide_prediction/issues)
-- Design discussions → [GitHub Discussions](https://github.com/saidaz24-meet/peptide_prediction/discussions)
+- Bugs / feature requests → [GitHub Issues](https://github.com/az-said/peptide_prediction/issues)
+- Design discussions → [GitHub Discussions](https://github.com/az-said/peptide_prediction/discussions)
 - Scientific questions about TANGO / S4PRED / FF-Helix definitions → check [`README_EXPLAINER.md`](README_EXPLAINER.md) and [`docs/active/PELEG_FEEDBACK_INSTRUCTIONS.md`](docs/active/PELEG_FEEDBACK_INSTRUCTIONS.md) first; reach out via issue if unanswered.
 
 ---

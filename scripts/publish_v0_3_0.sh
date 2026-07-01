@@ -265,7 +265,7 @@ echo "     Include the DOI $ZENODO_DOI in 'Publications'"
 echo ""
 echo "  2. JOSS    — https://joss.theoj.org/papers/new"
 echo "     Upload paper/paper.md + paper/paper.bib"
-echo "     Repository URL: https://github.com/saidaz24-meet/peptide_prediction"
+echo "     Repository URL: https://github.com/az-said/peptide_prediction"
 echo "     Software DOI: https://doi.org/$ZENODO_DOI"
 echo ""
 
@@ -293,7 +293,7 @@ hr
 
 echo "Release:        $TAG"
 echo "Zenodo DOI:     $ZENODO_DOI"
-echo "GitHub:         https://github.com/saidaz24-meet/peptide_prediction/releases/tag/$TAG"
+echo "GitHub:         https://github.com/az-said/peptide_prediction/releases/tag/$TAG"
 echo "Sentry release: https://desycssb.sentry.io/releases/pvl@$VERSION/"
 echo ""
 green "Done. Watch the JOSS + bio.tools tabs for next steps."
