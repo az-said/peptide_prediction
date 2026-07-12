@@ -10,6 +10,17 @@ PVL uses Sentry for frontend (React) and backend (FastAPI) error tracking, perfo
 
 ---
 
+## Roles (updated 2026-07-12)
+
+- **Owner (billing + admin, silent by default)**: **Said Azaizah** — full admin, retains the Owner role forever, but *personal notification preferences* are silenced (Account → Notifications → Issue Alerts → "Only on issues I'm subscribed to"). Still receives: weekly Sentry digest + SEV1 escalation emails.
+- **Owner (operational, primary alert recipient)**: **Aleksandr Golubev** — receives every issue-alert email, first responder.
+- **Escalation timer**: SEV1 unresolved > 30 min (business hours) or > 2 h (off-hours) → auto-escalation email to Said.
+- **How to make this real**: follow `docs/active/paper_drafts/13_sentry_migration_runbook.md` — the 7-step migration runbook. This is a one-time setup.
+
+See also: `docs/active/OWNERSHIP_MATRIX.md`, `docs/active/ONCALL.md`, `docs/active/INCIDENT_SEVERITY.md`, `docs/active/SLO.md`.
+
+---
+
 ## S1 — Source Maps in CI
 
 ### Vite Plugin Setup

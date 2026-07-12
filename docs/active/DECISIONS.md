@@ -359,3 +359,13 @@ Pinning happens in `backend/_perf_init.py` which is the first import in `api/mai
 **Implication.** Tier-2 BACKLOG item "async job queue at scale" describes the flip path: route batches > N peptides to the queue + surface progress via existing `jobStore.ts`. Estimated 2 days (~95% wired).
 
 **Evidence.** `backend/celery_app.py`, `backend/tasks.py`. `backend/api/routes/jobs.py`. `ui/src/stores/jobStore.ts`. `ui/src/lib/jobApi.ts`. `docker/docker-compose.prod.yml` celery-batch + celery-quick service definitions.
+
+---
+
+## How to add a new ADR
+
+1. **First, decide if this needs an RFC** (see `docs/active/RFC_TEMPLATE.md`). Any change to a classification axiom (FF-Helix / FF-SSW / SSW), any change to `backend/schemas/api_models.py`, or any item in `docs/handbook/agents/04_when_to_ask_humans.md` **requires an RFC first** as a GitHub Discussion under category `RFC`, with a 2-day comment window.
+2. Once the decision is made (via RFC or directly), append a new `## ADR-<n> — <title> (<date>)` block below, using the same `**Context / Decision / Reasoning / Implication / Evidence**` format as the entries above.
+3. **If the decision required an RFC**, link the Discussion thread under **Evidence**.
+4. Bump the ADR count in the top comment of this file.
+5. If the ADR changes a STABLE API field, additionally update `docs/active/API_STABILITY.md`.

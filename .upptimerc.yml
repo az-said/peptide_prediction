@@ -1,0 +1,55 @@
+# Upptime configuration — see .github/workflows/uptime.yml
+#
+# Docs: https://upptime.js.org/docs/configuration
+# The status site publishes to GitHub Pages under the "status" branch once
+# the workflow runs the first time.
+#
+# TODO(said): once the production hostname is finalised (currently direct-IP
+# http://94.130.178.182:3000), update the "sites" URLs below. For now, comment
+# out sites entries to prevent false-negative alerts.
+
+owner: az-said
+repo: peptide_prediction
+sites:
+  - name: Backend health
+    url: http://94.130.178.182:8000/api/health
+    method: GET
+    expectedStatusCodes:
+      - 200
+  - name: Frontend
+    url: http://94.130.178.182:3000/
+    method: GET
+    expectedStatusCodes:
+      - 200
+
+status-website:
+  cname: ""    # add custom domain here once DNS'd
+  logoUrl: https://raw.githubusercontent.com/az-said/peptide_prediction/main/ui/public/logo.svg
+  name: PePFibPred Status
+  introTitle: PePFibPred — status + uptime
+  introMessage: This page tracks the availability of the PePFibPred reference deployment.
+  navbar:
+    - title: Status
+      href: /
+    - title: GitHub
+      href: https://github.com/az-said/peptide_prediction
+
+notifications:
+  # Sentry issue-alerts are the primary alert path; this is a soft public signal.
+  # Add Discord webhook here later if desired.
+  - type: discord
+
+assignees:
+  - axelgolubev
+  - az-said
+
+skipDescriptionUpdate: false
+skipPoweredByReadme: false
+i18n:
+  activeIncidents: Active incidents
+  allSystemsOperational: All systems operational
+  allSystemsOperationalSubtitle: PePFibPred and all dependencies are up.
+
+# Skip .well-known files
+files:
+  - ".upptimerc.yml"

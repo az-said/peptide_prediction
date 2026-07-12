@@ -7,7 +7,11 @@ Thanks for the interest. PVL is an open-source MIT-licensed peptide-analysis pla
 - **Response times**: 1–4 weeks during academic terms; faster during summer breaks. PVL is a research-grade open-source project, not a commercial product. We'll get to your PR / issue when we get to it.
 - **AI-reviewed PRs**: every pull request gets an automatic [CodeRabbit](https://coderabbit.ai/) review with line-level comments. Address the AI's notes before requesting human review — it catches obvious issues for free.
 - **Tone**: peer-to-peer, direct, signal-over-style. We don't do "consider" or "might want to" — say what's wrong and what to change.
-- **Decisions**: load-bearing architectural choices are documented in [`docs/active/DECISIONS.md`](docs/active/DECISIONS.md) (12 ADRs). Read the relevant ones before proposing changes that contradict them.
+- **Decisions**: load-bearing architectural choices are documented in [`docs/active/DECISIONS.md`](docs/active/DECISIONS.md) (27 ADRs). Read the relevant ones before proposing changes that contradict them.
+- **RFC first for axiom changes**: if your PR touches the FF-Helix / FF-SSW / SSW rules, the μH / hydrophobicity / TANGO thresholds, or `backend/schemas/api_models.py`, file a GitHub Discussion under category `RFC` **before** the PR. Template: [`docs/active/RFC_TEMPLATE.md`](docs/active/RFC_TEMPLATE.md). Reason: `docs/active/DECISIONS.md` records the outcome; the RFC records the reasoning.
+- **API stability**: [`docs/active/API_STABILITY.md`](docs/active/API_STABILITY.md) lists which response fields are STABLE (protected by SemVer + 12-month deprecation window) and which are UNSTABLE (may change without a major bump). Check before you build downstream against a field.
+- **Ownership + on-call**: [`docs/active/OWNERSHIP_MATRIX.md`](docs/active/OWNERSHIP_MATRIX.md) is the who-owns-what map; [`docs/active/ONCALL.md`](docs/active/ONCALL.md) is the pager rotation. CODEOWNERS auto-routes review — see [`.github/CODEOWNERS`](.github/CODEOWNERS).
+- **Nightly / edge builds**: early adopters can pull `ghcr.io/az-said/peptide_prediction/backend:edge` (rebuilt on every push to `main`); `:latest` tracks the latest tagged release.
 - **Releases**: major features ship in summer-vacation cycles. v0.2 target: summer 2026 (MCP server, multi-predictor consensus). Don't expect rapid iteration during semester time — we batch.
 
 If those tradeoffs work for you, we're glad to have you.

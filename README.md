@@ -18,6 +18,8 @@ Built around [Ragonis-Bachar et al. 2022](https://doi.org/10.1021/acs.biomac.2c0
 
 [**Try the live demo**](http://94.130.178.182:3000) · [**Self-host in 3 min**](#self-host-in-3-minutes) · [**Documentation site**](https://az-said.github.io/peptide_prediction/) · [**API**](#api) · [**Contribute**](CONTRIBUTING.md) · [**Cite**](#citing-pvl)
 
+**Team member joining the project?** → **[Alex Onboarding](docs/active/ALEX_ONBOARDING.md)** is the primary responder / operator guided path; **[Handoff](docs/active/HANDOFF.md)** is the general developer on-ramp.
+
 </div>
 
 ---

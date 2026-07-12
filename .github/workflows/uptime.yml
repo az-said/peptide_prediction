@@ -1,0 +1,37 @@
+name: uptime
+
+# Upptime — free GitHub-native status page + uptime monitoring.
+# Pings /api/health every 5 minutes and publishes a status page to GitHub Pages.
+# See docs/active/RUNBOOKS/README.md for how this integrates with SLO 1.
+#
+# Configuration lives in .upptimerc.yml (create this file with the endpoints below).
+# The first run of this workflow will initialise the status site.
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'   # every 5 minutes
+  repository_dispatch:
+    types: [uptime]
+  workflow_dispatch:
+  push:
+    paths: [.upptimerc.yml]
+
+permissions:
+  contents: write
+  issues: write
+  pages: write
+
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+jobs:
+  uptime:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update template
+        uses: upptime/uptime-monitor@master
+        with:
+          command: "update-template"
+        env:
+          GH_PAT: ${{ secrets.GH_PAT }}   # add a PAT with repo:write scope

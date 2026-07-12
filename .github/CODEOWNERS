@@ -1,0 +1,66 @@
+# CODEOWNERS — see docs/active/OWNERSHIP_MATRIX.md for the human context.
+#
+# Rules:
+#   - Any PR touching a listed path auto-requests review from the listed owners.
+#   - Peleg Ragonis-Bachar owns the scientific axioms but is NOT a GitHub committer;
+#     for the files marked "SCIENTIFIC", her review happens off-repo (Drive comment /
+#     PDF review). Do not merge changes to those files without a documented
+#     off-repo sign-off from Peleg (recorded either in the ADR entry under
+#     "Evidence" or in a linked GitHub Discussion RFC — see RFC_TEMPLATE.md).
+#   - "@az-said" is the veto owner on architectural + scientific decisions.
+#   - "@axelgolubev" is the operational owner as of 2026-07-12.
+
+# ─────────────────────────────────────────────────────────────────────
+# SCIENTIFIC — Said (veto) + Alex (review). Off-repo Peleg approval required.
+# ─────────────────────────────────────────────────────────────────────
+backend/schemas/api_models.py           @az-said
+backend/services/dataframe_utils.py     @az-said @axelgolubev
+backend/services/normalize.py           @az-said @axelgolubev
+backend/auxiliary.py                    @az-said @axelgolubev
+backend/tango.py                        @az-said @axelgolubev
+backend/s4pred.py                       @az-said @axelgolubev
+backend/biochem_calculation.py          @az-said @axelgolubev
+backend/consensus.py                    @az-said @axelgolubev
+backend/services/peptide_rank.py        @az-said @axelgolubev
+backend/tests/test_axiom_invariants.py  @az-said @axelgolubev
+backend/tests/test_canary_peptides.py   @az-said @axelgolubev
+
+# ─────────────────────────────────────────────────────────────────────
+# ARCHITECTURAL DECISIONS — Said only.
+# ─────────────────────────────────────────────────────────────────────
+docs/active/DECISIONS.md                @az-said
+docs/active/CONTRACTS.md                @az-said
+docs/active/API_STABILITY.md            @az-said
+docs/active/RFC_TEMPLATE.md             @az-said
+
+# ─────────────────────────────────────────────────────────────────────
+# PAPER + SCIENTIFIC DOCS — Both.
+# ─────────────────────────────────────────────────────────────────────
+docs/active/paper_drafts/               @az-said @axelgolubev
+docs/handbook/research/                 @az-said @axelgolubev
+docs/active/PAPER_METHODS_REFERENCE.md  @az-said @axelgolubev
+
+# ─────────────────────────────────────────────────────────────────────
+# INFRA + OPS — Alex primary, Said review.
+# ─────────────────────────────────────────────────────────────────────
+docker/                                 @axelgolubev @az-said
+.github/workflows/                      @axelgolubev @az-said
+docs/active/DEPLOYMENT.md               @axelgolubev @az-said
+docs/active/SENTRY_RUNBOOK.md           @axelgolubev @az-said
+docs/active/RUNBOOKS/                   @axelgolubev @az-said
+docs/active/ONCALL.md                   @axelgolubev @az-said
+docs/active/SLO.md                      @axelgolubev @az-said
+docs/active/OWNERSHIP_MATRIX.md         @az-said
+docs/active/MONTHLY_REPORT_TEMPLATE.md  @axelgolubev @az-said
+docs/active/INCIDENT_SEVERITY.md        @axelgolubev @az-said
+docs/active/postmortems/                @axelgolubev @az-said
+
+# ─────────────────────────────────────────────────────────────────────
+# ROOT + PROJECT-LEVEL — Said.
+# ─────────────────────────────────────────────────────────────────────
+CLAUDE.md                               @az-said
+CITATION.cff                            @az-said
+CHANGELOG.md                            @az-said @axelgolubev
+LICENSE                                 @az-said
+SECURITY.md                             @az-said
+README.md                               @az-said @axelgolubev

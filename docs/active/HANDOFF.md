@@ -1,6 +1,8 @@
 # PVL — Developer Handoff
 
 > **Read this first.** If you're a new developer joining PVL, this file is your single-page on-ramp. Everything else linked from here is authoritative.
+>
+> **👋 Alex — if you're being onboarded as Primary Responder, start at [`ALEX_ONBOARDING.md`](ALEX_ONBOARDING.md) instead. It's a week-by-week guided path that references this document and everything else you need. Come back here on Day 4 of Week 1.**
 
 ---
 
@@ -12,6 +14,16 @@
 - **License**: MIT.
 - **Repo**: https://github.com/az-said/peptide_prediction
 - **Production**: Hetzner VPS at the moment; DESY VM migration queued (see `memory/project_desy_vm_access.md`).
+- **Paper (in preparation)**: Nucleic Acids Research Web Server Issue 2026 — submission window 2026-11-10 → 2026-12-10; working name **PePFibPred / FibrilPredictor**. See `docs/active/paper_drafts/`.
+
+## 1a. Ownership model (as of 2026-07-12)
+
+- **Owner (all admin access, veto, silent by default)**: Said Azaizah (`@az-said`)
+- **Primary Responder (paged, day-to-day operator)**: Aleksandr Golubev (`@axelgolubev`)
+- **Scientific Authority (off-repo)**: Dr. Peleg Ragonis-Bachar (Technion, Landau lab)
+- **Escalation**: SEV1 issue unresolved > 30 min (business hours) or > 2 h (off-hours) → auto-escalation email to Said
+
+Canonical reference: `docs/active/OWNERSHIP_MATRIX.md` (who owns which platform) + `docs/active/ONCALL.md` (how the pager rotates). Sentry-specific migration runbook: `docs/active/paper_drafts/13_sentry_migration_runbook.md`.
 
 ---
 
