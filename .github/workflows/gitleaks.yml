@@ -28,7 +28,7 @@ jobs:
           fetch-depth: 0     # Full history — required for historical scans
 
       - name: Gitleaks
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@v3
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # Uncomment when a Gitleaks license is available (free for public repos).
