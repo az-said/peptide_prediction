@@ -58,15 +58,23 @@
 
 ---
 
-### STEP 4 — Invite Alex to Sentry as Owner
+### STEP 4 — Sentry: transfer to Alex (no invite — free-plan limitation)
 
-**Time**: 2 min. **Manual**.
+**Time**: 5 min. **Manual**.
 
-1. <https://sentry.io> → switch to `desycssb` org
-2. Settings → Members → Invite Member
-3. Email `aleksandr.golubev@cssb-hamburg.de` → role **Owner** → add to all teams → Send
+**Why the plan changed**: your `desycssb` Sentry org is on the free Developer plan, capped at 1 member. Invites are blocked ("You have reached your 1 member limit"). Rather than pay $26/mo for Team plan, we transfer Sentry ownership to Alex entirely — cleanest founder-oversight fit: you have zero Sentry pager, Alex owns the whole surface, cost stays $0.
 
-**Success check**: Members shows Alex as *Pending*. He has 7 days to accept.
+**Steps**:
+1. Ask Alex (in the Step 7 email) to create a fresh Sentry account under `aleksandr.golubev@cssb-hamburg.de` and a new org (e.g. `pepfibpred`).
+2. Alex creates a new Python project inside his org → gets a new DSN.
+3. You go to <https://github.com/az-said/peptide_prediction/settings/secrets/actions> and update:
+   - `SENTRY_DSN` → Alex's new DSN
+   - `SENTRY_AUTH_TOKEN` → Alex generates via <https://sentry.io/settings/account/api/auth-tokens/> (scopes: `project:releases`, `org:read`)
+4. You leave your current `desycssb` org: <https://sentry.io/settings/members/> → your row → "Leave" (or close the org entirely at Settings → General → Close Account).
+5. Alex sets his notification prefs to receive all issue alerts (default is fine on free tier).
+6. Alex configures a single email-forwarding rule in his mailbox: any Sentry mail with `[SEV1]` in the subject → forward to `said.azaizah@cssb-hamburg.de`. That's your only Sentry signal going forward.
+
+**Success check**: `SENTRY_DSN` secret in GitHub matches Alex's new project; you receive no Sentry mail; a test SEV1 forwarded from Alex lands in your DESY inbox.
 
 ---
 
@@ -153,6 +161,8 @@ Alex,
 
 Welcome as Primary Responder + Hetzner account owner for PePFibPred. Thank you for taking this on — genuinely. The scientific side belongs to Peleg and Meytal; the operational side is now yours; I stay in the loop as founder-oversight but silent on day-to-day pages.
 
+One Sentry note before the reading list: my current Sentry org is on the free plan and capped at 1 user, so I can't just invite you. Cleanest fix: could you create a fresh Sentry org under this email (aleksandr.golubev@cssb-hamburg.de) — call it "pepfibpred" or similar — spin up a Python project inside it, and send me the DSN + a Sentry auth token (scopes: project:releases, org:read)? I'll swap those into GitHub Actions secrets and leave my old org. From then on Sentry is entirely yours; I only want SEV1 mail forwarded to me (a mailbox rule on your side is enough — forward anything with [SEV1] in the subject to said.azaizah@cssb-hamburg.de). Setup takes ~5 minutes.
+
 Everything you need is in the repo, and I wrote it assuming you're new to GitHub. Read these in order:
 
 1. docs/active/ALEX_ONBOARDING.md — your master guide, Week 1 / Week 2 / Week 3 plan
@@ -178,21 +188,20 @@ Said
 
 ---
 
-### STEP 8 — Sentry alert migration
+### STEP 8 — Sentry cutover verification (short version, since Step 4 already transferred ownership)
 
-**Time**: 30 min. **You do this manually** (access-control + notification routing).
-**Blocks on**: Alex accepting the Sentry invite (Step 4). Usually within a few hours.
+**Time**: 10 min. **You do this manually**.
+**Blocks on**: Alex having created his Sentry org + DSN (from Step 7 email reply).
 
-Follow `docs/active/paper_drafts/13_sentry_migration_runbook.md` end-to-end. Summary:
+1. Confirm the new `SENTRY_DSN` secret is set on `az-said/peptide_prediction` (Step 4.3).
+2. Push any trivial commit to `main`; watch `.github/workflows/deploy.yml` and confirm the Sentry release upload step succeeds against Alex's DSN. (Alternative: manually trigger a workflow rerun.)
+3. In production, hit a synthetic 500 endpoint (or wait for a real error). Verify the issue appears in Alex's Sentry org, NOT in your old `desycssb` org.
+4. Confirm no new mail lands in your inbox from Sentry within 24 h.
+5. Once verified: leave your `desycssb` org (Settings → your row → Leave) or close it entirely (Settings → General → Close Account) to stop the free-tier from being reachable.
 
-1. **Alerts → Alert Rules**: for each rule, change recipient from "Said Azaizah (user)" to "Team: Owners". Save.
-2. **Your avatar → Settings → Notifications**: Issue Alerts → "Only on issues I'm subscribed to". Deploy off. Weekly Reports on. Quotas on. Spike Protection on. Everything else off.
-3. **Add SEV1 escalation rule**: severity = sev1, unresolved for 30 min → email you + email Alex. Second rule at 2 h for off-hours.
-4. **Slack (if wired)**: re-point channel target to Alex.
-5. **Confirm both weekly reports on**.
-6. **Sanity test**: trigger a staging 500. Confirm Alex is paged, you are not. After 30 min confirm you receive the SEV1 escalation.
+**Success check**: errors flow to Alex's org, your inbox is silent, `desycssb` org is either abandoned or closed. You are officially off the pager.
 
-**Success check**: your inbox stops receiving routine pages; Alex's starts. You still receive the SEV1 escalation ping in a controlled test.
+**Optional (recommended)**: `docs/active/paper_drafts/13_sentry_migration_runbook.md` has the full alert-routing configuration for Alex to apply on his side (Team: Owners routing, SEV1 escalation rules, weekly report toggles) — forward it to him.
 
 ---
 
@@ -204,6 +213,29 @@ You send one final message to yourself (or to me next session): "close-out done"
 - I update `docs/active/SAID_MANUAL_ACTIONS.md` to mark Actions 3, 4, 5, 6, 7, 9, 10 as DONE.
 - I update the auto-memory index (`MEMORY.md`) with a `project_pvl_closeout_2026_08.md` entry that captures the handoff state for future compaction cycles.
 - We move on to your next non-PVL project.
+
+---
+
+## Dependabot triage — status snapshot (2026-08-04)
+
+Handled in this session so you're not walking Alex into 20 open PRs:
+
+**Merged (13)** — all GitHub Actions bumps + safe JS patch bumps + backend uvicorn/duckdb minor bumps:
+`#136` setup-python 5→7, `#135` gitleaks-action 2→3, `#134` codeql-action 3→4.37.3, `#133` setup-node 4→7, `#137` postcss 8.5.15→8.5.25, `#132` dompurify 3.4.2→3.4.12, `#131` brace-expansion+eslint (via rebase), `#129` uvicorn 0.46→0.49, `#127` duckdb 1.5.2→1.5.4, `#120` js-yaml 4.1.1→4.3.0, `#113`/`#138` undici 7.25→7.29, `#139` brace-expansion 1.1.14→1.1.18.
+
+**Rebased, awaiting fresh CI (2)**: `#122` actions/checkout 4→7, `#128` fastapi 0.136→0.138 — will auto-close once the rebased PRs pass.
+
+**Deferred to Alex (7)** — each has a triage comment pointing to `OPERATOR_COOKBOOK.md`:
+- `#61` **zod 3→4** (MAJOR, breaks validator API in ~15 files)
+- `#71` eslint-plugin-react-hooks 5→7 (MAJOR dev-dep, low blast)
+- `#72` @vitejs/plugin-react-swc 3→4 (MAJOR dev-dep)
+- `#73` @hookform/resolvers 3→5 (MAJOR, needs form-handler audit)
+- `#125` **transformers 4→5** (MAJOR, ML dep — check S4PRED model loading)
+- `#126` numpy 2.4→2.5 (backend tests failing — real incompat)
+- `#130` grouped 40-package minor+patch bundle (verify each)
+- `#140` vite+plugin-react-swc grouped MAJOR (same class as #72)
+
+**Vulnerability alert count**: dropped from **41** (2 crit / 16 high / 15 mod / 8 low) to **27** (2 crit / 12 high / 11 mod / 2 low). The remaining critical/high are inside the deferred majors (esp. transformers + zod); Alex clears them in Week 3.
 
 ---
 
