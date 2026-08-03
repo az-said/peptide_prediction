@@ -100,6 +100,14 @@ Really glad we built this together, and if you ever want a second read on anythi
 Said
 Said Azaizah - DESY-CSSB / Technion
 said.azaizah@cssb-hamburg.de
+
+PS - optional but recommended: if you want a coding agent to help you navigate the repo (Claude Code is what I used throughout - free tier is plenty for exploration), it takes about 3 minutes to wire up:
+
+  npm install -g @anthropic-ai/claude-code
+  cd /path/to/peptide_prediction    # after you git clone
+  claude                            # follow the login prompt; use your DESY-CSSB email if you have Anthropic org access, otherwise personal Google/GitHub works for the free tier
+
+Then type: "Read docs/active/FOR_NEXT_BUILDER.md and docs/active/HANDOFF_TECH_PLAYBOOK.md Chapters 0 and 7, then confirm you understand the guardrails." It loads the whole context in one go and follows the rules I wrote for coding agents (no touching api_models.py, no axiom edits, no bypassing pre-commit). Same setup works for Matheus.
 ```
 
 **Success**: sent from your DESY address. You then go to <https://github.com/az-said/peptide_prediction> → top-right *Unwatch* → **Ignore**, and to <https://github.com/az-said/peptide_prediction/settings/notifications> → uncheck *Dependabot alerts*. Your inbox goes quiet.
