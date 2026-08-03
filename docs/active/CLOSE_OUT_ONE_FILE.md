@@ -1,87 +1,112 @@
-# Close-out — the one file you follow to lock this chapter in
+# Close-out — final plan, executable step by step
 
 **Owner**: Said Azaizah
-**Purpose**: Everything left to do to hand this off cleanly to Alex + close the loop with Peleg and Meytal. Do the steps in order; each step has a one-line success check.
-**Time**: ~2h 40min of your active work + async waits.
-**When you're done with this file**: you're a co-author on a submitted paper with an operating co-founder handling day-to-day. You move on to non-PVL work. This file gets renamed to `CLOSE_OUT_DONE.md` and archived.
+**Last edited**: 2026-08-04 (post ownership pivot)
+**Purpose**: The one file you follow to finish the handoff and move on. Everything already done is marked ✅ and can be skipped; everything left is numbered in order with success checks and the exact wording you send.
+**When you're done**: I archive this file to `docs/archive/2026-08/CLOSE_OUT_DONE.md` and flip the memory to RESOLVED.
 
 ---
 
-## Where we are (the lock-in state)
+## Ownership decision (2026-08-04, locked)
 
-- `main` is at commit `9f3319c`, all handover docs pushed.
-- 82 markdown files in `docs/active/`. Anyone with repo access can pick up the trail from `README.md` → `docs/active/README.md`.
-- Wave 2.8/2.9 fully merged into `main`. The `wave-2.8/peleg-pdf-followups` branch is stale; you can ignore it.
-- Sentry, GitHub, PyPI, Hetzner ownership documented in `docs/active/OWNERSHIP_MATRIX.md`. Alex is Hetzner owner; you retain root SSH for founder-oversight.
-- Paper-side: full Materials & Methods v2 + 6 other sections drafted locally, ready to paste. Working-copy Google Doc already opened + shared with the team.
-- Cowork prompt library: `docs/active/COWORK_PROMPTS.md` (6 prompts, feed to a browser-capable agent).
-- Every action still needed for you personally is below.
+You keep everything visible on your portfolio. Alex gets everything he needs to operate. No credibility trade.
 
----
+| Surface | You | Alex | Why |
+|---|---|---|---|
+| **GitHub org `az-said`** | **Owner (permanent)** | — | Public org page is a portfolio signal. Stays yours. |
+| **`peptide_prediction` repo** | Owner (via org) | **Admin** | Alex can merge PRs, manage secrets, invite outside collaborators, triage Dependabot. Cannot delete the repo or remove you. |
+| **Sentry** | Leaves free org | **New free org, own DSN** | Sentry is invisible to CV. Alex owns it entirely; you get only `[SEV1]` mail-forwarded. |
+| **PyPI `pvl-cli` / `pvl-mcp`** | **Owner (permanent)** | Maintainer | Both can publish; ownership stays with you. |
+| **Hetzner VPS** | Root SSH + oversight | **Account Owner (billing)** | Already done 2026-07-12. |
+| **Zenodo (via GitHub)** | Auto via linked repo | — | DOI mint webhook. |
+| **DESY VM `landau-webapp-dev`** | Transitional SSH | **Owner (when IT unblocks)** | DESY-institutional; Alex's home turf. |
+| **`CITATION.cff` / ADR log** | **Veto** | Review | Peleg approves off-repo for anything touching axioms. |
 
-## Do these in order
-
-### STEP 1 — Paste 6 sections into the working-copy Google Doc
-
-**Time**: 90 min (Cowork does it; you review + accept).
-**Owns**: You (feed the Cowork prompt).
-**Blocks**: Nothing downstream; but Peleg + Meytal have nothing to review until this lands.
-
-**How**: open `docs/active/COWORK_PROMPTS.md` § A1 and paste the whole prompt into a browser-capable agent (Claude Desktop with Chrome tools, or Cursor Composer). It will paste sections 1/9 through 6/9 into the working copy, converting Markdown to Docs formatting and preserving Greek characters + your terminology guardrails.
-
-**Success check**: open <https://docs.google.com/document/d/1mawqsE2x2PIvPYcj_lon0oRMN5OsvOhnxGz8l8FElTQ/edit> — MATERIAL AND METHODS shows Method A through Method M; DATA AVAILABILITY replaced; DISCUSSION has your bullets + the "Ongoing development and roadmap" section.
+**GitLab prep**: DESY will likely mirror or migrate the repo to `gitlab.desy.de` at some point. When that happens, the transfer is a `git remote add gitlab …` + push + org handover in one afternoon. Documented in `docs/active/HANDOFF_TECH_PLAYBOOK.md` Ch. 4 so whoever's on-call at the time doesn't have to invent it.
 
 ---
 
-### STEP 2 — Post two replies on Peleg's threads
+## Done ✅ (in this session or before)
 
-**Time**: 5 min (Cowork does it).
-**Owns**: You (feed the Cowork prompt).
-**Blocks**: Signals to Peleg that naming + graphical-abstract discussion is live.
-
-**How**: `docs/active/COWORK_PROMPTS.md` § A2. Same browser-capable agent. Posts your naming candidates + graphical-abstract proposal as replies on the two open threads. Both stay open (Peleg resolves).
-
-**Success check**: both threads show your reply as the last comment.
-
----
-
-### STEP 3 — Invite Alex to GitHub org as Owner
-
-**Time**: 2 min. **You do this manually** (do not delegate access-control to an agent).
-
-1. <https://github.com/orgs/az-said/people>
-2. Invite member → search `axelgolubev` → pick DESY Hamburg profile
-3. Role: **Owner** → Send invitation
-4. Belt-and-suspenders: <https://github.com/az-said/peptide_prediction/settings/access> → Add people → `axelgolubev` → role **Admin**
-
-**Success check**: People page shows Alex as *Pending invitation*.
+- ✅ **Paper sections shared** — you shared the full 20-page working doc with the team. No more pasting needed; you kept the long sections you wrote, they edit around them.
+- ✅ **Cowork V11 landed** — test file, dead-code removal, README HANDOFF link, PR body doc all on `main`.
+- ✅ **Master push** — 22 handover docs (`ALEX_ONBOARDING`, `DOCS_MAP_FOR_ALEX`, `OPERATOR_COOKBOOK`, `GITHUB_101_FOR_ALEX`, ownership matrix, monthly report template + example, security policy, CODEOWNERS, gitleaks + uptime workflows, etc.) all committed and pushed.
+- ✅ **Dependabot triage** — 13 safe PRs merged this session; 7 risky ones deferred to Alex with per-PR triage comments; vulnerability count 41 → 27.
+- ✅ **Hetzner ownership** transferred to Alex.
+- ✅ **Ownership decision** — you keep the GitHub org, Alex gets repo-Admin.
 
 ---
 
-### STEP 4 — Sentry: transfer to Alex (no invite — free-plan limitation)
+## Still to do (in order — each ~2-15 min)
 
-**Time**: 5 min. **Manual**.
+### 1. Post two comments on Peleg's threads (5 min, browser)
 
-**Why the plan changed**: your `desycssb` Sentry org is on the free Developer plan, capped at 1 member. Invites are blocked ("You have reached your 1 member limit"). Rather than pay $26/mo for Team plan, we transfer Sentry ownership to Alex entirely — cleanest founder-oversight fit: you have zero Sentry pager, Alex owns the whole surface, cost stays $0.
+Peleg has two open threads in the Doc: "Find a name" and "Ideas for graphical abstract?". You wrote replies for both in `docs/active/paper_drafts/PASTE_MASTER_INTO_GOOGLE_DOC.md` (§ 7/9 and § 8/9). Copy each, paste into the corresponding thread's Reply box, post. Leave both threads open.
 
-**Steps**:
-1. Ask Alex (in the Step 7 email) to create a fresh Sentry account under `aleksandr.golubev@cssb-hamburg.de` and a new org (e.g. `pepfibpred`).
-2. Alex creates a new Python project inside his org → gets a new DSN.
-3. You go to <https://github.com/az-said/peptide_prediction/settings/secrets/actions> and update:
-   - `SENTRY_DSN` → Alex's new DSN
-   - `SENTRY_AUTH_TOKEN` → Alex generates via <https://sentry.io/settings/account/api/auth-tokens/> (scopes: `project:releases`, `org:read`)
-4. You leave your current `desycssb` org: <https://sentry.io/settings/members/> → your row → "Leave" (or close the org entirely at Settings → General → Close Account).
-5. Alex sets his notification prefs to receive all issue alerts (default is fine on free tier).
-6. Alex configures a single email-forwarding rule in his mailbox: any Sentry mail with `[SEV1]` in the subject → forward to `said.azaizah@cssb-hamburg.de`. That's your only Sentry signal going forward.
-
-**Success check**: `SENTRY_DSN` secret in GitHub matches Alex's new project; you receive no Sentry mail; a test SEV1 forwarded from Alex lands in your DESY inbox.
+**Success**: both threads show your reply as the last comment, both still open.
 
 ---
 
-### STEP 5 — Send Peleg the warm close-out email
+### 2. Invite Alex as repo Admin (NOT org Owner) — 2 min
 
-**Time**: 15 min (write once, review, send).
-**Owns**: You, from `said.azaizah@cssb-hamburg.de` (or Technion, or MIT — never personal Gmail).
+Open <https://github.com/az-said/peptide_prediction/settings/access> → **Add people** → search `axelgolubev` → pick DESY Hamburg profile → role **Admin** → send.
+
+Do **not** invite him at the org level — keep the org clean under your name.
+
+**Success**: the repo Access page shows Alex as *Pending invitation* with role Admin.
+
+---
+
+### 3. Send Alex the warm handoff email (5 min)
+
+**To**: `aleksandr.golubev@cssb-hamburg.de`
+**Subject**: `PePFibPred — handoff, welcome, and how to get set up`
+
+```
+Alex,
+
+You're now Primary Responder for PePFibPred. Thank you for taking this on — genuinely. This project mattered to me and it means a lot to hand it to someone who cares about the science.
+
+One structural note before the reading list. I'm keeping GitHub org ownership under my account (the org page is on my portfolio and I want it to stay stable there), but I've given you Admin on the peptide_prediction repo — that's full write, merge, secret management, and Dependabot triage. Practically identical to Owner for day-to-day operation. If DESY moves us to gitlab.desy.de down the line, we cut a clean transfer at that point; there's a chapter in the tech playbook (link below) describing exactly how.
+
+Hetzner stays with you (already done 2026-07-12). The one thing I need you to set up: Sentry. My current free-tier org is capped at 1 user, so the cleanest path is you creating a fresh Sentry account under this email address, spinning up an org (call it "pepfibpred" or similar) with a Python project inside, and sending me:
+
+  1. The project DSN (from Settings -> Projects -> [project] -> Client Keys)
+  2. A Sentry auth token with scopes project:releases and org:read (Settings -> Account -> API -> Auth Tokens)
+
+I'll swap those into GitHub Actions secrets, leave my old org, and Sentry is yours end-to-end. I only want [SEV1] mail forwarded to said.azaizah@cssb-hamburg.de - a single mailbox rule on your side is enough.
+
+Everything you need to run the server is written down. Read in this order:
+
+  1. docs/active/FOR_NEXT_BUILDER.md         - one-pager if you land cold
+  2. docs/active/CLAUDE.md                   - project ground rules
+  3. docs/active/ALEX_ONBOARDING.md          - Week 1-3 plan I wrote for you specifically
+  4. docs/active/HANDOFF_TECH_PLAYBOOK.md    - deep tech reference (also written to be readable by a coding agent if you use Cursor/Claude Code/similar)
+  5. docs/active/OPERATOR_COOKBOOK.md        - 21 how-to recipes (SSH, deploy rollback, Dependabot merge, etc.)
+  6. docs/active/DOCS_MAP_FOR_ALEX.md        - full file tree if you want to explore
+
+If you want to delegate day-to-day debugging to Matheus or someone else on the team, the docs are structured so anyone can walk in cold - point them at FOR_NEXT_BUILDER.md and HANDOFF_TECH_PLAYBOOK.md. There's an "AI-agent-consumable" section in the tech playbook so if they run a coding agent, it has enough guardrails to not break anything scientific.
+
+Two small things I need from you when you have a moment:
+  - Your PyPI username - so I can add you as Maintainer on pvl-cli and pvl-mcp (you get publish rights; ownership stays with me for the portfolio record)
+  - Your ORCID URL - so I can add you to CITATION.cff before we cut v1.0.0 and mint the Zenodo DOI
+
+Your first real work: 27 open Dependabot alerts. I merged the 13 safe ones this session and deferred 7 risky bumps (majors + one backend test failure) to you with triage comments pointing to OPERATOR_COOKBOOK.md ("Merge a Dependabot PR safely"). Target: 2 critical + 12 high closed within 2 weeks. Fine to hand this to Matheus if you want.
+
+I'll stop being the default page - turning off my repo watch and unsubscribing from Dependabot right after I send this. From here on only SEV1 escalations reach me.
+
+Really glad we built this together, and if you ever want a second read on anything, ping me at the DESY address. Same for future collaborations or references.
+
+Said
+Said Azaizah - DESY-CSSB / Technion
+said.azaizah@cssb-hamburg.de
+```
+
+**Success**: sent from your DESY address. You then go to <https://github.com/az-said/peptide_prediction> → top-right *Unwatch* → **Ignore**, and to <https://github.com/az-said/peptide_prediction/settings/notifications> → uncheck *Dependabot alerts*. Your inbox goes quiet.
+
+---
+
+### 4. Send Peleg the warm close-out email (10 min)
 
 **To**: Peleg Ragonis-Bachar
 **Subject**: `PePFibPred paper — closing the loop + four things I need`
@@ -89,194 +114,117 @@
 ```
 Peleg,
 
-I've drafted everything I could without you — Method A through M in Materials and Methods, the Server Usage section, Author Contributions, Data Availability, eight Discussion bullets, and a five-paragraph roadmap for Ongoing Development. It's all in the working copy of the Doc; I posted the sections directly under your existing headings so nothing you or Meytal wrote gets touched.
+I drafted everything I could without you - Method A through M in Materials and Methods, the Server Usage section, Author Contributions, Data Availability, eight Discussion bullets, and a five-paragraph Ongoing Development and Roadmap section. It's all in the working copy of the Doc, posted under your existing headings so nothing you or Meytal wrote gets touched.
 
-Working with you on this has been the best part of building it. The algorithms are yours — TANGO's stretch-average method, the FF-Helix Chou-Fasman propensity, the SSW-union axiom, the μH + hydrophobicity gates — and I tried to make sure the paper reads that way. I've been listing you as first author (and Meytal senior) per Author Contributions, and I'll keep it that way unless you and Meytal want it framed differently.
+Working with you on this has been the best part of building it. The algorithms are yours - TANGO's stretch-average method, the FF-Helix Chou-Fasman propensity, the SSW-union axiom, the mu-H + hydrophobicity gates - and I tried to make the paper read that way. I've been listing you as first author (Meytal senior) per Author Contributions and will keep it there unless you and Meytal want a different order.
 
 Four things I still need from you before I can send it to Meytal for a final read:
 
-1. The Ragonis-Bachar and Rayan threshold citation DOI — for Method G. I have "[CITE]" as a placeholder in three places.
-2. The Staphylococcus aureus 2023 dataset publication reference — for Method M validation table.
-3. TANGO aggregation-by-stretches: on 2026-06-03 you mentioned porting the stretch-scan function from your reference code (with average score limit = 0). Which function name in your repo should I port? Right now the code runs TANGO at fixed conditions (pH 7, T 298 K, ionic strength 0.1 M, TFE 0); I've documented that faithfully. If you want the stretch method instead, I'll implement it as soon as you point me to the function.
-4. Verbatim Help-page text for SSW and FF-SSW definitions — you already wrote Helix + FF-Helix; I want to mirror them so the paper's Server-Output section stays symmetric.
+  1. The Ragonis-Bachar and Rayan threshold citation DOI (Method G references it three times as [CITE])
+  2. The Staphylococcus aureus 2023 dataset publication reference (Method M validation table)
+  3. TANGO aggregation-by-stretches - on 2026-06-03 you mentioned porting the stretch-scan function from your reference code with average score limit = 0. Which function name in your repo should I port? Right now the code runs TANGO at fixed conditions (pH 7, T 298 K, ionic strength 0.1 M, TFE 0); I documented that faithfully. If you want the stretch method instead, I'll implement it as soon as you point me to the function.
+  4. Verbatim Help-page text for SSW and FF-SSW definitions - you already wrote Helix and FF-Helix; I want to mirror them so the paper's Server Output section stays symmetric.
 
 Two smaller things:
-- Signed charge vs. absolute charge (Q-FIX-022) — ok to ship with signed? I wrote the paper that way; happy to switch if you prefer absolute.
-- OQ7 (β-% threshold definition) — close it before submission, or defer to a next-cycle patch? I'm fine either way.
+  - Signed charge vs absolute charge (Q-FIX-022): ok to ship signed? Happy to switch to absolute if you prefer.
+  - OQ7 (beta-% threshold definition): close before submission, or defer to a next-cycle patch? Fine either way.
 
-On team going forward: Alex Golubev is stepping in as the primary maintainer for the ops side (Sentry alerts, dependency updates, deployment). I stay in the loop as founder-oversight — I'll see the monthly report, and I'm still on any scientific ADR you want me to look at — but for day-to-day questions about the server it's fastest to ping Alex directly (aleksandr.golubev@cssb-hamburg.de). Everything he'd need to answer you is in the repo under docs/active/; the entry point for a new maintainer is docs/active/ALEX_ONBOARDING.md.
+On team going forward: Aleksandr Golubev is now Primary Responder for the ops side (Sentry alerts, dependency updates, deployment). I stay in the loop as founder-oversight - I'll see the monthly report, and I'm still on any scientific ADR you want me to look at - but for day-to-day server questions it's fastest to ping Alex directly at aleksandr.golubev@cssb-hamburg.de. Everything he needs to answer you is in the repo under docs/active/; entry point is docs/active/ALEX_ONBOARDING.md.
 
-Take your time on the four items — nothing is urgent. Thank you again for trusting me with this. I hope we get to build the next one together.
+Take your time on the four items - nothing is urgent. And thank you again for trusting me with this. I hope we build the next one together; feel free to reach out any time - for the paper, for references, or if a future project comes up.
 
 Said
+said.azaizah@cssb-hamburg.de
 ```
 
-**Success check**: sent from a DESY / Technion / MIT address; you've cc'd Meytal so she has visibility on the naming + citation asks.
+**Success**: sent from your DESY address, ideally cc'ing Meytal.
 
 ---
 
-### STEP 6 — Send Meytal the warm close-out email
-
-**Time**: 10 min.
-**Owns**: You, from the same address family.
+### 5. Send Meytal the warm close-out email (10 min)
 
 **To**: Meytal Landau
-**Subject**: `PePFibPred paper — Acknowledgements, Funding, BioRender + handoff note`
+**Subject**: `PePFibPred paper — Acknowledgements, Funding, BioRender + handoff`
 
 ```
 Meytal,
 
-The technical sections of the NAR draft are in the working copy — Peleg has the link. I drafted six of them (Materials and Methods, Server Usage, Author Contributions, Data Availability, Discussion bullets, and a five-paragraph roadmap section) and left every section you or Peleg wrote untouched.
+The technical sections of the NAR draft are in the working copy - Peleg has the link. I drafted six of them (Materials and Methods, Server Usage, Author Contributions, Data Availability, Discussion bullets, and a five-paragraph roadmap section) and left every section you or Peleg wrote untouched.
 
-Thank you for trusting me with the build and for giving me the space to design it end-to-end. Being part of this — from the algorithms to the visualisations to the paper — is something I won't forget.
+Thank you for trusting me with the build and for giving me the space to design it end-to-end. Being part of this - from the algorithms through the visualisations to the paper - is something I won't forget, and it shaped how I think about scientific tools.
 
 Three things only you can provide before we can lock the draft:
 
-1. ACKNOWLEDGEMENTS — anyone at DESY-CSSB (or elsewhere) we should credit for support beyond authorship? The section has a placeholder comment I left for you.
-2. FUNDING — the grant numbers to cite. Placeholder in the same area.
-3. BIORENDER — for the graphical abstract, NAR wants an article-specific licence and an explicit acknowledgment line. Does the Landau lab have one we can reuse, or should I get one dedicated to this article?
+  1. ACKNOWLEDGEMENTS - anyone at DESY-CSSB (or elsewhere) we should credit for support beyond authorship? The section has a placeholder comment I left for you.
+  2. FUNDING - the grant numbers to cite. Placeholder in the same area.
+  3. BIORENDER - for the graphical abstract, NAR requires an article-specific licence and an explicit acknowledgment line. Does the Landau lab have one we can reuse, or should I get one dedicated to this article?
 
-On operations going forward: Aleksandr Golubev is taking over as primary maintainer for the running server (Sentry alerts, dependency updates, DESY VM handling once IT unblocks). He's now GitHub org Owner and Hetzner account owner. I stay involved as founder-oversight — the paper's my baby too — but for anything server-side after submission, Alex will be faster. Everything he needs is written up in the repo (docs/active/ALEX_ONBOARDING.md is his entry point).
+On operations going forward: Aleksandr Golubev is taking over as Primary Responder for the running server (Sentry alerts, dependency updates, DESY VM handling once IT unblocks). He's now Admin on the repo and Hetzner account owner. I stay involved as founder-oversight - the paper's my baby too - but for anything server-side after submission, Alex will be faster. Everything he needs is in the repo (docs/active/ALEX_ONBOARDING.md is his entry point).
 
-I'll be moving to non-PVL work in the coming weeks — happy to be pinged any time on paper-side questions, or for reference work down the road.
+I'll be moving to non-PVL work in the coming weeks - happy to be pinged any time on paper-side questions, references for the future, or if a related project ever comes up where I could contribute.
 
 With gratitude,
 Said
+said.azaizah@cssb-hamburg.de
 ```
 
-**Success check**: sent. Peleg cc'd (or she'll get the same context from her thread).
+**Success**: sent.
 
 ---
 
-### STEP 7 — Send Alex the warm handoff email
+### 6. Sentry cutover verification (10 min, after Alex sends his DSN)
 
-**Time**: 5 min.
-**Owns**: You. Send AFTER Alex accepts the GitHub and Sentry invites (Steps 3 + 4).
+Blocks on Alex's reply to Step 3. When you have the DSN + auth token:
 
-**To**: `aleksandr.golubev@cssb-hamburg.de`
-**Subject**: `PePFibPred handoff — you're now Primary Responder`
+1. <https://github.com/az-said/peptide_prediction/settings/secrets/actions> → update `SENTRY_DSN` and `SENTRY_AUTH_TOKEN` to Alex's values.
+2. Push any trivial commit (a whitespace edit to `README.md` works) → watch `.github/workflows/deploy.yml` → confirm the Sentry release-upload step succeeds against Alex's DSN.
+3. Hit a synthetic 500 in prod (or wait for a real error). Verify it appears in Alex's Sentry, not your `desycssb` org.
+4. Leave your old org: <https://sentry.io/settings/members/> → your row → **Leave** (or Settings → General → Close Account).
 
-```
-Alex,
-
-Welcome as Primary Responder + Hetzner account owner for PePFibPred. Thank you for taking this on — genuinely. The scientific side belongs to Peleg and Meytal; the operational side is now yours; I stay in the loop as founder-oversight but silent on day-to-day pages.
-
-One Sentry note before the reading list: my current Sentry org is on the free plan and capped at 1 user, so I can't just invite you. Cleanest fix: could you create a fresh Sentry org under this email (aleksandr.golubev@cssb-hamburg.de) — call it "pepfibpred" or similar — spin up a Python project inside it, and send me the DSN + a Sentry auth token (scopes: project:releases, org:read)? I'll swap those into GitHub Actions secrets and leave my old org. From then on Sentry is entirely yours; I only want SEV1 mail forwarded to me (a mailbox rule on your side is enough — forward anything with [SEV1] in the subject to said.azaizah@cssb-hamburg.de). Setup takes ~5 minutes.
-
-Everything you need is in the repo, and I wrote it assuming you're new to GitHub. Read these in order:
-
-1. docs/active/ALEX_ONBOARDING.md — your master guide, Week 1 / Week 2 / Week 3 plan
-2. docs/active/GITHUB_101_FOR_ALEX.md — GitHub primer if you want it
-3. docs/active/DOCS_MAP_FOR_ALEX.md — file tree + which doc to read for which task
-4. docs/active/OWNERSHIP_MATRIX.md — who owns what, who gets what alert
-5. docs/active/OPERATOR_COOKBOOK.md — 21 how-to recipes (SSH to VM, merge Dependabot, roll back a deploy, etc.)
-
-There's an example monthly report at docs/active/reports/2026-07-EXAMPLE.md — I'd like you to draft the real one for August by 2026-09-04. Template lives at docs/active/MONTHLY_REPORT_TEMPLATE.md; five to ten minutes of your time each month.
-
-Two things I need from you when you have a moment:
-- Your PyPI username — so I can add you as Owner on pvl-cli and pvl-mcp
-- Your ORCID URL — so I can add you to CITATION.cff before we cut v1.0.0
-
-First real task waiting for you when you're ready: 33 open Dependabot security PRs. The playbook is in docs/active/COWORK_PROMPTS.md § B4 and docs/active/OPERATOR_COOKBOOK.md ("Merge a Dependabot PR safely"). Target: close the 2 critical + 12 high within 48 hours of you starting.
-
-Pinging me directly on anything you want a second read on. And congratulations — you're on the paper too.
-
-Said
-```
-
-**Success check**: sent. You can now stop watching Sentry.
+**Success**: errors flow to Alex, no Sentry mail in your inbox for 24 h, `desycssb` abandoned.
 
 ---
 
-### STEP 8 — Sentry cutover verification (short version, since Step 4 already transferred ownership)
+## Everything after Step 6 is fully async (Alex or Peleg or Meytal drives)
 
-**Time**: 10 min. **You do this manually**.
-**Blocks on**: Alex having created his Sentry org + DSN (from Step 7 email reply).
-
-1. Confirm the new `SENTRY_DSN` secret is set on `az-said/peptide_prediction` (Step 4.3).
-2. Push any trivial commit to `main`; watch `.github/workflows/deploy.yml` and confirm the Sentry release upload step succeeds against Alex's DSN. (Alternative: manually trigger a workflow rerun.)
-3. In production, hit a synthetic 500 endpoint (or wait for a real error). Verify the issue appears in Alex's Sentry org, NOT in your old `desycssb` org.
-4. Confirm no new mail lands in your inbox from Sentry within 24 h.
-5. Once verified: leave your `desycssb` org (Settings → your row → Leave) or close it entirely (Settings → General → Close Account) to stop the free-tier from being reachable.
-
-**Success check**: errors flow to Alex's org, your inbox is silent, `desycssb` org is either abandoned or closed. You are officially off the pager.
-
-**Optional (recommended)**: `docs/active/paper_drafts/13_sentry_migration_runbook.md` has the full alert-routing configuration for Alex to apply on his side (Team: Owners routing, SEV1 escalation rules, weekly report toggles) — forward it to him.
-
----
-
-## Once Steps 1-8 are done
-
-You send one final message to yourself (or to me next session): "close-out done". Then:
-
-- I rename `CLOSE_OUT_ONE_FILE.md` → `docs/archive/2026-08/CLOSE_OUT_DONE.md` and commit.
-- I update `docs/active/SAID_MANUAL_ACTIONS.md` to mark Actions 3, 4, 5, 6, 7, 9, 10 as DONE.
-- I update the auto-memory index (`MEMORY.md`) with a `project_pvl_closeout_2026_08.md` entry that captures the handoff state for future compaction cycles.
-- We move on to your next non-PVL project.
-
----
-
-## Dependabot triage — status snapshot (2026-08-04)
-
-Handled in this session so you're not walking Alex into 20 open PRs:
-
-**Merged (13)** — all GitHub Actions bumps + safe JS patch bumps + backend uvicorn/duckdb minor bumps:
-`#136` setup-python 5→7, `#135` gitleaks-action 2→3, `#134` codeql-action 3→4.37.3, `#133` setup-node 4→7, `#137` postcss 8.5.15→8.5.25, `#132` dompurify 3.4.2→3.4.12, `#131` brace-expansion+eslint (via rebase), `#129` uvicorn 0.46→0.49, `#127` duckdb 1.5.2→1.5.4, `#120` js-yaml 4.1.1→4.3.0, `#113`/`#138` undici 7.25→7.29, `#139` brace-expansion 1.1.14→1.1.18.
-
-**Rebased, awaiting fresh CI (2)**: `#122` actions/checkout 4→7, `#128` fastapi 0.136→0.138 — will auto-close once the rebased PRs pass.
-
-**Deferred to Alex (7)** — each has a triage comment pointing to `OPERATOR_COOKBOOK.md`:
-- `#61` **zod 3→4** (MAJOR, breaks validator API in ~15 files)
-- `#71` eslint-plugin-react-hooks 5→7 (MAJOR dev-dep, low blast)
-- `#72` @vitejs/plugin-react-swc 3→4 (MAJOR dev-dep)
-- `#73` @hookform/resolvers 3→5 (MAJOR, needs form-handler audit)
-- `#125` **transformers 4→5** (MAJOR, ML dep — check S4PRED model loading)
-- `#126` numpy 2.4→2.5 (backend tests failing — real incompat)
-- `#130` grouped 40-package minor+patch bundle (verify each)
-- `#140` vite+plugin-react-swc grouped MAJOR (same class as #72)
-
-**Vulnerability alert count**: dropped from **41** (2 crit / 16 high / 15 mod / 8 low) to **27** (2 crit / 12 high / 11 mod / 2 low). The remaining critical/high are inside the deferred majors (esp. transformers + zod); Alex clears them in Week 3.
-
----
-
-## What's still open at that point (async, not blocking you)
-
-| Waiting on | What it unblocks | ETA |
+| Waiting on | Unblocks | Notes |
 |---|---|---|
-| Alex's PyPI username | Action 11 — add him as PyPI Owner | Days |
-| Alex's ORCID | Action 12 → 14 → 15 — `CITATION.cff`, `v1.0.0` tag, Zenodo DOI mint | Days |
-| Peleg's four blockers (Step 5) | Locking the paper draft | 1-2 weeks realistically |
-| Meytal's ACK + Funding + BioRender (Step 6) | Draft ready for internal review | 1-2 weeks |
-| DESY IT unblocking landau-webapp-dev | Public dev VM | Weeks — Alex tracks |
-| bio.tools submission (Action 17) | Registry visibility | After v1.0.0 |
-
-Nothing on that list requires you to babysit. Alex owns operational unblocking; Peleg + Meytal reply on their own timeline; you're notified only if the monthly report flags something.
+| Alex sends PyPI username | Add him as Maintainer on `pvl-cli` + `pvl-mcp` | 2 min for you when it arrives |
+| Alex sends ORCID | Update `CITATION.cff` → tag `v1.0.0` → Zenodo DOI mints | Single 15-min session |
+| Peleg's 4 blockers | Locking the paper draft | 1-2 weeks realistically |
+| Meytal's ACK + Funding + BioRender | Draft ready for internal review | 1-2 weeks |
+| DESY IT unblocking `landau-webapp-dev` | Public dev VM | Alex tracks; see `HANDOFF_TECH_PLAYBOOK.md` Ch. 3 |
+| bio.tools submission | Registry visibility | After `v1.0.0`; template ready in `docs/active/A4_BIO_TOOLS_SUBMISSION.md` |
 
 ---
 
-## Rules of the road while these are async
+## When you finish Step 6
 
-- If Alex escalates a SEV1 to you (30-min unresolved page), respond within a business day. Everything else, defer to him.
-- If Peleg emails you scientifically, respond promptly (she's your co-author, not your ops).
-- If Meytal emails you, same.
-- If GitHub Dependabot pings you on a security PR, forward to Alex — Week 3 backlog is his.
-- Monthly report from Alex lands on the 4th of each month; read it, note flags, otherwise silent.
+Tell me "close-out executed" and I:
+1. Move this file → `docs/archive/2026-08/CLOSE_OUT_DONE.md`
+2. Mark done Actions in `SAID_MANUAL_ACTIONS.md`
+3. Flip `project_pvl_closeout_2026_08.md` memory to `[RESOLVED]`
+4. You start your next project with PVL fully compounded and off your plate.
 
 ---
 
-## Files this close-out reads / relies on (all committed to `main`)
+## Rules of the road after that
 
-- `docs/active/paper_drafts/PASTE_MASTER_INTO_GOOGLE_DOC.md` — Section 1/9-9/9 source of truth
-- `docs/active/COWORK_PROMPTS.md` — Cowork prompts A1, A2 + Part B manual checklist
-- `docs/active/SAID_MANUAL_ACTIONS.md` — the 20-action master list (this close-out compresses it)
-- `docs/active/OWNERSHIP_MATRIX.md` — who owns what
+- SEV1 mail (from Alex's forwarding rule) → respond within a business day
+- Peleg or Meytal emails → respond promptly, they're co-authors not ops
+- Dependabot noise → no longer reaches you, Alex owns
+- Monthly report from Alex (4th of each month) → read, note flags, silent otherwise
+- If Matheus or a future hire joins → point them at `docs/active/FOR_NEXT_BUILDER.md`; the whole stack self-serves from there
+
+---
+
+## Reference files (all pushed to `main`)
+
+- `docs/active/FOR_NEXT_BUILDER.md` — cold-landing one-pager (new)
+- `docs/active/HANDOFF_TECH_PLAYBOOK.md` — comprehensive tech ref + AI-agent contract (new)
+- `docs/active/OWNERSHIP_MATRIX.md` — updated ownership (Said keeps Owner)
 - `docs/active/ALEX_ONBOARDING.md` — Alex's Week 1-3 plan
-- `docs/active/DOCS_MAP_FOR_ALEX.md` — Alex's file-tree map
 - `docs/active/OPERATOR_COOKBOOK.md` — 21 how-to recipes
-- `docs/active/GITHUB_101_FOR_ALEX.md` — GitHub primer
-- `docs/active/paper_drafts/13_sentry_migration_runbook.md` — Sentry migration detail
-- `docs/active/paper_drafts/12_master_handover_playbook.md` — the "Owner without a pager" pattern
-- `docs/active/MONTHLY_REPORT_TEMPLATE.md` + `docs/active/reports/2026-07-EXAMPLE.md` — Alex's cadence
-- `docs/active/INVENTORY_EVERYTHING.md` — full asset inventory (GitHub, PyPI, Zenodo, Sentry, Hetzner, DESY VM, DNS, etc.)
-
-If anything in this close-out file conflicts with any of the above, the above wins — they're the durable references, this file is the ordered runbook for closing the chapter.
+- `docs/active/paper_drafts/PASTE_MASTER_INTO_GOOGLE_DOC.md` — paper sections + comment replies
+- `docs/active/paper_drafts/13_sentry_migration_runbook.md` — forward to Alex for his side
+- `docs/active/INVENTORY_EVERYTHING.md` — full asset inventory
