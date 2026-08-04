@@ -25,7 +25,7 @@
 |---|---|---|---|
 | **GitHub org `az-said`** | Said (permanent Owner) | — | Said keeps sole `Owner` role at org level (portfolio + institutional record). Alex operates via repo-Admin below. |
 | **GitHub repo `peptide_prediction`** | Said (via org) | Alex (Admin) | Alex has `Admin` at repo level — full write, merge, secret management, Dependabot triage. Cannot delete the repo or remove Said. |
-| **Sentry** | Said + Alex (co-Owners) | Alex (paged) | Both listed as Owners on the org. Requires Sentry Team plan (~$26/mo, per-seat) since the Developer free tier caps at 1 user. Alex receives all issue alerts by default; Said stays subscribed to the weekly digest only + [SEV1] escalations. Updated 2026-08-05. |
+| **Sentry** | Alex (new free org) | Alex | Alex creates a fresh Sentry account under his DESY email and a new org (e.g. `pepfibpred`). He holds the DSN + auth token. Said leaves the old `desycssb` org and receives only `[SEV1]` mail via a forwarding rule on Alex's side. Reverted to this plan 2026-08-05 (b) — declined Team-plan spend. |
 | **Zenodo** | Auto (linked repo) | — | DOI minted by webhook on tagged release. No per-user admin; whoever links the repo owns the mint. |
 | **PyPI — `pvl-cli`** | Said + Alex (co-Owners) | Alex (publish) | Both hold `Owner` role. Either can publish releases. Updated 2026-08-05. |
 | **PyPI — `pvl-mcp`** | Said + Alex (co-Owners) | Alex (publish) | Both hold `Owner` role. Either can publish releases. Updated 2026-08-05. |
@@ -61,17 +61,17 @@ Sign-off is recorded in the merging PR either as a linked Drive comment permalin
 
 ---
 
-## Sentry-specific (2026-08-05 update): co-Owners on Team plan
+## Sentry-specific (2026-08-05 b — final): Alex creates his own free org
 
-The 2026-08-04 "transfer to Alex, Said leaves" plan is superseded. Reason: Said wants to remain a listed Owner on every operational surface for portfolio continuity + relationship preservation. The revised plan:
+Said declined the Team-plan spend. Final plan:
 
-- Sentry org is upgraded from Developer (free, 1 user) to Team (~$26/mo, unlimited users). Billing lands on Said's card by default; can migrate to Alex/DESY-CSSB card later.
-- Both Said and Alex hold `Owner` role on the org.
-- Alex is the paged Primary Responder: receives all issue-alert emails.
-- Said stays subscribed to the weekly digest + [SEV1] escalations; day-to-day silent.
-- Alert-rule routing, weekly-report toggles, and SEV1 escalation configuration is per `docs/active/paper_drafts/13_sentry_migration_runbook.md`.
+- Alex creates a fresh Sentry account under `aleksandr.golubev@cssb-hamburg.de` and a new org (e.g. `pepfibpred`).
+- Alex spins up a Python project, sends Said the DSN + a Sentry auth token (scopes: `project:releases`, `org:read`).
+- Said updates `SENTRY_DSN` + `SENTRY_AUTH_TOKEN` secrets on `az-said/peptide_prediction`.
+- Said leaves the `desycssb` org.
+- Alex receives all Sentry alerts by default. A single mailbox rule on his side forwards any subject containing `[SEV1]` to `said.azaizah@cssb-hamburg.de`. That is Said's only Sentry signal going forward.
 
-Applies the same pattern as GitHub org (Said = permanent Owner, Alex = admin operator) but at the Sentry surface. Said stays "in the loop for future links" while Alex handles day-to-day.
+Sentry is the one surface where the co-admin-everywhere pattern doesn't apply — free-tier cap makes it uneconomical. Said stays "in the loop" via [SEV1] forwarding only. All other surfaces (GitHub, PyPI, Drive, Upptime, bio.tools, JOSS) apply the co-admin-everywhere pattern.
 
 ---
 
