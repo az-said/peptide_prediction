@@ -376,6 +376,22 @@ If you want to do the whole kit, this is the sequence with the least friction:
 
 ---
 
+## 8b. What Cowork already delivered (as of your paste 2026-08-04)
+
+Cowork ran Prompts 3, 4, 5, 6 in a subsequent session and delivered:
+
+| Deliverable | Location | Notes |
+|---|---|---|
+| **CV_LINKS.md** | `docs/active/CV_LINKS.md` | 50+ rows across Project / Documents / People / Organisations / Future-anchors. Test-count fact-checked + corrected to ≈608 backend + ≈613 frontend (was 887). |
+| **Drive Archive** | Drive folder "PePFibPred Archive 2026-08" with 5 sub-folders, 12 files | Sub-folder `02_peleg_review_threads/` is empty — you export the comment PDFs manually (File → Print → Save as PDF). |
+| **LinkedIn signout post** | `docs/active/LINKEDIN_SIGNOUT_POST.md` | 280 words + 5-slide carousel outline + 12 hashtags + tag suggestions. Review + polish before posting; the `pepfibpred.desy.de` URL is aspirational — swap to `http://94.130.178.182:3000` if DNS hasn't landed by post time. |
+| **Case-study blog outline** | `docs/active/CASE_STUDY_OUTLINE.md` | 7 sections, 3 pull-quote candidates, 2 hero-image concepts. Ready for you to expand to 1,500 words. |
+| **Video demo research** | `docs/active/VIDEO_DEMO_OPTIONS.md` | Remotion recommended (fits your React skills). Static carousel is enough for the initial LinkedIn post; Remotion is for a standalone demo video later. |
+
+**Stale item from Cowork's manual-action list — ignore**: "Claude Code — paste CLAUDE_CODE_FINAL_CHECKLIST.md → runs CI, commits V11 files, opens PR, tags v1.0.0". Wave 2.8/2.9 is fully merged into `main`; there's nothing to PR. The checklist file has been moved to `docs/archive/2026-08/CLAUDE_CODE_FINAL_CHECKLIST_stale_wave2_8.md` to avoid confusion.
+
+**Correction to Cowork's manual-action list**: "Invite Alex — GitHub org Owner + repo Admin" is stale under the 2026-08-04 ownership pivot. Correct invite is **repo Admin ONLY** (do not invite him at org level). See `OWNERSHIP_MATRIX.md` change-log.
+
 ## 9. What I did for you already (this session)
 
 - Locked ownership pivot (Said keeps org, Alex repo-Admin, Sentry transfers)
